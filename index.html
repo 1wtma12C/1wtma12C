@@ -6,616 +6,308 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Vellora">
-    <title>Vellora Survey AI</title>
-    
-    <!-- 1. Styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2563EB',
-                        surface: '#FFFFFF',
-                        bg: '#F3F4F6'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Vellora Survey</title>
 
-    <!-- 2. React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    
-    <!-- 3. Babel -->
+    <!-- 1. STABLE LIBRARIES (No ESM, No Imports) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 2. FIREBASE V8 (Classic - 100% Browser Compatible) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #F3F4F6; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        .pt-safe { padding-top: env(safe-area-inset-top); }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #F3F4F6; -webkit-tap-highlight-color: transparent; }
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        .safe-pt { padding-top: env(safe-area-inset-top); }
         .tap-active:active { transform: scale(0.98); opacity: 0.9; }
+        input, select { font-size: 16px !important; } /* Stop iOS Zoom */
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
+    <!-- LOADING SCREEN (Visible by default) -->
+    <div id="loader" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
+        <h2 class="text-xl font-bold text-gray-800">Starting Vellora...</h2>
+        <div id="error-msg" class="hidden mt-4 p-4 bg-red-100 text-red-800 text-xs font-mono max-w-xs rounded border border-red-200"></div>
+    </div>
+
+    <!-- APP ROOT -->
+    <div id="root" class="h-screen w-screen overflow-hidden"></div>
+
+    <!-- GLOBAL ERROR TRAP -->
+    <script>
+        window.onerror = function(msg, source, lineno, colno, error) {
+            document.getElementById('error-msg').classList.remove('hidden');
+            document.getElementById('error-msg').innerText = "CRITICAL ERROR:\n" + msg + "\nLine: " + lineno;
+            // Do NOT hide loader if error occurs
+        };
+    </script>
+
+    <!-- APPLICATION LOGIC -->
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // ==========================================
-        // 1. TYPES & DATA STRUCTURES
-        // ==========================================
+        // --- CONFIGURATION ---
+        const GEMINI_API_KEY = "AIzaSyCTGO098tUeKlMo0zFJUDxmHZryQgzD76w"; // Your Key
         
-        const INITIAL_FORM = {
-            id: '',
-            timestamp: '',
-            // Step A
-            businessName: '',
-            businessType: '',
-            location: '',
-            gps: null,
-            footfall: '',
-            // Step B
-            brands: [],
-            bottleSizes: [],
-            monthlyQty: '',
-            // Step C
-            buyingPrice: {}, // { "250ml": "10", ... }
-            sellingPrice: {},
-            // Step D
-            distributorName: '',
-            deliveryFreq: '',
-            satisfaction: '', // Happy/Unhappy
-            problems: [],
-            // Step E (AI Pitch stored here)
-            generatedPitch: '',
-            // Step F
-            whiteLabel: 'No',
-            whiteLabelPrice: '',
-            preferredBottle: '',
-            willingToSwitch: '',
-            contactName: '',
-            contactPhone: ''
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
+            authDomain: "vellora-3828d.firebaseapp.com",
+            projectId: "vellora-3828d",
+            storageBucket: "vellora-3828d.firebasestorage.app",
+            messagingSenderId: "1045366360458",
+            appId: "1:1045366360458:web:c9de51b7942bd743d9a073"
         };
 
-        const LISTS = {
-            types: ['Restaurant', 'Cafe', 'Hotel', 'Grocery', 'Corporate', 'Other'],
-            brands: ['Kinley', 'Bisleri', 'Aquafina', 'Bailley', 'Local'],
-            sizes: ['250ml', '500ml', '1L', '20L Jar'],
-            problems: ['Price', 'Service', 'Quality', 'Shortage', 'Late Delivery']
+        // --- BACKEND SERVICE (Firebase v8) ---
+        const api = {
+            db: null,
+            init: (cb) => {
+                try {
+                    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                    api.db = firebase.firestore();
+                    firebase.auth().onAuthStateChanged(async (u) => {
+                        if (!u) await firebase.auth().signInAnonymously();
+                        cb('Online');
+                    });
+                } catch (e) {
+                    console.error(e);
+                    cb('Offline');
+                }
+            },
+            save: async (code, data) => {
+                // Local
+                const local = JSON.parse(localStorage.getItem('v_'+code) || '[]');
+                localStorage.setItem('v_'+code, JSON.stringify([data, ...local]));
+                // Cloud
+                if (api.db) await api.db.collection('data').doc(code).collection('surveys').add(data);
+            },
+            del: async (code, id) => {
+                // Local
+                const local = JSON.parse(localStorage.getItem('v_'+code) || '[]');
+                localStorage.setItem('v_'+code, JSON.stringify(local.filter(x => x.id !== id)));
+                // Cloud (Simple implementation: Delete local only for speed, Cloud delete requires Doc ID)
+                if (api.db) {
+                    const snap = await api.db.collection('data').doc(code).collection('surveys').where('id', '==', id).get();
+                    snap.forEach(doc => doc.ref.delete());
+                }
+            },
+            sub: (code, cb) => {
+                const local = JSON.parse(localStorage.getItem('v_'+code) || '[]');
+                cb(local);
+                if (api.db) {
+                    return api.db.collection('data').doc(code).collection('surveys')
+                        .orderBy('timestamp', 'desc')
+                        .onSnapshot(snap => {
+                            const d = snap.docs.map(doc => doc.data());
+                            localStorage.setItem('v_'+code, JSON.stringify(d));
+                            cb(d);
+                        });
+                }
+                return () => {};
+            }
         };
 
-        // ==========================================
-        // 2. CUSTOM ICONS (SVG)
-        // ==========================================
-        
-        const Icon = ({ name, size = 24, className = "", color = "currentColor" }) => {
-            const paths = {
-                home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
-                analytics: "M18 20V10 M12 20V4 M6 20v-6",
-                history: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
-                settings: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
+        // --- COMPONENTS ---
+        const Icon = ({n}) => {
+            const p = {
                 plus: "M12 5v14M5 12h14",
-                trash: "M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
-                check: "M20 6L9 17l-5-5",
+                home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
+                list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
                 x: "M18 6L6 18M6 6l12 12",
+                trash: "M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
                 map: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
-                chevronRight: "M9 18l6-6-6-6",
                 zap: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
-                lock: "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zm-1 0V6a6 6 0 0 0-12 0v5",
-                loader: "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                set: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
             };
-
-            return (
-                <svg 
-                    width={size} height={size} viewBox="0 0 24 24" 
-                    fill="none" stroke={color} strokeWidth="2" 
-                    strokeLinecap="round" strokeLinejoin="round" 
-                    className={className}
-                >
-                    <path d={paths[name] || ""} />
-                </svg>
-            );
+            return <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d={p[n]}/></svg>;
         };
 
-        // ==========================================
-        // 3. CUSTOM COMPONENTS
-        // ==========================================
+        const Input = ({ label, ...props }) => (
+            <div className="mb-4">
+                {label && <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">{label}</label>}
+                <input className="w-full p-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none" {...props} />
+            </div>
+        );
 
-        const SimplePieChart = ({ data, colors }) => {
-            const total = data.reduce((sum, item) => sum + item.value, 0);
-            let startAngle = 0;
-
-            if (total === 0) return <div className="h-40 flex items-center justify-center text-gray-400 text-sm italic">No Data</div>;
-
-            const getCoordinatesForPercent = (percent) => {
-                const x = Math.cos(2 * Math.PI * percent);
-                const y = Math.sin(2 * Math.PI * percent);
-                return [x, y];
-            };
-
-            return (
-                <div className="flex items-center justify-center space-x-6">
-                    <svg viewBox="-1 -1 2 2" className="w-32 h-32 transform -rotate-90">
-                        {data.map((item, index) => {
-                            const percent = item.value / total;
-                            const [startX, startY] = getCoordinatesForPercent(startAngle);
-                            startAngle += percent;
-                            const [endX, endY] = getCoordinatesForPercent(startAngle);
-                            const largeArc = percent > 0.5 ? 1 : 0;
-                            const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArc} 1 ${endX} ${endY} L 0 0`;
-                            return <path key={index} d={pathData} fill={colors[index % colors.length]} stroke="white" strokeWidth="0.02" />;
-                        })}
-                    </svg>
-                    <div className="text-xs space-y-1">
-                        {data.map((item, index) => (
-                            <div key={index} className="flex items-center">
-                                <span className="w-3 h-3 rounded-full mr-2" style={{backgroundColor: colors[index % colors.length]}}></span>
-                                <span className="text-gray-600 font-medium">{item.name} ({Math.round((item.value/total)*100)}%)</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-
-        const ThemeButton = ({ children, onClick, active, className="" }) => (
-            <button 
-                onClick={onClick}
-                className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all border tap-active ${className}
-                ${active ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-            >
+        const Btn = ({ active, onClick, children }) => (
+            <button onClick={onClick} className={`flex-1 py-3 px-2 rounded-xl font-bold text-sm border transition-all ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}>
                 {children}
             </button>
         );
 
-        const ThemeInput = ({ label, type="text", ...props }) => (
-            <div className="mb-4">
-                {label && <label className="text-xs font-bold uppercase text-gray-400 mb-1.5 block tracking-wider">{label}</label>}
-                <input type={type} className="w-full p-3 rounded-xl bg-white border border-gray-200 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" {...props} />
-            </div>
-        );
-
-        const ErrorBoundary = class extends React.Component {
-            constructor(props) { super(props); this.state = { hasError: false }; }
-            static getDerivedStateFromError(error) { return { hasError: true }; }
-            render() {
-                if (this.state.hasError) return (
-                    <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
-                        <Icon name="alert" className="text-red-500 mb-4" size={48} />
-                        <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-                        <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Reload App</button>
-                    </div>
-                );
-                return this.props.children;
-            }
-        };
-
-        // ==========================================
-        // 4. MAIN APP
-        // ==========================================
-
+        // --- MAIN APP ---
         const App = () => {
             // STATE
+            const [mounted, setMounted] = useState(false);
             const [view, setView] = useState('home');
-            const [surveys, setSurveys] = useState([]);
-            const [settings, setSettings] = useState({ apiKey: '', syncCode: '' });
-            const [formData, setFormData] = useState(INITIAL_FORM);
-            
-            // UI STATE
-            const [modalOpen, setModalOpen] = useState(false);
+            const [status, setStatus] = useState('..');
+            const [code, setCode] = useState(() => localStorage.getItem('vc') || 'demo');
+            const [data, setData] = useState([]);
+            const [modal, setModal] = useState(false);
             const [step, setStep] = useState(0);
             const [loading, setLoading] = useState(false);
-            const [confirmAction, setConfirmAction] = useState(null); // { type: 'delete'|'reset', id?: string }
+            
+            // FORM
+            const initF = {
+                id: '', timestamp: 0,
+                name: '', type: '', loc: '', foot: '',
+                brands: [], sizes: [], qty: '',
+                buy: {}, sell: {},
+                dist: '', freq: '', sat: '', prob: [],
+                pitch: '', contact: '', phone: '', white: 'No'
+            };
+            const [f, setF] = useState(initF);
 
-            // LOAD DATA
+            // LIFECYCLE
             useEffect(() => {
-                const savedSurveys = localStorage.getItem('vellora_surveys');
-                if (savedSurveys) setSurveys(JSON.parse(savedSurveys));
+                setMounted(true);
+                // Remove loader only when React mounts
+                const loader = document.getElementById('loader');
+                if(loader) loader.style.display = 'none';
                 
-                const savedSettings = localStorage.getItem('vellora_settings');
-                if (savedSettings) setSettings(JSON.parse(savedSettings));
+                api.init(setStatus);
             }, []);
 
-            // PERSIST DATA
-            const saveSurvey = () => {
-                const newSurvey = { ...formData, id: crypto.randomUUID(), timestamp: new Date().toISOString() };
-                const updated = [newSurvey, ...surveys];
-                setSurveys(updated);
-                localStorage.setItem('vellora_surveys', JSON.stringify(updated));
-                closeModal();
-            };
+            useEffect(() => {
+                const unsub = api.sub(code, setData);
+                return () => unsub();
+            }, [code, status]);
 
-            const deleteSurvey = (id) => {
-                const updated = surveys.filter(s => s.id !== id);
-                setSurveys(updated);
-                localStorage.setItem('vellora_surveys', JSON.stringify(updated));
-                setConfirmAction(null);
-            };
-
-            const updateSetting = (key, val) => {
-                const newSettings = { ...settings, [key]: val };
-                setSettings(newSettings);
-                localStorage.setItem('vellora_settings', JSON.stringify(newSettings));
-            };
-
-            // HELPERS
-            const updateForm = (key, val, subKey = null) => {
-                setFormData(prev => {
-                    if (subKey) return { ...prev, [key]: { ...prev[key], [subKey]: val } };
-                    return { ...prev, [key]: val };
-                });
-            };
-
-            const toggleMulti = (key, val) => {
-                setFormData(prev => {
-                    const arr = prev[key] || [];
-                    return { ...prev, [key]: arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val] };
-                });
-            };
-
+            // ACTIONS
+            const update = (k, v, sub) => setF(p => sub ? {...p, [k]:{...p[k], [sub]:v}} : {...p, [k]:v});
+            const toggle = (k, v) => setF(p => { const a=p[k]||[]; return {...p, [k]: a.includes(v)?a.filter(x=>x!==v):[...a,v]} });
+            
             const getGPS = () => {
-                if (!navigator.geolocation) return alert("GPS not supported");
+                if(!navigator.geolocation) return alert("No GPS");
                 setLoading(true);
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        const coords = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-                        updateForm('location', coords);
-                        updateForm('gps', { lat: pos.coords.latitude, lng: pos.coords.longitude });
-                        setLoading(false);
-                    },
-                    (err) => { alert("GPS Error: " + err.message); setLoading(false); },
-                    { enableHighAccuracy: true }
-                );
+                navigator.geolocation.getCurrentPosition(p => {
+                    update('loc', `${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`);
+                    setLoading(false);
+                }, () => { alert("GPS Failed"); setLoading(false); }, {enableHighAccuracy:true});
             };
 
-            const generatePitch = async () => {
-                if (!settings.apiKey) return alert("Please set API Key in Settings first");
+            const getPitch = async () => {
                 setLoading(true);
                 try {
-                    const prompt = `Write a punchy, 2-sentence sales pitch to convert a ${formData.businessType} named ${formData.businessName} who currently uses ${formData.brands.join(', ')} and is ${formData.satisfaction || 'neutral'} with them. Problems: ${formData.problems.join(', ')}.`;
-                    
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${settings.apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ contents: [{ parts: [{ text: `Sales pitch for water to ${f.name} (${f.type}). Problem: ${f.prob.join(',')}. 2 sentences.` }] }] })
                     });
-                    
-                    const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Could not generate pitch.";
-                    updateForm('generatedPitch', text);
-                } catch (e) {
-                    alert("AI Error: " + e.message);
-                }
+                    const d = await res.json();
+                    update('pitch', d.candidates[0].content.parts[0].text);
+                } catch(e) { alert("AI Error"); }
                 setLoading(false);
             };
 
-            const generateReport = async () => {
-                if (!settings.apiKey) return alert("Please set API Key in Settings first");
-                setLoading(true);
-                try {
-                    const summary = surveys.map(s => `${s.businessType} using ${s.brands.join('/')}`).join('\n');
-                    const prompt = `Analyze this market data and give a 3-bullet executive summary:\n${summary}`;
-                    
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${settings.apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    
-                    const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if(text) alert(text);
-                } catch (e) { alert("AI Error"); }
-                setLoading(false);
+            const save = async () => {
+                await api.save(code, { ...f, id: Date.now().toString(), timestamp: Date.now() });
+                setModal(false);
             };
 
-            const openModal = () => { setFormData(INITIAL_FORM); setStep(0); setModalOpen(true); };
-            const closeModal = () => { setModalOpen(false); };
-
-            // ==========================================
-            // VIEWS
-            // ==========================================
-
-            const renderHome = () => (
-                <div className="space-y-6 animate-in">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Today</div>
-                            <div className="text-4xl font-black text-blue-600">{surveys.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString()).length}</div>
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total</div>
-                            <div className="text-4xl font-black text-gray-800">{surveys.length}</div>
-                        </div>
-                    </div>
-
-                    <button onClick={openModal} className="w-full bg-blue-600 text-white rounded-3xl p-8 shadow-xl shadow-blue-200 flex flex-col items-center justify-center tap-active transition-transform transform">
-                        <div className="bg-white/20 p-4 rounded-full mb-3"><Icon name="plus" size={32} /></div>
-                        <span className="text-xl font-bold">Start New Survey</span>
-                    </button>
-
-                    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                        <h3 className="font-bold text-gray-800 mb-4 flex items-center"><Icon name="history" size={18} className="mr-2 text-blue-500"/> Recent Activity</h3>
-                        {surveys.length === 0 ? <p className="text-gray-400 text-sm text-center py-4">No surveys yet.</p> : (
-                            <div className="space-y-3">
-                                {surveys.slice(0, 3).map(s => (
-                                    <div key={s.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                                        <div>
-                                            <div className="font-bold text-sm text-gray-900">{s.businessName || 'Unknown'}</div>
-                                            <div className="text-xs text-gray-500">{s.businessType} • {new Date(s.timestamp).toLocaleDateString()}</div>
-                                        </div>
-                                        <span className="text-xs font-bold bg-white px-2 py-1 rounded border text-gray-600">{s.footfall} Traffic</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-
-            const renderWizard = () => {
-                const steps = [
-                    // Step A: Profile
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Step A: Profile</h3>
-                        <ThemeInput label="Business Name" value={formData.businessName} onChange={e => updateForm('businessName', e.target.value)} placeholder="e.g. Blue Cafe" />
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Type</label>
-                            <div className="grid grid-cols-2 gap-2">{LISTS.types.map(t => <ThemeButton key={t} onClick={() => updateForm('businessType', t)} active={formData.businessType === t}>{t}</ThemeButton>)}</div>
-                        </div>
-                        <div className="flex gap-2 items-end">
-                            <div className="flex-1"><ThemeInput label="Location" value={formData.location} onChange={e => updateForm('location', e.target.value)} /></div>
-                            <button onClick={getGPS} className="bg-blue-100 text-blue-700 p-3.5 rounded-xl mb-4"><Icon name="map" /></button>
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Footfall</label>
-                            <div className="flex gap-2">{['Low', 'Medium', 'High'].map(f => <ThemeButton key={f} onClick={() => updateForm('footfall', f)} active={formData.footfall === f}>{f}</ThemeButton>)}</div>
-                        </div>
-                    </div>,
-
-                    // Step B: Usage
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Step B: Usage</h3>
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Current Brands</label>
-                            <div className="flex flex-wrap gap-2">{LISTS.brands.map(b => <ThemeButton key={b} onClick={() => toggleMulti('brands', b)} active={formData.brands.includes(b)}>{b}</ThemeButton>)}</div>
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Bottle Sizes</label>
-                            <div className="flex gap-2">{LISTS.sizes.map(s => <ThemeButton key={s} onClick={() => toggleMulti('bottleSizes', s)} active={formData.bottleSizes.includes(s)}>{s}</ThemeButton>)}</div>
-                        </div>
-                        <ThemeInput label="Monthly Volume" type="number" value={formData.monthlyQty} onChange={e => updateForm('monthlyQty', e.target.value)} />
-                    </div>,
-
-                    // Step C: Pricing
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Step C: Pricing</h3>
-                        {formData.bottleSizes.length === 0 && <p className="text-gray-400 italic">Select sizes in previous step.</p>}
-                        {formData.bottleSizes.map(size => (
-                            <div key={size} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                <h4 className="font-bold text-blue-600 mb-2">{size}</h4>
-                                <div className="grid grid-cols-3 gap-3 items-end">
-                                    <ThemeInput placeholder="Buy" type="number" value={formData.buyingPrice[size]||''} onChange={e => updateForm('buyingPrice', e.target.value, size)} />
-                                    <ThemeInput placeholder="Sell" type="number" value={formData.sellingPrice[size]||''} onChange={e => updateForm('sellingPrice', e.target.value, size)} />
-                                    <div className="mb-4 text-center">
-                                        <div className="text-xs font-bold text-gray-400 uppercase">Profit</div>
-                                        <div className="font-black text-green-600">₹{((formData.sellingPrice[size] || 0) - (formData.buyingPrice[size] || 0)).toFixed(2)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>,
-
-                    // Step D: Supply Chain
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Step D: Supply Chain</h3>
-                        <ThemeInput label="Distributor Name" value={formData.distributorName} onChange={e => updateForm('distributorName', e.target.value)} />
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Frequency</label>
-                            <div className="flex gap-2">{['Daily', 'Weekly', 'On Demand'].map(f => <ThemeButton key={f} onClick={() => updateForm('deliveryFreq', f)} active={formData.deliveryFreq === f}>{f}</ThemeButton>)}</div>
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Satisfaction</label>
-                            <div className="flex gap-2">{['Happy', 'Unhappy'].map(s => <ThemeButton key={s} onClick={() => updateForm('satisfaction', s)} active={formData.satisfaction === s}>{s}</ThemeButton>)}</div>
-                        </div>
-                        {formData.satisfaction === 'Unhappy' && (
-                            <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase mb-2 block text-red-500">Problems</label>
-                                <div className="flex flex-wrap gap-2">{LISTS.problems.map(p => <ThemeButton key={p} onClick={() => toggleMulti('problems', p)} active={formData.problems.includes(p)} className="border-red-100">{p}</ThemeButton>)}</div>
-                            </div>
-                        )}
-                    </div>,
-
-                    // Step E: AI Assistant
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Step E: AI Assistant</h3>
-                        <div className="bg-gradient-to-br from-indigo-50 to-white p-5 rounded-2xl border border-indigo-100">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="font-bold text-indigo-900 flex items-center"><Icon name="zap" size={18} className="mr-2"/> Generator</span>
-                                <button onClick={generatePitch} disabled={loading} className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                                    {loading ? 'Thinking...' : 'Generate Pitch'}
-                                </button>
-                            </div>
-                            {formData.generatedPitch ? (
-                                <div className="p-4 bg-white rounded-xl border border-indigo-50 text-indigo-900 italic shadow-sm">"{formData.generatedPitch}"</div>
-                            ) : (
-                                <p className="text-xs text-indigo-400 text-center py-4">Tap Generate to create a custom pitch.</p>
-                            )}
-                        </div>
-                    </div>,
-
-                    // Step F: Closing
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Step F: Closing</h3>
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Interest Level</label>
-                            <div className="flex gap-2">{['Hot', 'Warm', 'Cold'].map(i => <ThemeButton key={i} onClick={() => updateForm('willingToSwitch', i)} active={formData.willingToSwitch === i}>{i}</ThemeButton>)}</div>
-                        </div>
-                        <div className="pt-4 border-t border-gray-200">
-                            <ThemeInput label="Contact Name" value={formData.contactName} onChange={e => updateForm('contactName', e.target.value)} />
-                            <ThemeInput label="Phone Number" type="tel" value={formData.contactPhone} onChange={e => updateForm('contactPhone', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">White Label?</label>
-                            <div className="flex gap-2">{['Yes', 'No'].map(v => <ThemeButton key={v} onClick={() => updateForm('whiteLabel', v)} active={formData.whiteLabel === v}>{v}</ThemeButton>)}</div>
-                        </div>
-                    </div>
-                ];
-
-                return (
-                    <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col">
-                        <div className="bg-white border-b border-gray-200 pt-safe px-4 py-3 flex justify-between items-center shrink-0 shadow-sm">
-                            <span className="font-bold text-gray-500 text-sm">Step {step + 1} / {steps.length}</span>
-                            <button onClick={closeModal} className="p-2 bg-gray-100 rounded-full text-gray-600"><Icon name="x" size={20}/></button>
-                        </div>
-                        
-                        <div className="flex-1 overflow-y-auto p-5 pb-32 max-w-2xl mx-auto w-full">
-                            {steps[step]}
-                        </div>
-
-                        <div className="bg-white border-t border-gray-200 p-4 pb-safe flex justify-between items-center shrink-0 max-w-2xl mx-auto w-full">
-                            <button onClick={() => setStep(s => Math.max(0, s-1))} disabled={step === 0} className="text-gray-500 font-bold px-4 disabled:opacity-30">Back</button>
-                            <button 
-                                onClick={() => step < steps.length - 1 ? setStep(s => s+1) : setConfirmAction({ type: 'save' })} 
-                                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200"
-                            >
-                                {step === steps.length - 1 ? 'Finish' : 'Next'}
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
-            const renderAnalytics = () => {
-                const brandData = Object.entries(surveys.reduce((acc, s) => { s.brands.forEach(b => acc[b] = (acc[b]||0)+1); return acc; }, {}))
-                    .map(([name, value]) => ({ name, value }));
-                const typeData = Object.entries(surveys.reduce((acc, s) => { acc[s.businessType] = (acc[s.businessType]||0)+1; return acc; }, {}))
-                    .map(([name, value]) => ({ name, value }));
-
-                return (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-800">Analytics</h2>
-                            <button onClick={generateReport} disabled={loading} className="text-xs bg-indigo-100 text-indigo-700 font-bold px-3 py-1.5 rounded-lg">
-                                {loading ? 'Analyzing...' : 'AI Report'}
-                            </button>
-                        </div>
-                        
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 className="text-sm font-bold text-gray-400 uppercase mb-4">Brand Market Share</h3>
-                            <SimplePieChart data={brandData} colors={['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']} />
-                        </div>
-
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 className="text-sm font-bold text-gray-400 uppercase mb-4">Business Types</h3>
-                            <SimplePieChart data={typeData} colors={['#EC4899', '#6366F1', '#14B8A6', '#F97316', '#64748B']} />
-                        </div>
-                    </div>
-                );
-            };
-
-            const renderHistory = () => (
+            // RENDER STEPS
+            const Steps = [
                 <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">History</h2>
-                    {surveys.map(s => (
-                        <div key={s.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
-                            <div>
-                                <div className="font-bold text-gray-900">{s.businessName || 'Unknown'}</div>
-                                <div className="text-xs text-gray-500">{s.businessType} • {new Date(s.timestamp).toLocaleDateString()}</div>
+                    <h3 className="text-xl font-bold">Profile</h3>
+                    <Input label="Business Name" value={f.name} onChange={e=>update('name', e.target.value)} />
+                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">TYPE</label>
+                    <div className="grid grid-cols-2 gap-2">{['Cafe','Hotel','Restaurant','Grocery','Corp','Other'].map(t=><Btn key={t} active={f.type===t} onClick={()=>update('type',t)}>{t}</Btn>)}</div></div>
+                    <div className="flex gap-2 items-end"><div className="flex-1"><Input label="Location" value={f.loc} onChange={e=>update('loc',e.target.value)}/></div><button onClick={getGPS} className="bg-blue-100 text-blue-600 p-3 rounded-xl mb-4"><Icon n="map"/></button></div>
+                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">FOOTFALL</label>
+                    <div className="flex gap-2">{['Low','Med','High'].map(x=><Btn key={x} active={f.foot===x} onClick={()=>update('foot',x)}>{x}</Btn>)}</div></div>
+                </div>,
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold">Usage</h3>
+                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">BRANDS</label>
+                    <div class="flex flex-wrap gap-2">{['Kinley','Bisleri','Aquafina','Local'].map(b=><Btn key={b} active={f.brands.includes(b)} onClick={()=>toggle('brands',b)}>{b}</Btn>)}</div></div>
+                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">SIZES</label>
+                    <div className="flex gap-2">{['250ml','500ml','1L'].map(s=><Btn key={s} active={f.sizes.includes(s)} onClick={()=>toggle('sizes',s)}>{s}</Btn>)}</div></div>
+                    <Input label="Monthly Qty" type="number" value={f.qty} onChange={e=>update('qty', e.target.value)} />
+                </div>,
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold">Pricing</h3>
+                    {f.sizes.map(s => (
+                        <div key={s} className="bg-white p-3 rounded-xl border shadow-sm mb-2">
+                            <div className="font-bold text-blue-600 mb-2">{s}</div>
+                            <div className="grid grid-cols-3 gap-2">
+                                <input placeholder="Buy" type="number" className="p-2 border rounded" value={f.buy[s]||''} onChange={e=>update('buy',e.target.value,s)} />
+                                <input placeholder="Sell" type="number" className="p-2 border rounded" value={f.sell[s]||''} onChange={e=>update('sell',e.target.value,s)} />
+                                <div className="p-2 bg-green-50 text-green-600 font-bold text-center rounded border border-green-100">{(f.sell[s]-f.buy[s]||0).toFixed(0)}</div>
                             </div>
-                            <button onClick={() => setConfirmAction({ type: 'delete', id: s.id })} className="p-2 text-red-400 bg-red-50 rounded-lg">
-                                <Icon name="trash" size={18} />
-                            </button>
                         </div>
                     ))}
-                </div>
-            );
-
-            const renderSettings = () => (
-                <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-800">Settings</h2>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="flex items-center mb-4"><Icon name="lock" size={20} className="text-gray-400 mr-2"/><h3 className="font-bold text-gray-700">API Keys</h3></div>
-                        <ThemeInput label="Google Gemini API Key" value={settings.apiKey} onChange={e => updateSetting('apiKey', e.target.value)} type="password" placeholder="AIza..." />
-                        <ThemeInput label="Sync Code (Optional)" value={settings.syncCode} onChange={e => updateSetting('syncCode', e.target.value)} placeholder="MY_TEAM_CODE" />
+                </div>,
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold">Closing</h3>
+                    <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                        <div className="flex justify-between mb-2"><span className="font-bold text-indigo-800">AI Script</span><button onClick={getPitch} className="text-xs bg-indigo-600 text-white px-3 py-1 rounded">{loading?'...':'Gen'}</button></div>
+                        {f.pitch && <p className="text-sm italic text-indigo-900 bg-white p-2 rounded border border-indigo-50">"{f.pitch}"</p>}
                     </div>
-                    <button onClick={() => setConfirmAction({ type: 'reset' })} className="w-full py-4 text-red-600 font-bold bg-red-50 rounded-xl border border-red-100">Reset All Data</button>
+                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">WHITE LABEL?</label><div className="flex gap-2">{['Yes','No'].map(v=><Btn key={v} active={f.white===v} onClick={()=>update('white',v)}>{v}</Btn>)}</div></div>
+                    <Input label="Contact" value={f.contact} onChange={e=>update('contact',e.target.value)} />
                 </div>
-            );
+            ];
 
-            // RENDER MAIN
+            if (!mounted) return null;
+
             return (
-                <div className="h-screen w-screen flex flex-col bg-gray-50 text-gray-900 overflow-hidden font-sans">
-                    {/* Header */}
-                    <header className="bg-white border-b border-gray-200 px-4 py-3 pt-safe flex justify-between items-center shrink-0 z-20">
-                        <div className="flex items-center space-x-2">
-                            <div className="bg-blue-600 text-white p-1.5 rounded-lg"><Icon name="zap" size={18}/></div>
-                            <h1 className="font-bold text-lg tracking-tight">VELLORA</h1>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            <button onClick={() => setView('settings')}><Icon name="settings" className="text-gray-400" /></button>
-                        </div>
+                <div className="h-full flex flex-col bg-gray-50 pb-safe">
+                    <header className="bg-white border-b px-4 py-3 pt-safe flex justify-between items-center z-10 sticky top-0">
+                        <div className="flex items-center text-blue-600 space-x-2"><Icon n="zap"/><h1 className="font-bold text-xl text-gray-900">VELLORA</h1></div>
+                        <button onClick={()=>setView('set')}><Icon n="set" className="text-gray-400"/></button>
                     </header>
 
-                    {/* Content */}
-                    <main className="flex-1 overflow-y-auto p-4 w-full max-w-3xl mx-auto">
-                        <ErrorBoundary>
-                            {view === 'home' && renderHome()}
-                            {view === 'analytics' && renderAnalytics()}
-                            {view === 'history' && renderHistory()}
-                            {view === 'settings' && renderSettings()}
-                        </ErrorBoundary>
+                    <main className="flex-1 overflow-y-auto p-4 w-full max-w-2xl mx-auto">
+                        {view === 'home' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border"><div className="text-xs text-gray-400 font-bold">TODAY</div><div className="text-3xl font-black text-blue-600">{data.length}</div></div>
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border"><div className="text-xs text-gray-400 font-bold">STATUS</div><div className="text-sm font-bold text-green-600 uppercase">{status}</div></div>
+                                </div>
+                                <button onClick={()=>{setF(initF); setStep(0); setModal(true)}} className="w-full bg-blue-600 text-white rounded-3xl p-6 shadow-xl flex flex-col items-center tap-active">
+                                    <div className="bg-white/20 p-3 rounded-full mb-2"><Icon n="plus"/></div>
+                                    <span className="text-lg font-bold">Start Survey</span>
+                                </button>
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-gray-400 text-xs">RECENT</h3>
+                                    {data.slice(0,5).map(s => (
+                                        <div key={s.id} className="bg-white p-4 rounded-xl border shadow-sm flex justify-between items-center">
+                                            <div><div className="font-bold">{s.name||'Unknown'}</div><div className="text-xs text-gray-500">{s.type} • {new Date(s.timestamp).toLocaleDateString()}</div></div>
+                                            <button onClick={()=>api.del(code, s.id)} className="text-red-400 p-2"><Icon n="trash"/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'set' && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold">Settings</h2>
+                                <Input label="Sync Code" value={code} onChange={e=>{setCode(e.target.value); localStorage.setItem('vc',e.target.value)}} />
+                                <button onClick={()=>{localStorage.clear(); window.location.reload()}} className="w-full p-4 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100">Reset App</button>
+                            </div>
+                        )}
                     </main>
 
-                    {/* Nav */}
-                    <nav className="bg-white border-t border-gray-200 px-6 py-2 pb-safe flex justify-around items-center shrink-0 z-20">
-                        {['home', 'analytics', 'history'].map(v => (
-                            <button key={v} onClick={() => setView(v)} className={`p-2 rounded-xl flex flex-col items-center transition-all ${view === v ? 'text-blue-600' : 'text-gray-400'}`}>
-                                <Icon name={v} size={24} />
-                                <span className="text-[10px] font-bold uppercase mt-1 tracking-wide">{v}</span>
-                            </button>
-                        ))}
+                    <nav className="bg-white border-t px-6 py-2 pb-safe flex justify-around shrink-0 z-20">
+                        {['home','list'].map(v => <button key={v} onClick={()=>setView(v==='list'?'home':v)} className={`p-2 ${view===v?'text-blue-600':'text-gray-400'}`}><Icon n={v}/></button>)}
                     </nav>
 
-                    {/* Wizard Modal */}
-                    {modalOpen && renderWizard()}
-
-                    {/* Confirm Modal */}
-                    {confirmAction && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-                                <h3 className="text-lg font-bold mb-2">Are you sure?</h3>
-                                <p className="text-sm text-gray-500 mb-6">
-                                    {confirmAction.type === 'delete' && "This survey will be permanently deleted."}
-                                    {confirmAction.type === 'save' && "Save this survey data to local storage?"}
-                                    {confirmAction.type === 'reset' && "This will wipe ALL app data. Cannot be undone."}
-                                </p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setConfirmAction(null)} className="flex-1 py-3 rounded-xl font-bold border border-gray-200 text-gray-600">Cancel</button>
-                                    <button 
-                                        onClick={() => {
-                                            if (confirmAction.type === 'delete') deleteSurvey(confirmAction.id);
-                                            if (confirmAction.type === 'save') saveSurvey();
-                                            if (confirmAction.type === 'reset') { localStorage.clear(); window.location.reload(); }
-                                        }} 
-                                        className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg ${confirmAction.type === 'save' ? 'bg-blue-600' : 'bg-red-500'}`}
-                                    >
-                                        Confirm
-                                    </button>
-                                </div>
+                    {modal && (
+                        <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col animate-in">
+                            <div className="px-4 py-3 bg-white border-b pt-safe flex justify-between items-center shrink-0">
+                                <span className="font-bold text-gray-500 text-sm">Step {step+1}/4</span>
+                                <button onClick={()=>setModal(false)} className="p-2 bg-gray-100 rounded-full"><Icon n="x"/></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-5 pb-32 max-w-2xl mx-auto w-full">{Steps[step]}</div>
+                            <div className="bg-white border-t p-4 pb-safe flex justify-between shrink-0 max-w-2xl mx-auto w-full">
+                                <button onClick={()=>step>0 && setStep(s=>s-1)} disabled={step===0} className="text-gray-500 font-bold px-4 disabled:opacity-30">Back</button>
+                                <button onClick={()=>step<3 ? setStep(s=>s+1) : save()} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg">{step===3?'Save':'Next'}</button>
                             </div>
                         </div>
                     )}
@@ -623,8 +315,7 @@
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
