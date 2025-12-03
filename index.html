@@ -2,322 +2,555 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Vellora">
-    <title>Vellora Survey</title>
-
-    <!-- 1. STABLE LIBRARIES (No ESM, No Imports) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VELLORA Enterprise PWA</title>
     
-    <!-- 2. FIREBASE V8 (Classic - 100% Browser Compatible) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #F3F4F6; -webkit-tap-highlight-color: transparent; }
-        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .safe-pt { padding-top: env(safe-area-inset-top); }
-        .tap-active:active { transform: scale(0.98); opacity: 0.9; }
-        input, select { font-size: 16px !important; } /* Stop iOS Zoom */
-    </style>
-</head>
-<body>
-
-    <!-- LOADING SCREEN (Visible by default) -->
-    <div id="loader" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
-        <h2 class="text-xl font-bold text-gray-800">Starting Vellora...</h2>
-        <div id="error-msg" class="hidden mt-4 p-4 bg-red-100 text-red-800 text-xs font-mono max-w-xs rounded border border-red-200"></div>
-    </div>
-
-    <!-- APP ROOT -->
-    <div id="root" class="h-screen w-screen overflow-hidden"></div>
-
-    <!-- GLOBAL ERROR TRAP -->
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        window.onerror = function(msg, source, lineno, colno, error) {
-            document.getElementById('error-msg').classList.remove('hidden');
-            document.getElementById('error-msg').innerText = "CRITICAL ERROR:\n" + msg + "\nLine: " + lineno;
-            // Do NOT hide loader if error occurs
-        };
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'scale-in': 'scaleIn 0.15s ease-out',
+                        'bounce-in': 'bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { transform: 'translateY(100%)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        scaleIn: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
+                        bounceIn: { '0%': { transform: 'translate(-50%, -20px)', opacity: '0' }, '50%': { transform: 'translate(-50%, 5px)', opacity: '1' }, '100%': { transform: 'translate(-50%, 0)' } }
+                    }
+                }
+            }
+        }
     </script>
 
-    <!-- APPLICATION LOGIC -->
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+    <!-- 2. React & Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 3. Styles for Maps/Layout -->
+    <style>
+        /* Mobile Safe Areas */
+        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+        /* Hide scrollbar for clean UI */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 selection:bg-blue-100">
 
-        // --- CONFIGURATION ---
-        const GEMINI_API_KEY = "AIzaSyCTGO098tUeKlMo0zFJUDxmHZryQgzD76w"; // Your Key
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
         
+        // Firebase Imports (Modular)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, getDocs, doc, 
+            updateDoc, deleteDoc, onSnapshot, setDoc, getDoc 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // --- ICONS (Inline SVG to avoid dependency issues in single HTML) ---
+        const Icons = {
+            Database: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            CheckCircle: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            AlertTriangle: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+            Settings: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+            LayoutDashboard: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+            Plus: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            FileText: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            X: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            MapPin: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+            ArrowLeft: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+            ArrowRight: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+            Save: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Search: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            Download: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            Phone: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+            Navigation: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>,
+            Trash2: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+            RefreshCw: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+            Sun: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+            Moon: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        };
+
+        const Icon = ({ name, size = 20, className }) => {
+            const Comp = Icons[name] || Icons.AlertTriangle;
+            return <Comp width={size} height={size} className={className} />;
+        };
+
+        // --- CONSTANTS ---
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
             authDomain: "vellora-3828d.firebaseapp.com",
             projectId: "vellora-3828d",
             storageBucket: "vellora-3828d.firebasestorage.app",
             messagingSenderId: "1045366360458",
-            appId: "1:1045366360458:web:c9de51b7942bd743d9a073"
+            appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
+            measurementId: "G-WLKMJNBJTP"
         };
 
-        // --- BACKEND SERVICE (Firebase v8) ---
-        const api = {
-            db: null,
-            init: (cb) => {
-                try {
-                    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-                    api.db = firebase.firestore();
-                    firebase.auth().onAuthStateChanged(async (u) => {
-                        if (!u) await firebase.auth().signInAnonymously();
-                        cb('Online');
-                    });
-                } catch (e) {
-                    console.error(e);
-                    cb('Offline');
-                }
-            },
-            save: async (code, data) => {
-                // Local
-                const local = JSON.parse(localStorage.getItem('v_'+code) || '[]');
-                localStorage.setItem('v_'+code, JSON.stringify([data, ...local]));
-                // Cloud
-                if (api.db) await api.db.collection('data').doc(code).collection('surveys').add(data);
-            },
-            del: async (code, id) => {
-                // Local
-                const local = JSON.parse(localStorage.getItem('v_'+code) || '[]');
-                localStorage.setItem('v_'+code, JSON.stringify(local.filter(x => x.id !== id)));
-                // Cloud (Simple implementation: Delete local only for speed, Cloud delete requires Doc ID)
-                if (api.db) {
-                    const snap = await api.db.collection('data').doc(code).collection('surveys').where('id', '==', id).get();
-                    snap.forEach(doc => doc.ref.delete());
-                }
-            },
-            sub: (code, cb) => {
-                const local = JSON.parse(localStorage.getItem('v_'+code) || '[]');
-                cb(local);
-                if (api.db) {
-                    return api.db.collection('data').doc(code).collection('surveys')
-                        .orderBy('timestamp', 'desc')
-                        .onSnapshot(snap => {
-                            const d = snap.docs.map(doc => doc.data());
-                            localStorage.setItem('v_'+code, JSON.stringify(d));
-                            cb(d);
-                        });
-                }
-                return () => {};
-            }
+        const THEMES = {
+            corporate: { name: "Corporate Light", bg: "bg-gray-50", card: "bg-white", text: "text-gray-900", primary: "bg-blue-600", accent: "text-blue-600", border: "border-gray-200" },
+            midnight: { name: "Midnight Dark", bg: "bg-slate-900", card: "bg-slate-800", text: "text-slate-100", primary: "bg-blue-500", accent: "text-blue-400", border: "border-slate-700" },
+            forest: { name: "Forest Rain", bg: "bg-emerald-50", card: "bg-white", text: "text-emerald-950", primary: "bg-emerald-600", accent: "text-emerald-700", border: "border-emerald-200" },
+            obsidian: { name: "Obsidian", bg: "bg-black", card: "bg-gray-900", text: "text-gray-100", primary: "bg-white", accent: "text-gray-300", border: "border-gray-800" },
+            sunset: { name: "Sunset", bg: "bg-orange-50", card: "bg-white", text: "text-orange-950", primary: "bg-orange-500", accent: "text-orange-600", border: "border-orange-200" },
+            royal: { name: "Royal", bg: "bg-purple-50", card: "bg-white", text: "text-purple-950", primary: "bg-purple-700", accent: "text-purple-700", border: "border-purple-200" },
+            oceanic: { name: "Oceanic", bg: "bg-cyan-50", card: "bg-white", text: "text-cyan-950", primary: "bg-cyan-600", accent: "text-cyan-700", border: "border-cyan-200" },
+            luxury: { name: "Luxury", bg: "bg-neutral-900", card: "bg-neutral-800", text: "text-yellow-50", primary: "bg-yellow-600", accent: "text-yellow-500", border: "border-yellow-700" },
+            berry: { name: "Berry", bg: "bg-pink-50", card: "bg-white", text: "text-pink-950", primary: "bg-pink-600", accent: "text-pink-600", border: "border-pink-200" },
+            slate: { name: "Slate", bg: "bg-gray-100", card: "bg-white", text: "text-gray-800", primary: "bg-gray-600", accent: "text-gray-700", border: "border-gray-300" },
         };
 
-        // --- COMPONENTS ---
-        const Icon = ({n}) => {
-            const p = {
-                plus: "M12 5v14M5 12h14",
-                home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
-                list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
-                x: "M18 6L6 18M6 6l12 12",
-                trash: "M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
-                map: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
-                zap: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
-                set: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
-            };
-            return <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d={p[n]}/></svg>;
+        const INITIAL_MASTER_DATA = {
+            businessTypes: ["Corporate Office", "Retail Store", "Restaurant", "Clinic", "Gym", "School"],
+            brands: ["Bisleri", "Kinley", "Aquafina", "Bailley", "Local ISI"],
+            bottleSizes: ["250ml", "500ml", "1L", "2L", "20L Jar"],
+            problems: ["Late Delivery", "Dirty Bottles", "High Price", "Rude Staff", "No Bill"]
         };
 
-        const Input = ({ label, ...props }) => (
-            <div className="mb-4">
-                {label && <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">{label}</label>}
-                <input className="w-full p-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none" {...props} />
-            </div>
-        );
+        // --- UTILS ---
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false }; }
+            static getDerivedStateFromError(error) { return { hasError: true }; }
+            componentDidCatch(error, errorInfo) { console.error("App Error:", error, errorInfo); }
+            render() { return this.state.hasError ? <div className="p-8 text-center text-red-600 font-bold">App Error. Reload.</div> : this.props.children; }
+        }
 
-        const Btn = ({ active, onClick, children }) => (
-            <button onClick={onClick} className={`flex-1 py-3 px-2 rounded-xl font-bold text-sm border transition-all ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}>
-                {children}
-            </button>
-        );
+        const exportToCSV = (data) => {
+            if (!data || data.length === 0) return;
+            const headers = Object.keys(data[0]).join(",");
+            const rows = data.map(row => Object.values(row).map(val => typeof val === 'object' ? JSON.stringify(val).replace(/,/g, ';') : `"${val}"`).join(","));
+            const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `vellora_surveys_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const AppContext = createContext();
 
         // --- MAIN APP ---
-        const App = () => {
-            // STATE
-            const [mounted, setMounted] = useState(false);
-            const [view, setView] = useState('home');
-            const [status, setStatus] = useState('..');
-            const [code, setCode] = useState(() => localStorage.getItem('vc') || 'demo');
-            const [data, setData] = useState([]);
-            const [modal, setModal] = useState(false);
-            const [step, setStep] = useState(0);
+        function App() {
+            const [firebaseApp, setFirebaseApp] = useState(null);
+            const [db, setDb] = useState(null);
+            const [user, setUser] = useState(null);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [currentTheme, setCurrentTheme] = useState('corporate');
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [syncCode, setSyncCode] = useState(() => localStorage.getItem('vellora_sync_code') || 'MAIN');
+            const [surveys, setSurveys] = useState([]);
+            const [masterData, setMasterData] = useState(INITIAL_MASTER_DATA);
             const [loading, setLoading] = useState(false);
-            
-            // FORM
-            const initF = {
-                id: '', timestamp: 0,
-                name: '', type: '', loc: '', foot: '',
-                brands: [], sizes: [], qty: '',
-                buy: {}, sell: {},
-                dist: '', freq: '', sat: '', prob: [],
-                pitch: '', contact: '', phone: '', white: 'No'
-            };
-            const [f, setF] = useState(initF);
+            const [notification, setNotification] = useState(null);
 
-            // LIFECYCLE
             useEffect(() => {
-                setMounted(true);
-                // Remove loader only when React mounts
-                const loader = document.getElementById('loader');
-                if(loader) loader.style.display = 'none';
-                
-                api.init(setStatus);
+                const app = initializeApp(FIREBASE_CONFIG);
+                const auth = getAuth(app);
+                const database = getFirestore(app);
+                setFirebaseApp(app);
+                setDb(database);
+                signInAnonymously(auth).catch(console.error);
+                onAuthStateChanged(auth, (u) => setUser(u));
+                window.addEventListener('online', () => setIsOnline(true));
+                window.addEventListener('offline', () => setIsOnline(false));
+                return () => {
+                    window.removeEventListener('online', () => setIsOnline(true));
+                    window.removeEventListener('offline', () => setIsOnline(false));
+                }
             }, []);
 
             useEffect(() => {
-                const unsub = api.sub(code, setData);
-                return () => unsub();
-            }, [code, status]);
-
-            // ACTIONS
-            const update = (k, v, sub) => setF(p => sub ? {...p, [k]:{...p[k], [sub]:v}} : {...p, [k]:v});
-            const toggle = (k, v) => setF(p => { const a=p[k]||[]; return {...p, [k]: a.includes(v)?a.filter(x=>x!==v):[...a,v]} });
-            
-            const getGPS = () => {
-                if(!navigator.geolocation) return alert("No GPS");
+                if (!user || !db) return;
                 setLoading(true);
-                navigator.geolocation.getCurrentPosition(p => {
-                    update('loc', `${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`);
+                const masterRef = doc(db, 'artifacts', syncCode, 'settings', 'masterData');
+                const unsubMaster = onSnapshot(masterRef, (docSnap) => {
+                    if (docSnap.exists()) setMasterData(docSnap.data());
+                    else setDoc(masterRef, INITIAL_MASTER_DATA);
+                }, () => {
+                    const local = localStorage.getItem(`vellora_${syncCode}_master`);
+                    if (local) setMasterData(JSON.parse(local));
+                });
+
+                const surveysCol = collection(db, 'artifacts', syncCode, 'data', 'surveys');
+                const unsubSurveys = onSnapshot(surveysCol, (snapshot) => {
+                    const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setSurveys(list);
+                    localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(list));
                     setLoading(false);
-                }, () => { alert("GPS Failed"); setLoading(false); }, {enableHighAccuracy:true});
+                }, () => {
+                    const local = localStorage.getItem(`vellora_${syncCode}_surveys`);
+                    if (local) setSurveys(JSON.parse(local));
+                    setLoading(false);
+                });
+                return () => { unsubMaster(); unsubSurveys(); };
+            }, [user, db, syncCode]);
+
+            const showToast = (msg, type = 'success') => {
+                setNotification({ msg, type });
+                setTimeout(() => setNotification(null), 3000);
             };
 
-            const getPitch = async () => {
-                setLoading(true);
+            const updateSyncCode = (code) => {
+                if(!code) return;
+                setSyncCode(code);
+                localStorage.setItem('vellora_sync_code', code);
+                setSurveys([]);
+                showToast(`Switched to: ${code}`);
+            };
+
+            const handleSaveSurvey = async (data) => {
+                const newSurvey = { ...data, timestamp: new Date().toISOString(), syncCode };
+                const optimisticId = crypto.randomUUID();
+                const withId = { ...newSurvey, id: optimisticId };
+                setSurveys(prev => [withId, ...prev]);
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ contents: [{ parts: [{ text: `Sales pitch for water to ${f.name} (${f.type}). Problem: ${f.prob.join(',')}. 2 sentences.` }] }] })
-                    });
-                    const d = await res.json();
-                    update('pitch', d.candidates[0].content.parts[0].text);
-                } catch(e) { alert("AI Error"); }
-                setLoading(false);
+                    if (db && isOnline && user) {
+                        await addDoc(collection(db, 'artifacts', syncCode, 'data', 'surveys'), newSurvey);
+                        showToast('Survey Synced');
+                    } else {
+                        const existing = JSON.parse(localStorage.getItem(`vellora_${syncCode}_surveys`) || '[]');
+                        localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify([withId, ...existing]));
+                        showToast('Saved Offline');
+                    }
+                } catch (e) { showToast('Error Saving', 'error'); }
+                setActiveTab('list');
             };
 
-            const save = async () => {
-                await api.save(code, { ...f, id: Date.now().toString(), timestamp: Date.now() });
-                setModal(false);
+            const handleUpdateMaster = async (key, newValue) => {
+                if (!newValue) return;
+                const currentList = masterData[key] || [];
+                if (currentList.includes(newValue)) return;
+                const newList = [...currentList, newValue];
+                const newMaster = { ...masterData, [key]: newList };
+                setMasterData(newMaster);
+                localStorage.setItem(`vellora_${syncCode}_master`, JSON.stringify(newMaster));
+                if (db && isOnline && user) {
+                    try { await setDoc(doc(db, 'artifacts', syncCode, 'settings', 'masterData'), newMaster); } catch(e) {}
+                }
             };
 
-            // RENDER STEPS
-            const Steps = [
-                <div className="space-y-4">
-                    <h3 className="text-xl font-bold">Profile</h3>
-                    <Input label="Business Name" value={f.name} onChange={e=>update('name', e.target.value)} />
-                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">TYPE</label>
-                    <div className="grid grid-cols-2 gap-2">{['Cafe','Hotel','Restaurant','Grocery','Corp','Other'].map(t=><Btn key={t} active={f.type===t} onClick={()=>update('type',t)}>{t}</Btn>)}</div></div>
-                    <div className="flex gap-2 items-end"><div className="flex-1"><Input label="Location" value={f.loc} onChange={e=>update('loc',e.target.value)}/></div><button onClick={getGPS} className="bg-blue-100 text-blue-600 p-3 rounded-xl mb-4"><Icon n="map"/></button></div>
-                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">FOOTFALL</label>
-                    <div className="flex gap-2">{['Low','Med','High'].map(x=><Btn key={x} active={f.foot===x} onClick={()=>update('foot',x)}>{x}</Btn>)}</div></div>
-                </div>,
-                <div className="space-y-4">
-                    <h3 className="text-xl font-bold">Usage</h3>
-                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">BRANDS</label>
-                    <div class="flex flex-wrap gap-2">{['Kinley','Bisleri','Aquafina','Local'].map(b=><Btn key={b} active={f.brands.includes(b)} onClick={()=>toggle('brands',b)}>{b}</Btn>)}</div></div>
-                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">SIZES</label>
-                    <div className="flex gap-2">{['250ml','500ml','1L'].map(s=><Btn key={s} active={f.sizes.includes(s)} onClick={()=>toggle('sizes',s)}>{s}</Btn>)}</div></div>
-                    <Input label="Monthly Qty" type="number" value={f.qty} onChange={e=>update('qty', e.target.value)} />
-                </div>,
-                <div className="space-y-4">
-                    <h3 className="text-xl font-bold">Pricing</h3>
-                    {f.sizes.map(s => (
-                        <div key={s} className="bg-white p-3 rounded-xl border shadow-sm mb-2">
-                            <div className="font-bold text-blue-600 mb-2">{s}</div>
-                            <div className="grid grid-cols-3 gap-2">
-                                <input placeholder="Buy" type="number" className="p-2 border rounded" value={f.buy[s]||''} onChange={e=>update('buy',e.target.value,s)} />
-                                <input placeholder="Sell" type="number" className="p-2 border rounded" value={f.sell[s]||''} onChange={e=>update('sell',e.target.value,s)} />
-                                <div className="p-2 bg-green-50 text-green-600 font-bold text-center rounded border border-green-100">{(f.sell[s]-f.buy[s]||0).toFixed(0)}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>,
-                <div className="space-y-4">
-                    <h3 className="text-xl font-bold">Closing</h3>
-                    <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <div className="flex justify-between mb-2"><span className="font-bold text-indigo-800">AI Script</span><button onClick={getPitch} className="text-xs bg-indigo-600 text-white px-3 py-1 rounded">{loading?'...':'Gen'}</button></div>
-                        {f.pitch && <p className="text-sm italic text-indigo-900 bg-white p-2 rounded border border-indigo-50">"{f.pitch}"</p>}
-                    </div>
-                    <div><label className="text-xs font-bold text-gray-400 mb-2 block">WHITE LABEL?</label><div className="flex gap-2">{['Yes','No'].map(v=><Btn key={v} active={f.white===v} onClick={()=>update('white',v)}>{v}</Btn>)}</div></div>
-                    <Input label="Contact" value={f.contact} onChange={e=>update('contact',e.target.value)} />
-                </div>
-            ];
+            const handleDelete = async (id) => {
+                if (!confirm("Are you sure?")) return;
+                try {
+                    if (db && isOnline) {
+                        await deleteDoc(doc(db, 'artifacts', syncCode, 'data', 'surveys', id));
+                        showToast("Deleted");
+                    } else {
+                        const filtered = surveys.filter(s => s.id !== id);
+                        setSurveys(filtered);
+                        localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(filtered));
+                        showToast("Deleted locally");
+                    }
+                } catch(e) { showToast("Delete failed", "error"); }
+            };
 
-            if (!mounted) return null;
+            const theme = THEMES[currentTheme];
+            const ctx = { theme, currentTheme, setCurrentTheme, surveys, masterData, handleUpdateMaster, handleSaveSurvey, activeTab, setActiveTab, loading, isOnline, syncCode, updateSyncCode, handleDelete };
 
             return (
-                <div className="h-full flex flex-col bg-gray-50 pb-safe">
-                    <header className="bg-white border-b px-4 py-3 pt-safe flex justify-between items-center z-10 sticky top-0">
-                        <div className="flex items-center text-blue-600 space-x-2"><Icon n="zap"/><h1 className="font-bold text-xl text-gray-900">VELLORA</h1></div>
-                        <button onClick={()=>setView('set')}><Icon n="set" className="text-gray-400"/></button>
-                    </header>
-
-                    <main className="flex-1 overflow-y-auto p-4 w-full max-w-2xl mx-auto">
-                        {view === 'home' && (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border"><div className="text-xs text-gray-400 font-bold">TODAY</div><div className="text-3xl font-black text-blue-600">{data.length}</div></div>
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border"><div className="text-xs text-gray-400 font-bold">STATUS</div><div className="text-sm font-bold text-green-600 uppercase">{status}</div></div>
+                <ErrorBoundary>
+                    <AppContext.Provider value={ctx}>
+                        <div className={`min-h-screen ${theme.bg} ${theme.text} transition-colors duration-300 font-sans`}>
+                            <header className={`p-4 shadow-sm flex items-center justify-between sticky top-0 z-50 ${theme.card} border-b ${theme.border}`}>
+                                <div className="flex items-center gap-2">
+                                    <div className={`p-2 rounded-lg ${theme.primary} text-white`}><Icon name="Database" size={20} /></div>
+                                    <div><h1 className="font-bold text-lg leading-tight">VELLORA</h1><p className="text-xs opacity-70">Enterprise Market Survey</p></div>
                                 </div>
-                                <button onClick={()=>{setF(initF); setStep(0); setModal(true)}} className="w-full bg-blue-600 text-white rounded-3xl p-6 shadow-xl flex flex-col items-center tap-active">
-                                    <div className="bg-white/20 p-3 rounded-full mb-2"><Icon n="plus"/></div>
-                                    <span className="text-lg font-bold">Start Survey</span>
-                                </button>
-                                <div className="space-y-3">
-                                    <h3 className="font-bold text-gray-400 text-xs">RECENT</h3>
-                                    {data.slice(0,5).map(s => (
-                                        <div key={s.id} className="bg-white p-4 rounded-xl border shadow-sm flex justify-between items-center">
-                                            <div><div className="font-bold">{s.name||'Unknown'}</div><div className="text-xs text-gray-500">{s.type} • {new Date(s.timestamp).toLocaleDateString()}</div></div>
-                                            <button onClick={()=>api.del(code, s.id)} className="text-red-400 p-2"><Icon n="trash"/></button>
-                                        </div>
-                                    ))}
+                                <div className="flex gap-2">
+                                    <span className={`px-2 py-1 rounded text-xs font-mono flex items-center gap-1 ${isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                        {isOnline ? <Icon name="CheckCircle" size={10} /> : <Icon name="AlertTriangle" size={10} />}
+                                        {isOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                    <button onClick={() => setActiveTab('settings')} className="p-2 rounded hover:bg-black/5"><Icon name="Settings" size={20} /></button>
                                 </div>
-                            </div>
-                        )}
+                            </header>
 
-                        {view === 'set' && (
+                            <main className="pb-24 pt-4 max-w-5xl mx-auto px-4">
+                                {activeTab === 'dashboard' && <AnalyticsDashboard />}
+                                {activeTab === 'wizard' && <SurveyWizard />}
+                                {activeTab === 'list' && <DataListView />}
+                                {activeTab === 'settings' && <SettingsView />}
+                            </main>
+
+                            <nav className={`fixed bottom-0 w-full ${theme.card} border-t ${theme.border} flex justify-around p-3 z-50 safe-area-pb`}>
+                                <NavBtn icon="LayoutDashboard" label="Analytics" id="dashboard" active={activeTab} set={setActiveTab} theme={theme} />
+                                <div className="-mt-8">
+                                    <button onClick={() => setActiveTab('wizard')} className={`h-14 w-14 rounded-full ${theme.primary} text-white shadow-lg flex items-center justify-center transform active:scale-95 transition-all ring-4 ring-white dark:ring-slate-800`}>
+                                        <Icon name="Plus" size={28} />
+                                    </button>
+                                </div>
+                                <NavBtn icon="FileText" label="Surveys" id="list" active={activeTab} set={setActiveTab} theme={theme} />
+                            </nav>
+
+                            {notification && (
+                                <div className={`fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-xl z-[60] flex items-center gap-2 animate-bounce-in ${notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white'}`}>
+                                    <Icon name={notification.type === 'success' ? 'CheckCircle' : 'AlertTriangle'} size={16}/>
+                                    <span className="text-sm font-medium">{notification.msg}</span>
+                                </div>
+                            )}
+                        </div>
+                    </AppContext.Provider>
+                </ErrorBoundary>
+            );
+        }
+
+        const NavBtn = ({ icon, label, id, active, set, theme }) => (
+            <button onClick={() => set(id)} className={`flex flex-col items-center gap-1 ${active === id ? theme.accent : 'opacity-50'}`}>
+                <Icon name={icon} size={22} />
+                <span className="text-[10px] font-medium">{label}</span>
+            </button>
+        );
+
+        const STEPS = ['Profile', 'Usage', 'Pricing', 'Distributor', 'White Label', 'Closing'];
+
+        function SurveyWizard() {
+            const { theme, masterData, handleUpdateMaster, handleSaveSurvey, setActiveTab } = useContext(AppContext);
+            const [step, setStep] = useState(0);
+            const [form, setForm] = useState({
+                businessName: '', businessType: '', footfall: '', locationArea: '', gps: { lat: null, lng: null },
+                brands: [], bottleSizes: [], qtyMonthly: '', buyingPrice: {}, sellingPrice: {},
+                distributorName: '', happyWithService: 'Yes', mainProblems: [],
+                interestedInCustomLogo: 'No', extraWillingToPay: '', customPurpose: '', contactName: '', contactMobile: ''
+            });
+            const updateForm = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
+            const nextStep = () => setStep(s => Math.min(s + 1, STEPS.length - 1));
+            const prevStep = () => setStep(s => Math.max(s - 1, 0));
+            const isLastStep = step === STEPS.length - 1;
+            const handleSubmit = () => { if (!form.businessName) return alert("Business Name is required"); handleSaveSurvey(form); };
+            const getGPS = () => {
+                if (!navigator.geolocation) return alert("Geolocation not supported");
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude: lat, longitude: lng } = pos.coords;
+                    updateForm('gps', { lat, lng });
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                        const data = await res.json();
+                        updateForm('locationArea', data.address.suburb || data.address.neighbourhood || "Unknown Area");
+                    } catch (e) {}
+                });
+            };
+
+            return (
+                <div className="mb-8">
+                    <div className="flex items-center justify-between mb-6 px-2">
+                        <button onClick={() => setActiveTab('dashboard')} className="p-2 opacity-50"><Icon name="X" size={20}/></button>
+                        <div className="flex gap-1">
+                            {STEPS.map((_, i) => <div key={i} className={`h-1.5 w-8 rounded-full transition-colors ${i <= step ? theme.primary : 'bg-gray-200'}`} />)}
+                        </div>
+                        <div className="w-8" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-1 px-2">{STEPS[step]}</h2>
+                    <div className={`${theme.card} p-5 rounded-2xl shadow-sm border ${theme.border} min-h-[400px]`}>
+                        {step === 0 && (
                             <div className="space-y-4">
-                                <h2 className="text-xl font-bold">Settings</h2>
-                                <Input label="Sync Code" value={code} onChange={e=>{setCode(e.target.value); localStorage.setItem('vc',e.target.value)}} />
-                                <button onClick={()=>{localStorage.clear(); window.location.reload()}} className="w-full p-4 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100">Reset App</button>
+                                <Input label="Business Name" value={form.businessName} onChange={v => updateForm('businessName', v)} theme={theme} />
+                                <SelfLearningSelect label="Business Type" options={masterData.businessTypes} value={form.businessType} onChange={v => updateForm('businessType', v)} onAddNew={v => handleUpdateMaster('businessTypes', v)} theme={theme} />
+                                <Input label="Est. Daily Footfall" type="number" value={form.footfall} onChange={v => updateForm('footfall', v)} theme={theme} />
+                                <div className="pt-2 border-t border-dashed">
+                                    <label className="text-xs font-bold uppercase opacity-50 mb-1 block">GPS</label>
+                                    <div className="flex gap-2 mb-2">
+                                        <input disabled className={`flex-1 p-3 rounded-lg bg-gray-100/50 text-xs font-mono border ${theme.border}`} value={form.gps.lat ? `${form.gps.lat.toFixed(4)}, ${form.gps.lng.toFixed(4)}` : "No Coordinates"} />
+                                        <button onClick={getGPS} className={`${theme.primary} text-white px-4 rounded-lg`}><Icon name="MapPin" size={18} /></button>
+                                    </div>
+                                    <Input label="Location Area" value={form.locationArea} onChange={v => updateForm('locationArea', v)} theme={theme} />
+                                </div>
                             </div>
                         )}
-                    </main>
-
-                    <nav className="bg-white border-t px-6 py-2 pb-safe flex justify-around shrink-0 z-20">
-                        {['home','list'].map(v => <button key={v} onClick={()=>setView(v==='list'?'home':v)} className={`p-2 ${view===v?'text-blue-600':'text-gray-400'}`}><Icon n={v}/></button>)}
-                    </nav>
-
-                    {modal && (
-                        <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col animate-in">
-                            <div className="px-4 py-3 bg-white border-b pt-safe flex justify-between items-center shrink-0">
-                                <span className="font-bold text-gray-500 text-sm">Step {step+1}/4</span>
-                                <button onClick={()=>setModal(false)} className="p-2 bg-gray-100 rounded-full"><Icon n="x"/></button>
+                        {step === 1 && (
+                            <div className="space-y-4">
+                                <MultiSelect label="Brands" options={masterData.brands} selected={form.brands} onChange={v => updateForm('brands', v)} onAddNew={v => handleUpdateMaster('brands', v)} theme={theme} />
+                                <MultiSelect label="Sizes" options={masterData.bottleSizes} selected={form.bottleSizes} onChange={v => updateForm('bottleSizes', v)} onAddNew={v => handleUpdateMaster('bottleSizes', v)} theme={theme} />
+                                <Input label="Monthly Qty" type="number" value={form.qtyMonthly} onChange={v => updateForm('qtyMonthly', v)} theme={theme} />
                             </div>
-                            <div className="flex-1 overflow-y-auto p-5 pb-32 max-w-2xl mx-auto w-full">{Steps[step]}</div>
-                            <div className="bg-white border-t p-4 pb-safe flex justify-between shrink-0 max-w-2xl mx-auto w-full">
-                                <button onClick={()=>step>0 && setStep(s=>s-1)} disabled={step===0} className="text-gray-500 font-bold px-4 disabled:opacity-30">Back</button>
-                                <button onClick={()=>step<3 ? setStep(s=>s+1) : save()} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg">{step===3?'Save':'Next'}</button>
+                        )}
+                        {step === 2 && (
+                            <div className="space-y-6">
+                                {form.bottleSizes.map(size => {
+                                    const profit = (form.sellingPrice[size] || 0) - (form.buyingPrice[size] || 0);
+                                    return (
+                                        <div key={size} className="bg-gray-50/50 dark:bg-black/20 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                                            <h4 className="font-bold mb-2 text-sm">{size} Pricing</h4>
+                                            <div className="flex gap-2 mb-2">
+                                                <div className="flex-1"><label className="text-[10px] opacity-70">Buy</label><input type="number" className={`w-full p-2 rounded border ${theme.border} bg-transparent`} value={form.buyingPrice[size] || ''} onChange={e => updateForm('buyingPrice', { ...form.buyingPrice, [size]: e.target.value })} /></div>
+                                                <div className="flex-1"><label className="text-[10px] opacity-70">Sell</label><input type="number" className={`w-full p-2 rounded border ${theme.border} bg-transparent`} value={form.sellingPrice[size] || ''} onChange={e => updateForm('sellingPrice', { ...form.sellingPrice, [size]: e.target.value })} /></div>
+                                            </div>
+                                            <div className={`p-2 rounded text-center font-bold text-sm ${profit > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}`}>Margin: ₹{profit}</div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                        {step === 3 && (
+                            <div className="space-y-4">
+                                <SelfLearningSelect label="Distributor" options={["Direct Company", "Local Vendor"]} value={form.distributorName} onChange={v => updateForm('distributorName', v)} onAddNew={() => {}} theme={theme} />
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold opacity-70">Happy with Service?</label>
+                                    <div className="flex gap-2">{['Yes', 'No'].map(opt => <button key={opt} onClick={() => updateForm('happyWithService', opt)} className={`flex-1 py-2 rounded-lg border ${form.happyWithService === opt ? `${theme.primary} text-white border-transparent` : `${theme.border} opacity-60`}`}>{opt}</button>)}</div>
+                                </div>
+                                {form.happyWithService === 'No' && <MultiSelect label="Main Problems" options={masterData.problems} selected={form.mainProblems} onChange={v => updateForm('mainProblems', v)} onAddNew={v => handleUpdateMaster('problems', v)} theme={theme} />}
+                            </div>
+                        )}
+                        {step === 4 && (
+                            <div className="space-y-4">
+                                <div className="space-y-2"><label className="text-xs font-bold opacity-70">Interested in Custom Logo?</label><div className="flex gap-2">{['Yes', 'No'].map(opt => <button key={opt} onClick={() => updateForm('interestedInCustomLogo', opt)} className={`flex-1 py-2 rounded-lg border ${form.interestedInCustomLogo === opt ? `${theme.primary} text-white border-transparent` : `${theme.border} opacity-60`}`}>{opt}</button>)}</div></div>
+                                {form.interestedInCustomLogo === 'Yes' && <div className="animate-fade-in space-y-4 mt-4"><Input label="Extra willing to pay (₹)" type="number" value={form.extraWillingToPay} onChange={v => updateForm('extraWillingToPay', v)} theme={theme} /><Input label="Purpose" value={form.customPurpose} onChange={v => updateForm('customPurpose', v)} theme={theme} /></div>}
+                            </div>
+                        )}
+                        {step === 5 && (
+                            <div className="space-y-4">
+                                <div className="text-center py-6"><div className={`mx-auto h-16 w-16 rounded-full flex items-center justify-center ${theme.bg} mb-4`}><Icon name="CheckCircle" size={32} className={theme.accent} /></div><h3 className="font-bold text-xl">Almost Done!</h3></div>
+                                <Input label="Contact Name" value={form.contactName} onChange={v => updateForm('contactName', v)} theme={theme} />
+                                <Input label="Mobile Number" type="tel" value={form.contactMobile} onChange={v => updateForm('contactMobile', v)} theme={theme} />
+                            </div>
+                        )}
+                    </div>
+                    <div className="fixed bottom-0 left-0 w-full p-4 bg-white/80 dark:bg-black/80 backdrop-blur border-t border-gray-200 dark:border-gray-800 flex justify-between gap-4 z-[60]">
+                        <button onClick={prevStep} disabled={step === 0} className={`px-6 py-3 rounded-xl font-bold ${step === 0 ? 'opacity-0' : 'bg-gray-200 dark:bg-gray-800'}`}><Icon name="ArrowLeft" size={20} /></button>
+                        <button onClick={isLastStep ? handleSubmit : nextStep} className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 ${theme.primary}`}>{isLastStep ? <><Icon name="Save" size={20} /> Save</> : <><Icon name="ArrowRight" size={20} /> Next</>}</button>
+                    </div>
+                </div>
+            );
+        }
+
+        function AnalyticsDashboard() {
+            const { theme, surveys } = useContext(AppContext);
+            const total = surveys.length;
+            const today = surveys.filter(s => s.timestamp.startsWith(new Date().toISOString().slice(0,10))).length;
+            const whiteLabel = surveys.filter(s => s.interestedInCustomLogo === 'Yes').length;
+            const groupBy = (key) => { const c={}; surveys.forEach(s => { const v=s[key]; if(Array.isArray(v)) v.forEach(x=>c[x]=(c[x]||0)+1); else if(v) c[v]=(c[v]||0)+1; }); return Object.entries(c).sort((a,b)=>b[1]-a[1]); };
+            
+            return (
+                <div className="space-y-6 pb-20">
+                    <h2 className="text-2xl font-bold">Dashboard</h2>
+                    <div className="grid grid-cols-2 gap-3">
+                        <KPICard label="Total Surveys" val={total} theme={theme} />
+                        <KPICard label="Today" val={today} theme={theme} highlight />
+                        <KPICard label="White Label" val={whiteLabel} theme={theme} />
+                    </div>
+                    {total > 0 ? (
+                        <>
+                            <ChartCard title="Types" theme={theme}><SimplePieChart data={groupBy('businessType')} /></ChartCard>
+                            <ChartCard title="Brands" theme={theme}><SimpleDonutChart data={groupBy('brands')} /></ChartCard>
+                            <ChartCard title="Demand" theme={theme}><SimpleBarChart data={groupBy('bottleSizes')} color={theme.primary} /></ChartCard>
+                        </>
+                    ) : <p className="opacity-50 text-center py-10">No data available.</p>}
+                </div>
+            );
+        }
+
+        const KPICard = ({ label, val, theme, highlight }) => (
+            <div className={`p-4 rounded-2xl border shadow-sm flex flex-col justify-between h-24 ${highlight ? theme.primary + ' text-white border-transparent' : theme.card + ' ' + theme.border}`}>
+                <span className="text-xs opacity-70 font-bold uppercase">{label}</span>
+                <span className="text-3xl font-bold tracking-tight">{val}</span>
+            </div>
+        );
+
+        const ChartCard = ({ title, children, theme }) => (<div className={`p-5 rounded-2xl border ${theme.border} ${theme.card} shadow-sm`}><h3 className="font-bold text-sm mb-4 opacity-80">{title}</h3><div className="flex justify-center">{children}</div></div>);
+
+        function DataListView() {
+            const { theme, surveys, handleDelete } = useContext(AppContext);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedSurvey, setSelectedSurvey] = useState(null);
+            const filtered = surveys.filter(s => s.businessName.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            return (
+                <div className="h-full">
+                    <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Surveys</h2><button onClick={() => exportToCSV(surveys)} className={`p-2 rounded-full ${theme.bg} border ${theme.border}`}><Icon name="Download" size={18} className={theme.accent} /></button></div>
+                    <div className={`flex items-center p-3 rounded-xl mb-4 border ${theme.border} ${theme.card}`}><Icon name="Search" size={18} className="opacity-40 mr-2" /><input placeholder="Search..." className="bg-transparent w-full outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                    <div className="space-y-3 pb-20">
+                        {filtered.map(s => (
+                            <div key={s.id} onClick={() => setSelectedSurvey(s)} className={`p-4 rounded-xl border ${theme.border} ${theme.card} shadow-sm active:scale-[0.98] transition-transform cursor-pointer`}>
+                                <div className="flex justify-between items-start mb-1"><h3 className="font-bold text-lg">{s.businessName}</h3><span className="text-[10px] opacity-50 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{new Date(s.timestamp).toLocaleDateString()}</span></div>
+                                <p className="text-sm opacity-70 mb-2">{s.businessType} • {s.locationArea}</p>
+                                {s.interestedInCustomLogo === 'Yes' && <span className="text-[10px] px-2 py-1 rounded font-bold uppercase bg-purple-100 text-purple-800">WL Lead</span>}
+                            </div>
+                        ))}
+                    </div>
+                    {selectedSurvey && (
+                        <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+                            <div className={`w-full max-w-md ${theme.card} rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto`}>
+                                <div className="flex justify-between items-start mb-6"><div><h2 className="text-2xl font-bold leading-tight">{selectedSurvey.businessName}</h2><p className="opacity-60 text-sm">{selectedSurvey.locationArea}</p></div><button onClick={() => setSelectedSurvey(null)} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"><Icon name="X" size={20} /></button></div>
+                                <div className="flex gap-3 mb-8">
+                                    <a href={`tel:${selectedSurvey.contactMobile}`} className="flex-1 py-3 rounded-xl bg-green-500 text-white font-bold flex items-center justify-center gap-2"><Icon name="Phone" size={18} /> Call</a>
+                                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedSurvey.gps?.lat},${selectedSurvey.gps?.lng}`} target="_blank" className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-bold flex items-center justify-center gap-2"><Icon name="Navigation" size={18} /> Map</a>
+                                </div>
+                                <div className="space-y-4 text-sm">
+                                    <div className="flex justify-between border-b pb-2"><span className="opacity-50">Contact</span><span className="font-medium text-right">{selectedSurvey.contactName} ({selectedSurvey.contactMobile})</span></div>
+                                    <div className="flex justify-between border-b pb-2"><span className="opacity-50">Sizes</span><span className="font-medium text-right">{selectedSurvey.bottleSizes?.join(', ')}</span></div>
+                                </div>
+                                <div className="mt-8 pt-4 border-t flex justify-center"><button onClick={() => { handleDelete(selectedSurvey.id); setSelectedSurvey(null); }} className="text-red-500 flex items-center gap-2 text-sm font-medium"><Icon name="Trash2" size={16} /> Delete</button></div>
                             </div>
                         </div>
                     )}
                 </div>
             );
+        }
+
+        function SettingsView() {
+            const { theme, currentTheme, setCurrentTheme, syncCode, updateSyncCode, setActiveTab } = useContext(AppContext);
+            const [localCode, setLocalCode] = useState(syncCode);
+            return (
+                <div className="space-y-8">
+                    <div className="flex items-center gap-4"><button onClick={() => setActiveTab('dashboard')} className="p-2 bg-gray-100 rounded-full"><Icon name="ArrowLeft" size={20}/></button><h2 className="text-2xl font-bold">Settings</h2></div>
+                    <div className={`p-5 rounded-2xl border ${theme.border} ${theme.card}`}><h3 className="font-bold mb-2 flex items-center gap-2"><Icon name="RefreshCw" size={18} /> Sync Workspace</h3><div className="flex gap-2"><input value={localCode} onChange={e => setLocalCode(e.target.value.toUpperCase())} className={`flex-1 p-3 rounded-xl border ${theme.border} bg-transparent font-mono`} /><button onClick={() => updateSyncCode(localCode)} className={`${theme.primary} text-white px-4 rounded-xl font-bold`}>Save</button></div></div>
+                    <div><h3 className="font-bold mb-4 flex items-center gap-2"><Icon name="Sun" size={18}/> Appearance</h3><div className="grid grid-cols-2 gap-3">{Object.entries(THEMES).map(([key, t]) => (<button key={key} onClick={() => setCurrentTheme(key)} className={`p-3 rounded-xl border text-left text-sm font-medium ${currentTheme === key ? `ring-2 ${theme.primary}` : 'opacity-70'}`} style={{backgroundColor: key.includes('obsidian')||key.includes('night')?'#111':'#f5f5f5', color:key.includes('obsidian')||key.includes('night')?'#fff':'#000'}}>{t.name}</button>))}</div></div>
+                </div>
+            );
+        }
+
+        // --- UI COMPS ---
+        const Input = ({ label, type = "text", value, onChange, theme }) => (<div className="flex flex-col gap-1"><label className="text-xs font-bold uppercase opacity-60 ml-1">{label}</label><input type={type} value={value} onChange={e => onChange(e.target.value)} className={`p-3 rounded-xl border bg-transparent outline-none focus:ring-2 ${theme.border}`} /></div>);
+        
+        const SelfLearningSelect = ({ label, options, value, onChange, onAddNew, theme }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [search, setSearch] = useState('');
+            const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
+            return (
+                <div className="relative"><label className="text-xs font-bold uppercase opacity-60 ml-1 block mb-1">{label}</label><div onClick={() => setIsOpen(!isOpen)} className={`p-3 rounded-xl border ${theme.border} flex justify-between items-center cursor-pointer`}><span>{value || "Select..."}</span><Icon name="ArrowRight" size={14} className="rotate-90 opacity-40" /></div>{isOpen && (<div className={`absolute top-full mt-2 w-full z-50 p-2 rounded-xl shadow-xl border ${theme.border} ${theme.card}`}><input autoFocus placeholder="Type..." className={`w-full p-2 mb-2 rounded border ${theme.border} bg-transparent text-sm`} value={search} onChange={e => setSearch(e.target.value)} /><div className="max-h-40 overflow-y-auto space-y-1">{filtered.map(opt => <div key={opt} onClick={() => { onChange(opt); setIsOpen(false); }} className="p-2 rounded hover:bg-black/5 cursor-pointer text-sm">{opt}</div>)}{search && <div onClick={() => { onAddNew(search); onChange(search); setIsOpen(false); }} className={`p-2 rounded ${theme.primary} text-white cursor-pointer text-sm flex items-center gap-2`}><Icon name="Plus" size={14} /> Add "{search}"</div>}</div></div>)}</div>
+            );
         };
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const MultiSelect = ({ label, options, selected = [], onChange, onAddNew, theme }) => {
+            const [isAdding, setIsAdding] = useState(false);
+            const [newVal, setNewVal] = useState('');
+            const toggle = (opt) => onChange(selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt]);
+            const handleAdd = () => { if(newVal) { onAddNew(newVal); onChange([...selected, newVal]); setNewVal(''); } setIsAdding(false); };
+            return (
+                <div><label className="text-xs font-bold uppercase opacity-60 ml-1 block mb-2">{label}</label><div className="flex flex-wrap gap-2">{options.map(opt => <button key={opt} onClick={() => toggle(opt)} className={`px-3 py-2 rounded-lg text-sm border ${selected.includes(opt) ? `${theme.primary} text-white border-transparent` : `${theme.border} opacity-70`}`}>{opt}</button>)}{isAdding ? <input autoFocus className={`w-24 px-2 py-2 rounded-lg border ${theme.border} text-sm`} value={newVal} onChange={e => setNewVal(e.target.value)} onBlur={handleAdd} onKeyDown={e=>e.key==='Enter'&&handleAdd()} /> : <button onClick={() => setIsAdding(true)} className={`px-3 py-2 rounded-lg text-sm border border-dashed ${theme.border} opacity-50 flex items-center gap-1`}><Icon name="Plus" size={14}/> Add</button>}</div></div>
+            );
+        };
+
+        // --- CHARTS ---
+        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+        const SimplePieChart = ({ data }) => {
+            if(!data.length) return null;
+            let acc = 0; const tot = data.reduce((a, b) => a + b[1], 0);
+            return (<div className="flex items-center gap-4"><svg width="120" height="120" viewBox="0 0 32 32">{data.map((d, i) => { const slice = (d[1]/tot)*100; const off = acc; acc += slice; return <circle key={i} r="16" cx="16" cy="16" fill="transparent" stroke={COLORS[i%COLORS.length]} strokeWidth="32" strokeDasharray={`${slice} 100`} strokeDashoffset={-off} /> })}</svg><div className="text-xs space-y-1">{data.slice(0,4).map((d,i)=><div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background:COLORS[i%COLORS.length]}}/><span className="opacity-70">{d[0]}</span><span className="font-bold ml-auto">{Math.round((d[1]/tot)*100)}%</span></div>)}</div></div>);
+        };
+        const SimpleDonutChart = ({ data }) => {
+            if(!data.length) return null;
+            let acc = 0; const tot = data.reduce((a, b) => a + b[1], 0);
+            return (<div className="flex items-center gap-4"><svg width="120" height="120" viewBox="0 0 40 40">{data.map((d, i) => { const slice = (d[1]/tot)*100; const off = acc; acc += slice; return <circle key={i} r="15.9" cx="20" cy="20" fill="transparent" stroke={COLORS[i%COLORS.length]} strokeWidth="5" strokeDasharray={`${slice} 100`} strokeDashoffset={-1*acc+slice+25} /> })}<text x="20" y="22" textAnchor="middle" fontSize="10" fontWeight="bold" fill="currentColor">{tot}</text></svg><div className="text-xs space-y-1">{data.slice(0,4).map((d,i)=><div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background:COLORS[i%COLORS.length]}}/><span className="opacity-70">{d[0]}</span></div>)}</div></div>);
+        };
+        const SimpleBarChart = ({ data, color }) => {
+            if(!data.length) return null;
+            const max = Math.max(...data.map(d => d[1]));
+            return (<div className="flex items-end h-32 gap-2 w-full px-2">{data.map((d, i) => <div key={i} className="flex-1 flex flex-col items-center gap-1 group"><div className="w-full relative h-full flex items-end"><div className={`w-full rounded-t-sm opacity-80 ${color}`} style={{ height: `${(d[1]/max)*100}%`, backgroundColor:'currentColor' }} /></div><span className="text-[9px] truncate w-full text-center opacity-60">{d[0]}</span></div>)}</div>);
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
-
 
