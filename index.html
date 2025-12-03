@@ -57,20 +57,20 @@
         import { GoogleGenAI } from "@google/genai";
 
         // ==========================================
-        // CONFIGURATION (PASTE KEYS HERE)
+        // CONFIGURATION
         // ==========================================
         
         const FIREBASE_CONFIG = {
-            // Paste your Firebase Config Object inside these brackets
-            apiKey: "PASTE_YOUR_API_KEY_HERE",
-            authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-            projectId: "PASTE_YOUR_PROJECT_ID",
-            storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
+            apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
+            authDomain: "vellora-3828d.firebaseapp.com",
+            projectId: "vellora-3828d",
+            storageBucket: "vellora-3828d.firebasestorage.app",
+            messagingSenderId: "1045366360458",
+            appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
+            measurementId: "G-WLKMJNBJTP"
         };
 
-        const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE";
+        const GEMINI_API_KEY = "AIzaSyCTGO098tUeKlMo0zFJUDxmHZryQgzD76w"; 
 
         // ==========================================
         // SERVICES (Backend & AI)
@@ -80,10 +80,8 @@
         const getAI = () => new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
         const generateSalesPitch = async (prompt) => {
-            if (GEMINI_API_KEY.includes("PASTE")) return "Please configure API Key in code.";
             const ai = getAI();
             try {
-                // Using standard gemini-pro for broad compatibility
                 const model = ai.getGenerativeModel({ model: "gemini-pro" });
                 const result = await model.generateContent(`You are a sales expert. Keep it short (2 sentences). ${prompt}`);
                 const response = await result.response;
@@ -91,19 +89,6 @@
             } catch (e) {
                 console.error("Gemini Error:", e);
                 return "AI Service Unavailable.";
-            }
-        };
-
-        const generateMarketReport = async (dataSummary) => {
-            if (GEMINI_API_KEY.includes("PASTE")) return "Please configure API Key in code.";
-            const ai = getAI();
-            try {
-                const model = ai.getGenerativeModel({ model: "gemini-pro" });
-                const result = await model.generateContent(`Analyze this market survey data for VELLORA water. Provide an executive summary.\n\nData:\n${dataSummary}`);
-                const response = await result.response;
-                return response.text() || "Could not generate report.";
-            } catch (e) {
-                return "AI Analysis Unavailable.";
             }
         };
 
@@ -120,13 +105,6 @@
             init(onStatusChange) {
                 if (this.initialized) return;
                 this.initialized = true;
-
-                // Check if config is valid
-                if (FIREBASE_CONFIG.apiKey.includes("PASTE")) {
-                    console.warn("Firebase not configured");
-                    onStatusChange('Offline');
-                    return;
-                }
 
                 try {
                     const app = initializeApp(FIREBASE_CONFIG);
@@ -145,7 +123,6 @@
             }
 
             subscribeSurveys(syncCode, callback) {
-                // Load Local First
                 const localData = JSON.parse(localStorage.getItem(`vellora_surveys_${syncCode}`) || '[]');
                 callback(localData);
 
@@ -166,24 +143,20 @@
             }
 
             async addSurvey(syncCode, survey) {
-                // Local Save
                 const localSurveys = JSON.parse(localStorage.getItem(`vellora_surveys_${syncCode}`) || '[]');
                 const updated = [survey, ...localSurveys];
                 localStorage.setItem(`vellora_surveys_${syncCode}`, JSON.stringify(updated));
 
-                // Cloud Save
                 if (this.status === 'Cloud' && this.db) {
                     await addDoc(collection(this.db, `vellora_data/${syncCode}/surveys`), survey);
                 }
             }
 
             async deleteSurvey(syncCode, id) {
-                // Local Delete
                 const localSurveys = JSON.parse(localStorage.getItem(`vellora_surveys_${syncCode}`) || '[]');
                 const updated = localSurveys.filter(s => s.id !== id);
                 localStorage.setItem(`vellora_surveys_${syncCode}`, JSON.stringify(updated));
 
-                // Cloud Delete
                 if (this.status === 'Cloud' && this.db) {
                     await deleteDoc(doc(this.db, `vellora_data/${syncCode}/surveys`, id));
                 }
