@@ -12,7 +12,7 @@
     <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. Import Map -->
+    <!-- 2. Import Map (Switched to Stable Google AI SDK) -->
     <script type="importmap">
     {
       "imports": {
@@ -20,7 +20,7 @@
         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
         "lucide-react": "https://esm.sh/lucide-react@0.263.1",
         "recharts": "https://esm.sh/recharts@2.12.0",
-        "@google/genai": "https://esm.sh/@google/genai@0.1.1",
+        "@google/generative-ai": "https://esm.sh/@google/generative-ai@0.2.1",
         "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
         "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
@@ -40,22 +40,28 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
+    <!-- LOADING SCREEN -->
     <div id="root" class="h-screen flex items-center justify-center text-center p-4">
         <div>
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <h2 class="text-xl font-bold text-gray-700">Loading Vellora...</h2>
-            <p class="text-gray-400 text-sm mt-2">If this takes longer than 5s, check your internet.</p>
-            <div id="error-log" class="hidden mt-4 text-red-500 text-xs text-left bg-red-50 p-4 rounded max-w-md mx-auto whitespace-pre-wrap"></div>
+            <div id="debug-log" class="hidden mt-6 text-red-600 text-xs font-mono text-left bg-red-50 p-4 rounded border border-red-200 max-w-md mx-auto whitespace-pre-wrap break-words"></div>
         </div>
     </div>
 
-    <!-- ERROR TRAPPING -->
+    <!-- ERROR TRAPPING (Safety Net) -->
     <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            const el = document.getElementById('error-log');
+        const logError = (msg) => {
+            const el = document.getElementById('debug-log');
             el.classList.remove('hidden');
-            el.innerText += `Error: ${message}\nLine: ${lineno}\n\n`;
+            el.innerText += "⚠️ " + msg + "\n";
         };
+        window.onerror = function(message, source, lineno, colno, error) {
+            logError(`${message} (Line ${lineno})`);
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            logError(`Promise Failed: ${event.reason}`);
+        });
     </script>
 
     <!-- MAIN APP SCRIPT -->
@@ -74,7 +80,7 @@
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
         import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, deleteDoc } from 'firebase/firestore';
-        import { GoogleGenAI } from "@google/genai";
+        import { GoogleGenerativeAI } from "@google/generative-ai";
 
         // ==========================================
         // CONFIGURATION
@@ -96,13 +102,11 @@
         // SERVICES
         // ==========================================
 
-        const getAI = () => new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
         const generateSalesPitch = async (prompt) => {
-            if (GEMINI_API_KEY.includes("PASTE")) return "Error: API Key missing.";
-            const ai = getAI();
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("PASTE")) return "Error: API Key missing.";
             try {
-                const model = ai.getGenerativeModel({ model: "gemini-pro" });
+                const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
                 const result = await model.generateContent(`You are a sales expert. Keep it short (2 sentences). ${prompt}`);
                 const response = await result.response;
                 return response.text() || "Could not generate pitch.";
@@ -540,4 +544,5 @@
     </script>
 </body>
 </html>
+
 
