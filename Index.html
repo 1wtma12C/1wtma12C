@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Vellora">
+    
+    <title>Vellora Survey AI</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+        "recharts": "https://esm.sh/recharts@2.12.0",
+        "@google/genai": "https://esm.sh/@google/genai@0.1.1",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      }
+    }
+    </script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useCallback, useMemo } from 'react';
+        import ReactDOM from 'react-dom/client';
+        import { 
+            Loader, Check, Zap, Plus, X, List, AlertTriangle, 
+            TrendingUp, PieChart as PieIcon, Home, Eye, 
+            Settings, DollarSign, Package, User, MapPin, 
+            Trash2, Wifi, WifiOff, LocateFixed, Navigation, AlertCircle, 
+            ChevronRight, Cloud, Lock, Sparkles, Map as MapIcon,
+            ArrowUpDown, ArrowUp, ArrowDown
+        } from 'lucide-react';
+        import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, doc, addDoc, setDoc, onSnapshot, collection, deleteDoc } from 'firebase/firestore';
+        import { GoogleGenAI } from "@google/genai";
+
+        // ==========================================
+        // CONFIGURATION (PASTE KEYS HERE)
+        // ==========================================
+        
+        const FIREBASE_CONFIG = {
+            // Paste your Firebase Config Object inside these brackets
+            apiKey: "PASTE_YOUR_API_KEY_HERE",
+            authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+            projectId: "PASTE_YOUR_PROJECT_ID",
+            storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE";
+
+        // ==========================================
+        // SERVICES (Backend & AI)
+        // ==========================================
+
+        // --- GEMINI SERVICE ---
+        const getAI = () => new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+        const generateSalesPitch = async (prompt) => {
+            if (GEMINI_API_KEY.includes("PASTE")) return "Please configure API Key in code.";
+            const ai = getAI();
+            try {
+                // Using standard gemini-pro for broad compatibility
+                const model = ai.getGenerativeModel({ model: "gemini-pro" });
+                const result = await model.generateContent(`You are a sales expert. Keep it short (2 sentences). ${prompt}`);
+                const response = await result.response;
+                return response.text() || "Could not generate pitch.";
+            } catch (e) {
+                console.error("Gemini Error:", e);
+                return "AI Service Unavailable.";
+            }
+        };
+
+        const generateMarketReport = async (dataSummary) => {
+            if (GEMINI_API_KEY.includes("PASTE")) return "Please configure API Key in code.";
+            const ai = getAI();
+            try {
+                const model = ai.getGenerativeModel({ model: "gemini-pro" });
+                const result = await model.generateContent(`Analyze this market survey data for VELLORA water. Provide an executive summary.\n\nData:\n${dataSummary}`);
+                const response = await result.response;
+                return response.text() || "Could not generate report.";
+            } catch (e) {
+                return "AI Analysis Unavailable.";
+            }
+        };
+
+        // --- BACKEND SERVICE ---
+        class BackendService {
+            constructor() {
+                this.db = null;
+                this.status = 'Offline';
+                this.initialized = false;
+                this.surveyUnsub = null;
+                this.listUnsub = null;
+            }
+
+            init(onStatusChange) {
+                if (this.initialized) return;
+                this.initialized = true;
+
+                // Check if config is valid
+                if (FIREBASE_CONFIG.apiKey.includes("PASTE")) {
+                    console.warn("Firebase not configured");
+                    onStatusChange('Offline');
+                    return;
+                }
+
+                try {
+                    const app = initializeApp(FIREBASE_CONFIG);
+                    const auth = getAuth(app);
+                    this.db = getFirestore(app);
+                    
+                    onAuthStateChanged(auth, async (user) => {
+                        if (!user) await signInAnonymously(auth);
+                        onStatusChange('Cloud');
+                        this.status = 'Cloud';
+                    });
+                } catch (e) {
+                    console.error("Firebase Init Error", e);
+                    onStatusChange('Offline');
+                }
+            }
+
+            subscribeSurveys(syncCode, callback) {
+                // Load Local First
+                const localData = JSON.parse(localStorage.getItem(`vellora_surveys_${syncCode}`) || '[]');
+                callback(localData);
+
+                if (this.status === 'Cloud' && this.db) {
+                    if (this.surveyUnsub) this.surveyUnsub();
+                    const surveyRef = collection(this.db, `vellora_data/${syncCode}/surveys`);
+                    
+                    this.surveyUnsub = onSnapshot(surveyRef, (snap) => {
+                        const s = [];
+                        snap.forEach(d => s.push({ id: d.id, ...d.data() }));
+                        const sorted = s.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                        localStorage.setItem(`vellora_surveys_${syncCode}`, JSON.stringify(sorted));
+                        callback(sorted);
+                    });
+                    return () => { if (this.surveyUnsub) this.surveyUnsub(); };
+                }
+                return () => {};
+            }
+
+            async addSurvey(syncCode, survey) {
+                // Local Save
+                const localSurveys = JSON.parse(localStorage.getItem(`vellora_surveys_${syncCode}`) || '[]');
+                const updated = [survey, ...localSurveys];
+                localStorage.setItem(`vellora_surveys_${syncCode}`, JSON.stringify(updated));
+
+                // Cloud Save
+                if (this.status === 'Cloud' && this.db) {
+                    await addDoc(collection(this.db, `vellora_data/${syncCode}/surveys`), survey);
+                }
+            }
+
+            async deleteSurvey(syncCode, id) {
+                // Local Delete
+                const localSurveys = JSON.parse(localStorage.getItem(`vellora_surveys_${syncCode}`) || '[]');
+                const updated = localSurveys.filter(s => s.id !== id);
+                localStorage.setItem(`vellora_surveys_${syncCode}`, JSON.stringify(updated));
+
+                // Cloud Delete
+                if (this.status === 'Cloud' && this.db) {
+                    await deleteDoc(doc(this.db, `vellora_data/${syncCode}/surveys`, id));
+                }
+            }
+
+            subscribeLists(syncCode, callback) {
+                const localLists = JSON.parse(localStorage.getItem(`vellora_lists_${syncCode}`) || 'null');
+                if (localLists) callback(localLists);
+
+                if (this.status === 'Cloud' && this.db) {
+                    if (this.listUnsub) this.listUnsub();
+                    this.listUnsub = onSnapshot(doc(this.db, `vellora_data/${syncCode}/lists/content`), (snap) => {
+                        if(snap.exists()) {
+                            const remoteLists = snap.data();
+                            localStorage.setItem(`vellora_lists_${syncCode}`, JSON.stringify(remoteLists));
+                            callback(remoteLists);
+                        }
+                    });
+                    return () => { if (this.listUnsub) this.listUnsub(); };
+                }
+                return () => {};
+            }
+
+            async addListItem(syncCode, currentLists, key, val) {
+                if (!val?.trim()) return currentLists;
+                const newState = { ...currentLists, [key]: [...(currentLists[key] || []), val] };
+                localStorage.setItem(`vellora_lists_${syncCode}`, JSON.stringify(newState));
+
+                if (this.status === 'Cloud' && this.db) {
+                    await setDoc(doc(this.db, `vellora_data/${syncCode}/lists/content`), newState, { merge: true });
+                }
+                return newState;
+            }
+        }
+
+        const backend = new BackendService();
+
+        // ==========================================
+        // UI COMPONENTS & THEMES
+        // ==========================================
+
+        const THEMES = {
+            light: { id: 'light', name: 'Corporate Light', type: 'light', colors: { bg: '#F3F4F6', surface: '#FFFFFF', text: '#111827', textSec: '#6B7280', border: '#E5E7EB', primary: '#2563EB', primaryFg: '#FFFFFF', inputBg: '#FFFFFF', success: '#10B981', error: '#EF4444', ai: '#8B5CF6' }},
+            dark: { id: 'dark', name: 'Midnight Dark', type: 'dark', colors: { bg: '#0F172A', surface: '#1E293B', text: '#F8FAFC', textSec: '#94A3B8', border: '#334155', primary: '#3B82F6', primaryFg: '#FFFFFF', inputBg: '#1E293B', success: '#34D399', error: '#F87171', ai: '#A78BFA' }},
+        };
+
+        const SimplePieChart = ({ data, title, theme }) => {
+            const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+            if (!data?.length) return <div className="p-8 rounded-xl border text-center opacity-50 italic text-sm h-64 flex items-center justify-center" style={{backgroundColor: theme.surface, borderColor: theme.border}}>No data available</div>;
+
+            return (
+                <div className="p-4 rounded-xl shadow-sm border flex flex-col h-80" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                    <h4 className="font-bold mb-2 text-sm uppercase tracking-wider opacity-70" style={{ color: theme.text }}>{title}</h4>
+                    <div className="flex-1 w-full h-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                    {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={theme.surface} strokeWidth={2} />))}
+                                </Pie>
+                                <Tooltip contentStyle={{ backgroundColor: theme.surface, borderColor: theme.border, borderRadius: '8px', color: theme.text }} />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            );
+        };
+
+        const ThemeInput = ({ theme, label, ...props }) => (
+            <div className="w-full mb-3">
+                {label && <label className="text-xs font-bold uppercase tracking-wider mb-1.5 block" style={{color: theme.textSec}}>{label}</label>}
+                <input {...props} className="w-full p-3 rounded-lg border outline-none focus:ring-2 transition-all" style={{ backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, '--tw-ring-color': theme.primary }} />
+            </div>
+        );
+
+        const ThemeButton = ({ children, onClick, active, theme, className = "", icon: Icon }) => (
+            <button onClick={onClick} className={`px-4 py-3 rounded-lg text-sm font-medium border transition-all flex items-center justify-center ${className}`}
+                style={active ? { backgroundColor: theme.primary, color: theme.primaryFg, borderColor: theme.primary, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' } : { backgroundColor: theme.surface, color: theme.textSec, borderColor: theme.border }}>
+                {Icon && <Icon size={16} className="mr-2" />} {children}
+            </button>
+        );
+
+        const DynamicList = ({ label, selected, onSelect, multi, placeholder, items = [], theme, onAddCustom }) => {
+            const [isAdding, setIsAdding] = useState(false);
+            const [customVal, setCustomVal] = useState('');
+            const safeItems = Array.isArray(items) ? items : [];
+
+            const handleSave = () => {
+                if(customVal.trim()) { onAddCustom(customVal); setCustomVal(''); setIsAdding(false); }
+            };
+
+            return (
+                <div className="mb-6">
+                    <div className="flex justify-between items-end mb-3">
+                        <label className="text-sm font-bold" style={{ color: theme.text }}>{label}</label>
+                        <button onClick={() => setIsAdding(!isAdding)} className="text-xs font-bold px-2 py-1.5 rounded flex items-center" style={{ backgroundColor: theme.bg, color: theme.textSec }}><Plus size={12} className="mr-1"/> New</button>
+                    </div>
+                    {isAdding && (
+                        <div className="flex space-x-2 mb-3 p-2 border rounded-lg shadow-sm" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                            <input className="flex-1 text-sm outline-none bg-transparent" placeholder={placeholder} value={customVal} onChange={(e) => setCustomVal(e.target.value)} style={{ color: theme.text }} autoFocus />
+                            <button onClick={handleSave} className="text-xs font-bold px-3 py-1 rounded" style={{ backgroundColor: theme.success, color: '#fff' }}>Save</button>
+                        </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                        {safeItems.map((item) => {
+                            const isActive = multi ? selected?.includes(item) : selected === item;
+                            return <ThemeButton key={item} onClick={() => onSelect(item)} active={isActive} theme={theme}>{item}</ThemeButton>;
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const LocationPicker = ({ theme, area, gps, onAreaChange, onLocationFound }) => {
+            const [status, setStatus] = useState('idle');
+            const handleGetLocation = () => {
+                if (!navigator.geolocation) return;
+                setStatus('locating');
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    onLocationFound(area || "Locating...", { lat: latitude, lng: longitude });
+                    setStatus('done');
+                }, () => setStatus('error'));
+            };
+
+            return (
+                <div className="flex flex-col gap-3">
+                    <div className="flex gap-2">
+                        <div className="flex-1"><ThemeInput value={area} onChange={(e) => onAreaChange(e.target.value)} placeholder="Area Name" theme={theme} /></div>
+                        <button onClick={handleGetLocation} className="px-4 py-3 rounded-lg text-sm font-bold flex items-center text-white" style={{ backgroundColor: theme.primary }}>
+                            {status === 'locating' ? <Loader size={16} className="animate-spin"/> : <LocateFixed size={16}/>}
+                        </button>
+                    </div>
+                    {gps && <div className="text-xs font-mono opacity-50 px-1">{gps.lat.toFixed(6)}, {gps.lng.toFixed(6)}</div>}
+                </div>
+            );
+        };
+
+        // ==========================================
+        // STEPS
+        // ==========================================
+
+        const StepA = ({ formData, updateForm, lists, addListItem, theme }) => (
+            <div className="space-y-6">
+                <div className="flex items-center space-x-2 mb-2"><User size={20} style={{color: theme.primary}}/><h3 className="text-lg font-bold" style={{color: theme.text}}>Business Profile</h3></div>
+                <DynamicList label="1. Business Name" selected={formData.businessName} onSelect={(v) => updateForm('businessName', v)} placeholder="E.g. Cafe" items={lists.names} onAddCustom={(v) => addListItem('names', 'names', v)} theme={theme} />
+                <div>
+                    <label className="text-sm font-bold block mb-2" style={{color: theme.text}}>2. Type of Business</label>
+                    <div className="grid grid-cols-2 gap-2">{['Restaurant', 'Cafe', 'Hotel', 'Grocery Store', 'Event Company', 'Office', 'Other'].map(t => <ThemeButton key={t} onClick={() => updateForm('businessType', t)} active={formData.businessType === t} theme={theme}>{t}</ThemeButton>)}</div>
+                    {formData.businessType === 'Other' && <div className="mt-2"><ThemeInput theme={theme} placeholder="Specify" value={formData.otherBusinessType || ''} onChange={(e) => updateForm('otherBusinessType', e.target.value)} /></div>}
+                </div>
+                <div>
+                    <label className="text-sm font-bold block mb-2" style={{color: theme.text}}>3. Location</label>
+                    <LocationPicker theme={theme} area={formData.locationArea} gps={formData.gps} onAreaChange={(val) => updateForm('locationArea', val)} onLocationFound={(addr, gps) => { updateForm('locationArea', addr); updateForm('gps', gps); }} />
+                </div>
+            </div>
+        );
+
+        const StepB = ({ formData, toggleMulti, updateForm, lists, addListItem, theme }) => (
+            <div className="space-y-6">
+                <div className="flex items-center space-x-2 mb-2"><Package size={20} style={{color: theme.primary}}/><h3 className="text-lg font-bold" style={{color: theme.text}}>Water Usage</h3></div>
+                <DynamicList label="Brands" multi={true} selected={formData.brands} onSelect={(v) => toggleMulti('brands', v)} placeholder="Brand" items={lists.brands} onAddCustom={(v) => addListItem('brands', 'brands', v)} theme={theme} />
+                <div><label className="text-sm font-bold block mb-2" style={{color: theme.text}}>Bottle Sizes</label><div className="flex flex-wrap gap-2">{['250ml', '500ml', '1L', '20L'].map(s => <ThemeButton key={s} onClick={() => toggleMulti('bottleSizes', s)} active={formData.bottleSizes.includes(s)} theme={theme}>{s}</ThemeButton>)}</div></div>
+                <div><label className="text-sm font-bold block mb-2" style={{color: theme.text}}>Monthly Req</label><div className="grid grid-cols-2 gap-2">{['0–500', '500–1500', '1500–3000', '3000+'].map(r => <ThemeButton key={r} onClick={() => updateForm('monthlyRequirement', r)} active={formData.monthlyRequirement === r} theme={theme}>{r}</ThemeButton>)}</div></div>
+            </div>
+        );
+
+        const StepC = ({ formData, updateForm, theme }) => (
+            <div className="space-y-6">
+                <div className="flex items-center space-x-2 mb-2"><DollarSign size={20} style={{color: theme.primary}}/><h3 className="text-lg font-bold" style={{color: theme.text}}>Pricing</h3></div>
+                {formData.bottleSizes.map((size) => (
+                    <div key={size} className="p-4 rounded-xl border border-l-4" style={{ backgroundColor: theme.surface, borderColor: theme.border, borderLeftColor: theme.primary }}>
+                        <h4 className="font-bold mb-3 flex justify-between" style={{color: theme.text}}>{size} Bottle</h4>
+                        <div className="grid grid-cols-3 gap-3 items-end">
+                            <ThemeInput label="Buy" type="number" value={formData.buyingPrice[size] || ''} onChange={(e) => updateForm('buyingPrice', e.target.value, size)} theme={theme} />
+                            <ThemeInput label="Sell" type="number" value={formData.sellingPrice[size] || ''} onChange={(e) => updateForm('sellingPrice', e.target.value, size)} theme={theme} />
+                            <div className="mb-3"><div className="w-full p-3 rounded-lg text-center font-bold" style={{ backgroundColor: theme.bg }}>{formData.profitPerBottle[size] || '0'}</div></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+
+        const StepI = ({ formData, updateForm, toggleMulti, theme }) => {
+            const [pitch, setPitch] = useState('');
+            const [loadingPitch, setLoadingPitch] = useState(false);
+
+            const handleGeneratePitch = async () => {
+                setLoadingPitch(true);
+                const prompt = `Business: ${formData.businessName}. Selling Vellora water.`;
+                const result = await generateSalesPitch(prompt);
+                setPitch(result);
+                setLoadingPitch(false);
+            };
+
+            return (
+                <div className="space-y-6">
+                    <h3 className="text-lg font-bold" style={{color: theme.primary}}>Final Insight</h3>
+                    <div className="p-4 rounded-xl border" style={{backgroundColor: theme.surface, borderColor: theme.border}}>
+                        <label className="text-sm font-bold block mb-3" style={{color: theme.text}}>Triggers to Switch</label>
+                        <div className="grid grid-cols-2 gap-2">{['Better price', 'Better quality', 'Consistent supply', 'Custom branding'].map(p => <ThemeButton key={p} onClick={() => toggleMulti('switchReasons', p)} active={formData.switchReasons.includes(p)} theme={theme}>{p}</ThemeButton>)}</div>
+                    </div>
+                    <div className="p-4 rounded-xl border bg-gradient-to-br from-purple-50 to-white" style={{borderColor: theme.ai}}>
+                        <div className="flex justify-between items-center mb-2">
+                            <div className="flex items-center text-sm font-bold" style={{color: theme.ai}}><Sparkles size={16} className="mr-2"/> AI Sales Assistant</div>
+                            <button onClick={handleGeneratePitch} disabled={loadingPitch} className="text-xs px-3 py-1 rounded-lg text-white font-bold" style={{backgroundColor: theme.ai}}>{loadingPitch ? 'Thinking...' : 'Generate Pitch'}</button>
+                        </div>
+                        {pitch && <div className="text-sm italic p-3 bg-white rounded-lg border">{pitch}</div>}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // MAIN APP
+        // ==========================================
+
+        const App = () => {
+            const [status, setStatus] = useState('Offline');
+            const [syncCode, setSyncCode] = useState(() => localStorage.getItem('vellora_sync_code') || 'default');
+            const [currentThemeId, setCurrentThemeId] = useState('light');
+            const theme = THEMES[currentThemeId].colors;
+            const [view, setView] = useState('home');
+            const [modalOpen, setModalOpen] = useState(false);
+            const [currentStep, setCurrentStep] = useState('A');
+            const [surveys, setSurveys] = useState([]);
+            const [lists, setLists] = useState({ brands: ['Kinley', 'Bisleri'], locations: [], names: [] });
+            
+            const initialForm = { businessType: '', otherBusinessType: '', businessName: '', locationArea: '', footfall: '', gps: null, brands: [], bottleSizes: [], monthlyRequirement: '', buyingPrice: {}, sellingPrice: {}, profitPerBottle: {}, comfortableMargin: '', switchReasons: [], contact: '', contactName: '' };
+            const [formData, setFormData] = useState(initialForm);
+
+            useEffect(() => { backend.init(setStatus); }, []);
+            useEffect(() => {
+                const unsubSurveys = backend.subscribeSurveys(syncCode, setSurveys);
+                const unsubLists = backend.subscribeLists(syncCode, setLists);
+                return () => { unsubSurveys(); unsubLists(); };
+            }, [syncCode, status]);
+
+            const updateForm = useCallback((field, val, sub) => {
+                setFormData(p => {
+                    if (sub) {
+                        const newState = { ...p, [field]: { ...p[field], [sub]: val } };
+                        if (field.includes('Price')) {
+                            const b = parseFloat(field === 'buyingPrice' ? val : p.buyingPrice[sub] || '0');
+                            const s = parseFloat(field === 'sellingPrice' ? val : p.sellingPrice[sub] || '0');
+                            if (!isNaN(b) && !isNaN(s)) { newState.profitPerBottle = { ...newState.profitPerBottle, [sub]: (s - b).toFixed(2) }; }
+                        }
+                        return newState;
+                    }
+                    return { ...p, [field]: val };
+                });
+            }, []);
+
+            const toggleMulti = useCallback((field, val) => { 
+                setFormData(p => {
+                    const arr = p[field] || [];
+                    return { ...p, [field]: arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val] };
+                }); 
+            }, []);
+
+            const addListItem = useCallback(async (key, docName, val) => {
+                const newLists = await backend.addListItem(syncCode, lists, key, val);
+                setLists(newLists);
+                if (key === 'names') updateForm('businessName', val);
+            }, [lists, syncCode]);
+
+            const submitSurvey = async () => {
+                const newSurvey = { ...formData, id: crypto.randomUUID(), timestamp: new Date() }; 
+                await backend.addSurvey(syncCode, newSurvey);
+                setModalOpen(false);
+            };
+
+            const stepsRender = {
+                A: <StepA formData={formData} updateForm={updateForm} lists={lists} addListItem={addListItem} theme={theme} />,
+                B: <StepB formData={formData} toggleMulti={toggleMulti} updateForm={updateForm} lists={lists} addListItem={addListItem} theme={theme} />,
+                C: <StepC formData={formData} updateForm={updateForm} theme={theme} />,
+                I: <StepI formData={formData} updateForm={updateForm} toggleMulti={toggleMulti} theme={theme} />
+            };
+            const stepsList = ['A', 'B', 'C', 'I']; 
+
+            return (
+                <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 pb-safe" style={{ backgroundColor: theme.bg, color: theme.text }}>
+                    <div className="sticky top-0 z-20 border-b shadow-sm backdrop-blur-md bg-opacity-90" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                                <div className="p-2 rounded-lg shadow-sm" style={{ backgroundColor: theme.primary, color: theme.primaryFg }}><Zap size={20} /></div>
+                                <div><h1 className="font-extrabold text-lg leading-tight">VELLORA</h1>
+                                <div className="flex items-center space-x-1"><span className="text-[10px] font-bold uppercase tracking-wider opacity-60">{status}</span></div></div>
+                            </div>
+                            <button onClick={() => setView('settings')} className="p-2 rounded-full hover:bg-gray-100"><Settings size={20} /></button>
+                        </div>
+                    </div>
+
+                    <main className="flex-grow max-w-4xl mx-auto w-full pb-28 p-4">
+                        {view === 'home' && (
+                            <div className="grid gap-6">
+                                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                                    <div className="p-4 rounded-xl shadow-sm border min-w-[140px] flex-1" style={{backgroundColor: theme.surface, borderColor: theme.border}}>
+                                        <div className="text-xs font-bold uppercase opacity-50 mb-1">Total Surveys</div>
+                                        <div className="text-2xl font-black">{surveys.length}</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => { setModalOpen(true); setFormData(initialForm); setCurrentStep('A'); }} className="p-8 rounded-3xl shadow-xl border flex flex-col items-center justify-center text-center group" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform" style={{ backgroundColor: theme.primary, color: theme.primaryFg }}><Plus size={32} /></div>
+                                    <h2 className="text-xl font-bold">Start New Survey</h2>
+                                </button>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setView('analytics')} className="p-6 rounded-2xl shadow-sm border flex flex-col items-center justify-center" style={{ backgroundColor: theme.surface, borderColor: theme.border }}><TrendingUp size={24} className="mb-2" style={{color: theme.primary}}/><span className="font-bold text-sm">Analytics</span></button>
+                                    <button onClick={() => setView('review')} className="p-6 rounded-2xl shadow-sm border flex flex-col items-center justify-center" style={{ backgroundColor: theme.surface, borderColor: theme.border }}><List size={24} className="mb-2" style={{color: theme.primary}}/><span className="font-bold text-sm">Data</span></button>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'review' && (
+                            <div className="space-y-4">
+                                {surveys.map(s => (
+                                    <div key={s.id} className="p-4 rounded-xl shadow-sm border flex justify-between items-center" style={{backgroundColor: theme.surface, borderColor: theme.border}}>
+                                        <div>
+                                            <div className="font-bold text-base">{s.businessName || 'Unnamed'}</div>
+                                            <div className="text-xs opacity-60 flex items-center mt-1"><MapPin size={10} className="mr-1"/> {s.locationArea}</div>
+                                        </div>
+                                        <button onClick={() => backend.deleteSurvey(syncCode, s.id)} className="p-2 text-red-400"><Trash2 size={18}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {view === 'analytics' && (
+                            <div className="space-y-6">
+                                <SimplePieChart title="Business Types" data={Object.entries(surveys.reduce((c, s) => { const k = s.businessType; c[k]=(c[k]||0)+1; return c; }, {})).map(([k,v]) => ({name:k, value:v}))} theme={theme} />
+                            </div>
+                        )}
+                        
+                        {view === 'settings' && (
+                             <div className="p-4 rounded-xl border" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                                <div className="flex items-center mb-4"><Cloud size={20} className="mr-3"/><h3 className="font-bold text-sm">Sync Code</h3></div>
+                                <input className="w-full p-3 rounded-lg border text-sm font-mono" style={{ backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }} value={syncCode} onChange={(e) => { setSyncCode(e.target.value); localStorage.setItem('vellora_sync_code', e.target.value); }} />
+                            </div>
+                        )}
+                    </main>
+                    
+                    <div className="fixed bottom-0 left-0 right-0 border-t pb-safe pt-2 px-6 flex justify-around shadow-sm z-30" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                        {['home', 'analytics', 'review'].map(v => (
+                            <button key={v} onClick={() => setView(v)} className="p-3 rounded-xl flex flex-col items-center" style={{ color: view === v ? theme.primary : theme.textSec }}>
+                                {v === 'home' && <Home size={24} />} {v === 'analytics' && <PieIcon size={24} />} {v === 'review' && <Eye size={24} />}
+                                <span className="text-[10px] font-bold uppercase mt-1 tracking-wide">{v}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {modalOpen && (
+                        <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.bg }}>
+                            <div className="px-4 py-3 border-b flex justify-between items-center shadow-sm" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                                <span className="font-bold text-sm opacity-60">Step {stepsList.indexOf(currentStep) + 1}/{stepsList.length}</span>
+                                <button onClick={() => setModalOpen(false)} className="p-2 rounded-full"><X size={20}/></button>
+                            </div>
+                            <div className="flex-grow overflow-y-auto p-5 pb-32">{stepsRender[currentStep]}</div>
+                            <div className="absolute bottom-0 left-0 right-0 border-t p-4 flex justify-between items-center shadow-sm safe-bottom" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
+                                <button onClick={() => { const i = stepsList.indexOf(currentStep); if (i > 0) setCurrentStep(stepsList[i-1]); }} disabled={currentStep==='A'} className="font-bold px-6 py-3 rounded-xl disabled:opacity-30" style={{color: theme.textSec}}>Back</button>
+                                <button onClick={() => { const i = stepsList.indexOf(currentStep); if (i < stepsList.length - 1) setCurrentStep(stepsList[i+1]); else submitSurvey(); }} className="px-8 py-3 rounded-xl font-bold shadow-lg flex items-center text-white" style={{ backgroundColor: theme.primary }}>{currentStep === 'I' ? 'Save' : 'Next'}</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
