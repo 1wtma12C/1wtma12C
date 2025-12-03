@@ -9,8 +9,10 @@
     
     <title>Vellora Survey AI</title>
     
+    <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- 2. Import Map -->
     <script type="importmap">
     {
       "imports": {
@@ -26,6 +28,7 @@
     }
     </script>
 
+    <!-- 3. Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
@@ -37,8 +40,25 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-    <div id="root"></div>
+    <div id="root" class="h-screen flex items-center justify-center text-center p-4">
+        <div>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h2 class="text-xl font-bold text-gray-700">Loading Vellora...</h2>
+            <p class="text-gray-400 text-sm mt-2">If this takes longer than 5s, check your internet.</p>
+            <div id="error-log" class="hidden mt-4 text-red-500 text-xs text-left bg-red-50 p-4 rounded max-w-md mx-auto whitespace-pre-wrap"></div>
+        </div>
+    </div>
 
+    <!-- ERROR TRAPPING -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const el = document.getElementById('error-log');
+            el.classList.remove('hidden');
+            el.innerText += `Error: ${message}\nLine: ${lineno}\n\n`;
+        };
+    </script>
+
+    <!-- MAIN APP SCRIPT -->
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useCallback, useMemo } from 'react';
         import ReactDOM from 'react-dom/client';
@@ -73,13 +93,13 @@
         const GEMINI_API_KEY = "AIzaSyCTGO098tUeKlMo0zFJUDxmHZryQgzD76w"; 
 
         // ==========================================
-        // SERVICES (Backend & AI)
+        // SERVICES
         // ==========================================
 
-        // --- GEMINI SERVICE ---
         const getAI = () => new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
         const generateSalesPitch = async (prompt) => {
+            if (GEMINI_API_KEY.includes("PASTE")) return "Error: API Key missing.";
             const ai = getAI();
             try {
                 const model = ai.getGenerativeModel({ model: "gemini-pro" });
@@ -92,7 +112,6 @@
             }
         };
 
-        // --- BACKEND SERVICE ---
         class BackendService {
             constructor() {
                 this.db = null;
@@ -195,7 +214,7 @@
         const backend = new BackendService();
 
         // ==========================================
-        // UI COMPONENTS & THEMES
+        // UI COMPONENTS
         // ==========================================
 
         const THEMES = {
@@ -295,10 +314,6 @@
             );
         };
 
-        // ==========================================
-        // STEPS
-        // ==========================================
-
         const StepA = ({ formData, updateForm, lists, addListItem, theme }) => (
             <div className="space-y-6">
                 <div className="flex items-center space-x-2 mb-2"><User size={20} style={{color: theme.primary}}/><h3 className="text-lg font-bold" style={{color: theme.text}}>Business Profile</h3></div>
@@ -369,10 +384,6 @@
                 </div>
             );
         };
-
-        // ==========================================
-        // MAIN APP
-        // ==========================================
 
         const App = () => {
             const [status, setStatus] = useState('Offline');
@@ -529,3 +540,4 @@
     </script>
 </body>
 </html>
+
