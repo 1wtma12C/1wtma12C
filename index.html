@@ -201,7 +201,8 @@
             if (survey.gps) {
                  doc.text(`GPS: ${survey.gps.lat}, ${survey.gps.lng}`, 14, 72);
                  doc.setTextColor(41, 128, 185);
-                 doc.textWithLink("Open in Google Maps", 14, 78, { url: `https://www.google.com/maps/dir/?api=1&destination=${survey.gps.lat},${survey.gps.lng}` });
+                 // Changed from "dir" (direction) to "q" (query/pin) to ensure it points to the location
+                 doc.textWithLink("Open in Google Maps", 14, 78, { url: `https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}` });
             }
 
             doc.setTextColor(0);
@@ -1117,21 +1118,93 @@
 
             return (
                 <Modal isOpen={!!survey} onClose={onClose} title={survey.businessName}>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="opacity-60">Type</div><div>{survey.businessType}</div>
-                            <div className="opacity-60">Contact</div><div>{survey.contactName} ({survey.contactMobile})</div>
-                            <div className="opacity-60">Area</div><div>{survey.locationArea}</div>
-                            <div className="opacity-60">Date</div><div>{formatDate(survey.timestamp)}</div>
+                    <div className="space-y-6">
+                        {/* 1. Business & Location Section */}
+                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
+                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Business Profile</h4>
+                            <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                                <div><span className="opacity-60 block text-xs">Type</span><span className="font-medium">{survey.businessType}</span></div>
+                                <div><span className="opacity-60 block text-xs">Footfall</span><span className="font-medium">{survey.dailyFootfall || 'N/A'}</span></div>
+                                <div><span className="opacity-60 block text-xs">Area</span><span className="font-medium">{survey.locationArea}</span></div>
+                                <div><span className="opacity-60 block text-xs">Date</span><span className="font-medium">{new Date(survey.timestamp).toLocaleDateString()}</span></div>
+                                {survey.gps && (
+                                    <div className="col-span-2 mt-1">
+                                        <span className="opacity-60 block text-xs">GPS Coordinates</span>
+                                        <span className="font-mono text-xs opacity-80">{survey.gps.lat.toFixed(5)}, {survey.gps.lng.toFixed(5)}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Pricing Table Render */}
-                        <div className={`p-3 rounded-lg border ${theme.border} bg-opacity-50`}>
-                            <h4 className="font-bold text-sm mb-2 opacity-80">Pricing Data</h4>
+                        {/* 2. Contact Section */}
+                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
+                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Contact</h4>
+                            <div className="text-sm">
+                                <div className="font-bold text-lg">{survey.contactName}</div>
+                                <div className="font-mono opacity-80">{survey.contactMobile}</div>
+                            </div>
+                        </div>
+
+                        {/* 3. Supply & Distributor Section */}
+                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
+                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Supply Chain</h4>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex justify-between items-center">
+                                    <span className="opacity-70">Monthly Volume</span>
+                                    <span className="font-bold text-lg">{survey.qtyMonthly} <span className="text-xs font-normal opacity-60">bottles</span></span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-2 border-t border-dashed border-gray-200">
+                                    <div><span className="opacity-60 block text-xs">Distributor</span><span className="font-medium">{survey.distributorName}</span></div>
+                                    <div>
+                                        <span className="opacity-60 block text-xs">Service Satisfaction</span>
+                                        <span className={`font-bold ${survey.happyWithService === 'No' ? 'text-red-500' : 'text-green-600'}`}>
+                                            {survey.happyWithService}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Conditional Distributor Details */}
+                                    {survey.companyDetails && (
+                                        <div className="col-span-2"><span className="opacity-60 block text-xs">Company Details</span><span className="font-medium">{survey.companyDetails}</span></div>
+                                    )}
+                                    {(survey.localVendorName || survey.localVendorMobile) && (
+                                        <div className="col-span-2">
+                                            <span className="opacity-60 block text-xs">Local Vendor</span>
+                                            <span className="font-medium">{survey.localVendorName} ({survey.localVendorMobile})</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {survey.mainProblems && survey.mainProblems.length > 0 && (
+                                    <div className="pt-2">
+                                        <span className="opacity-60 block text-xs mb-1">Reported Issues</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {survey.mainProblems.map(p => (
+                                                <span key={p} className="px-2 py-1 bg-red-50 text-red-700 border border-red-100 text-[10px] rounded-md font-bold">{p}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 4. White Label Section (Conditional) */}
+                        {survey.interestedInCustomLogo === 'Yes' && (
+                            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900">
+                                <h4 className="font-bold text-xs uppercase opacity-60 mb-3 border-b border-amber-200 pb-1">White Label Opportunity</h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div><span className="opacity-60 block text-xs">Purpose</span><span className="font-bold">{survey.customPurpose}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Extra Willing to Pay</span><span className="font-bold">₹{survey.extraWillingToPay}</span></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 5. Pricing Table (Existing) */}
+                        <div className={`p-4 rounded-xl border ${theme.border} bg-opacity-50`}>
+                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Pricing Matrix</h4>
                             {survey.brands?.map(b => (
-                                <div key={b} className="mb-2">
-                                    <div className="font-bold text-xs mb-1">{b}</div>
-                                    <div className="grid grid-cols-4 gap-1 text-[10px] opacity-70">
+                                <div key={b} className="mb-3 last:mb-0">
+                                    <div className="font-bold text-sm mb-1">{b}</div>
+                                    <div className="grid grid-cols-4 gap-1 text-[10px] opacity-60 uppercase font-bold mb-1">
                                         <span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span>
                                     </div>
                                     {survey.bottleSizes?.map(s => {
@@ -1150,17 +1223,18 @@
                             ))}
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-                            <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2`}>
+                        {/* Actions */}
+                        <div className="flex flex-wrap gap-2 pt-2 sticky bottom-0 bg-white/80 backdrop-blur-sm pb-2 border-t mt-4">
+                            <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2 shadow-sm`}>
                                 Call
                             </a>
                             {survey.gps && (
-                                <a href={`https://www.google.com/maps/dir/?api=1&destination=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2`}>
+                                <a href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2 shadow-sm`}>
                                     <Icons.Map /> Map
                                 </a>
                             )}
-                            <button onClick={handleExport} className={`px-4 py-3 rounded-lg font-bold ${theme.bg} border ${theme.border} text-red-600 flex items-center justify-center`}><Icons.Download /></button>
-                            <button onClick={handleDelete} className="px-4 py-3 rounded-lg font-bold bg-red-100 text-red-600 flex items-center justify-center"><Icons.Trash /></button>
+                            <button onClick={handleExport} className={`px-4 py-3 rounded-lg font-bold ${theme.bg} border ${theme.border} text-blue-600 flex items-center justify-center shadow-sm`}><Icons.Download /></button>
+                            <button onClick={handleDelete} className="px-4 py-3 rounded-lg font-bold bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shadow-sm"><Icons.Trash /></button>
                         </div>
                     </div>
                 </Modal>
