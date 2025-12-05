@@ -8,6 +8,7 @@
     <!-- PWA Manifest Meta -->
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -42,12 +43,47 @@
             border-radius: 50%; background: currentColor; cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Animations */
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        
+        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Spinner */
+        .spinner { border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top: 2px solid currentColor; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 select-none">
     <div id="root"></div>
+
+    <!-- OFFLINE WORKER -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            const swContent = `
+                const CACHE_NAME = 'vellora-offline-v4';
+                const urlsToCache = [
+                    'https://cdn.tailwindcss.com',
+                    'https://unpkg.com/react@18/umd/react.production.min.js',
+                    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+                    'https://unpkg.com/@babel/standalone/babel.min.js',
+                    'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
+                    'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
+                    'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js'
+                ];
+                self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))); self.skipWaiting(); });
+                self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
+            `;
+            try {
+                navigator.serviceWorker.register(URL.createObjectURL(new Blob([swContent], {type: 'text/javascript'})))
+                .then(() => console.log('SW Registered')).catch(e => console.log('SW Fail', e));
+            } catch(e){}
+        }
+    </script>
 
     <script type="text/babel">
         /*******************************************************
@@ -64,16 +100,16 @@
         };
 
         const THEMES = {
-            corporate: { name: 'Corporate Light', bg: 'bg-slate-50', card: 'bg-white', text: 'text-slate-800', accent: 'bg-blue-600', accentText: 'text-white', border: 'border-slate-200', input: 'bg-white text-slate-900' },
-            midnight: { name: 'Midnight Dark', bg: 'bg-slate-900', card: 'bg-slate-800', text: 'text-slate-100', accent: 'bg-blue-500', accentText: 'text-white', border: 'border-slate-700', input: 'bg-slate-900 text-white' },
-            forest: { name: 'Forest Rain', bg: 'bg-emerald-50', card: 'bg-white', text: 'text-emerald-900', accent: 'bg-emerald-600', accentText: 'text-white', border: 'border-emerald-200', input: 'bg-white text-emerald-900' },
-            obsidian: { name: 'Obsidian (OLED)', bg: 'bg-black', card: 'bg-black', text: 'text-gray-100', accent: 'bg-white', accentText: 'text-black', border: 'border-gray-700', input: 'bg-gray-900 text-white placeholder-gray-400' },
-            sunset: { name: 'Sunset', bg: 'bg-orange-50', card: 'bg-white', text: 'text-orange-900', accent: 'bg-orange-500', accentText: 'text-white', border: 'border-orange-200', input: 'bg-white text-orange-900' },
-            royal: { name: 'Royal', bg: 'bg-purple-50', card: 'bg-white', text: 'text-purple-900', accent: 'bg-purple-600', accentText: 'text-white', border: 'border-purple-200', input: 'bg-white text-purple-900' },
-            oceanic: { name: 'Oceanic', bg: 'bg-cyan-50', card: 'bg-white', text: 'text-cyan-900', accent: 'bg-cyan-600', accentText: 'text-white', border: 'border-cyan-200', input: 'bg-white text-cyan-900' },
-            luxury: { name: 'Luxury', bg: 'bg-gray-900', card: 'bg-gray-800', text: 'text-amber-100', accent: 'bg-amber-500', accentText: 'text-gray-900', border: 'border-amber-500/30', input: 'bg-gray-900 text-amber-50' },
-            berry: { name: 'Berry', bg: 'bg-pink-50', card: 'bg-white', text: 'text-pink-900', accent: 'bg-pink-600', accentText: 'text-white', border: 'border-pink-200', input: 'bg-white text-pink-900' },
-            slate: { name: 'Slate', bg: 'bg-gray-100', card: 'bg-white', text: 'text-gray-800', accent: 'bg-gray-600', accentText: 'text-white', border: 'border-gray-300', input: 'bg-white text-gray-800' },
+            corporate: { name: 'Corporate Light', bg: 'bg-slate-50', card: 'bg-white', text: 'text-slate-800', accent: 'bg-blue-600', accentText: 'text-white', border: 'border-slate-200', input: 'bg-white text-slate-900 border-slate-200' },
+            midnight: { name: 'Midnight Dark', bg: 'bg-slate-900', card: 'bg-slate-800', text: 'text-slate-100', accent: 'bg-blue-500', accentText: 'text-white', border: 'border-slate-700', input: 'bg-slate-900 text-white border-slate-700' },
+            forest: { name: 'Forest Rain', bg: 'bg-emerald-50', card: 'bg-white', text: 'text-emerald-900', accent: 'bg-emerald-600', accentText: 'text-white', border: 'border-emerald-200', input: 'bg-white text-emerald-900 border-emerald-200' },
+            obsidian: { name: 'Obsidian (OLED)', bg: 'bg-black', card: 'bg-gray-900', text: 'text-gray-100', accent: 'bg-white', accentText: 'text-black', border: 'border-gray-800', input: 'bg-gray-900 text-white border-gray-700 placeholder-gray-500' },
+            sunset: { name: 'Sunset', bg: 'bg-orange-50', card: 'bg-white', text: 'text-orange-900', accent: 'bg-orange-500', accentText: 'text-white', border: 'border-orange-200', input: 'bg-white text-orange-900 border-orange-200' },
+            royal: { name: 'Royal', bg: 'bg-purple-50', card: 'bg-white', text: 'text-purple-900', accent: 'bg-purple-600', accentText: 'text-white', border: 'border-purple-200', input: 'bg-white text-purple-900 border-purple-200' },
+            oceanic: { name: 'Oceanic', bg: 'bg-cyan-50', card: 'bg-white', text: 'text-cyan-900', accent: 'bg-cyan-600', accentText: 'text-white', border: 'border-cyan-200', input: 'bg-white text-cyan-900 border-cyan-200' },
+            luxury: { name: 'Luxury', bg: 'bg-gray-900', card: 'bg-gray-800', text: 'text-amber-100', accent: 'bg-amber-500', accentText: 'text-gray-900', border: 'border-amber-500/30', input: 'bg-gray-900 text-amber-50 border-amber-900' },
+            berry: { name: 'Berry', bg: 'bg-pink-50', card: 'bg-white', text: 'text-pink-900', accent: 'bg-pink-600', accentText: 'text-white', border: 'border-pink-200', input: 'bg-white text-pink-900 border-pink-200' },
+            slate: { name: 'Slate', bg: 'bg-gray-100', card: 'bg-white', text: 'text-gray-800', accent: 'bg-gray-600', accentText: 'text-white', border: 'border-gray-300', input: 'bg-white text-gray-800 border-gray-300' },
         };
 
         const INITIAL_MASTER_DATA = {
@@ -90,16 +126,8 @@
         /*******************************************************
          * 1. HELPERS & PDF GENERATOR
          *******************************************************/
-        const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-
-        const formatDate = (isoString) => {
-            if (!isoString) return '';
-            const d = new Date(isoString);
-            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
-        };
+        const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); });
+        const formatDate = (iso) => !iso ? '' : new Date(iso).toLocaleDateString() + ' ' + new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
 
         const convertToCSV = (data) => {
             if (!data || !data.length) return '';
@@ -113,8 +141,7 @@
             };
             const flatData = data.map(flattenRow);
             const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
-            const csvRows = [headers.join(','), ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', replacer=null, space=0)).join(','))];
-            return csvRows.join('\n');
+            return [headers.join(','), ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', null, 0)).join(','))].join('\n');
         };
 
         // --- ENHANCED PDF GENERATOR (CARD STYLE) ---
@@ -245,7 +272,10 @@
             WifiOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
             Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
             Filter: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
-            Map: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            Map: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
+            Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8"/><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"/></svg>,
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            FileText: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         };
 
         /*******************************************************
@@ -259,22 +289,31 @@
             static getDerivedStateFromError(error) { return { hasError: true }; }
             componentDidCatch(error, errorInfo) { console.error("Uncaught error:", error, errorInfo); }
             render() {
-                if (this.state.hasError) return <div className="p-6"><h2>Something went wrong.</h2><button onClick={() => window.location.reload()} className="mt-4 p-2 bg-red-500 text-white rounded">Reload</button></div>;
+                if (this.state.hasError) return <div className="p-6 text-red-500"><h2>App Error. Please Reload.</h2><button onClick={() => window.location.reload()} className="mt-4 p-2 bg-red-100 rounded">Reload</button></div>;
                 return this.props.children;
             }
         }
 
+        const Toast = ({ msg, type, onClose }) => {
+            React.useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+            const bg = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            return <div className={`fixed top-4 left-4 right-4 p-3 rounded-lg shadow-lg z-[100] text-white font-bold flex justify-between items-center ${bg} slide-up`}><span>{msg}</span><button onClick={onClose}><Icons.X /></button></div>;
+        };
+
         const AppProvider = ({ children }) => {
             const [user, setUser] = React.useState(null);
-            const [syncCode] = React.useState('MAIN'); // Fixed to MAIN as requested
             const [surveys, setSurveys] = React.useState([]);
             const [masterData, setMasterData] = React.useState(INITIAL_MASTER_DATA);
             const [outbox, setOutbox] = React.useState([]);
             const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+            const [isSyncing, setIsSyncing] = React.useState(false);
             const [themeKey, setThemeKey] = React.useState(localStorage.getItem('vellora_theme') || 'corporate');
+            const [toast, setToast] = React.useState(null); // { msg, type }
 
             React.useEffect(() => { localStorage.setItem('vellora_theme', themeKey); }, [themeKey]);
             const currentTheme = THEMES[themeKey] || THEMES.corporate;
+
+            const showToast = (msg, type='info') => setToast({ msg, type });
 
             React.useEffect(() => {
                 if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -290,39 +329,38 @@
             React.useEffect(() => {
                 if (!user) return;
                 const db = firebase.firestore();
+                // We use 'MAIN' as the default hardcoded sync code
+                const syncCode = 'MAIN';
                 
-                // Master Data Listener
                 const unsubscribeMaster = db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData')
                     .onSnapshot(doc => {
                         if (doc.exists) {
                             const remote = doc.data();
                             setMasterData(prev => {
-                                // Merge remote arrays with local to ensure nothing lost
                                 const merged = { ...prev, ...remote };
-                                localStorage.setItem(`vellora_${syncCode}_master`, JSON.stringify(merged));
+                                localStorage.setItem('vellora_MAIN_master', JSON.stringify(merged));
                                 return merged;
                             });
                         } else doc.ref.set(INITIAL_MASTER_DATA);
                     });
 
-                // Survey Listener
                 const unsubscribeSurveys = db.collection('artifacts').doc(syncCode).collection('data')
                     .onSnapshot(snapshot => {
                         const remoteSurveys = [];
                         snapshot.forEach(doc => remoteSurveys.push(doc.data()));
                         setSurveys(remoteSurveys);
-                        localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(remoteSurveys));
-                    });
+                        localStorage.setItem('vellora_MAIN_surveys', JSON.stringify(remoteSurveys));
+                    }, err => console.log("Sync Error", err));
 
                 return () => { unsubscribeMaster(); unsubscribeSurveys(); };
             }, [user]);
 
             const loadLocalData = () => {
-                const ls = localStorage.getItem(`vellora_${syncCode}_surveys`);
+                const ls = localStorage.getItem('vellora_MAIN_surveys');
                 if (ls) try { setSurveys(JSON.parse(ls)); } catch(e){}
-                const lm = localStorage.getItem(`vellora_${syncCode}_master`);
+                const lm = localStorage.getItem('vellora_MAIN_master');
                 if (lm) try { setMasterData(JSON.parse(lm)); } catch(e){}
-                const lo = localStorage.getItem(`vellora_${syncCode}_outbox`);
+                const lo = localStorage.getItem('vellora_MAIN_outbox');
                 if (lo) try { setOutbox(JSON.parse(lo)); } catch(e){}
             };
 
@@ -330,78 +368,128 @@
                 const newItem = { id: generateUUID(), action, payload, timestamp: new Date().toISOString() };
                 const newOutbox = [...outbox, newItem];
                 setOutbox(newOutbox);
-                localStorage.setItem(`vellora_${syncCode}_outbox`, JSON.stringify(newOutbox));
+                localStorage.setItem('vellora_MAIN_outbox', JSON.stringify(newOutbox));
                 
                 if (action === 'ADD_SURVEY') {
-                    const newSurveyList = [payload, ...surveys];
-                    setSurveys(newSurveyList);
-                    localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(newSurveyList));
+                    setSurveys([payload, ...surveys]);
+                    showToast("Survey Saved Locally");
                 } else if (action === 'DELETE_SURVEY') {
-                     const newSurveyList = surveys.filter(s => s.id !== payload.id);
-                     setSurveys(newSurveyList);
-                     localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(newSurveyList));
-                } else if (action === 'UPDATE_MASTER') {
-                    // Update local state immediately for "Others" logic
-                    setMasterData(payload);
-                    localStorage.setItem(`vellora_${syncCode}_master`, JSON.stringify(payload));
+                     setSurveys(surveys.filter(s => s.id !== payload.id));
+                     showToast("Survey Deleted");
                 }
 
                 if (navigator.onLine) flushOutbox(newOutbox);
             };
 
             const flushOutbox = async (currentOutbox = outbox) => {
-                if (!currentOutbox.length) return;
+                if (!currentOutbox.length || isSyncing) return;
+                setIsSyncing(true);
                 const db = firebase.firestore();
                 const remaining = [];
+                const syncCode = 'MAIN';
+
                 for (const item of currentOutbox) {
                     try {
-                        if (item.action === 'ADD_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).set(item.payload);
+                        // Sanitize Payload for Firestore (No undefined values)
+                        const cleanPayload = JSON.parse(JSON.stringify(item.payload)); 
+                        
+                        if (item.action === 'ADD_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).set(cleanPayload);
                         else if (item.action === 'DELETE_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).delete();
-                        else if (item.action === 'UPDATE_MASTER') await db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData').set(item.payload);
-                    } catch (e) { remaining.push(item); }
+                        else if (item.action === 'UPDATE_MASTER') await db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData').set(cleanPayload);
+                    } catch (e) {
+                        console.error("Sync Item Failed", e);
+                        remaining.push(item);
+                    }
                 }
+                
+                if(remaining.length < currentOutbox.length) showToast("Cloud Sync Complete", 'success');
+                else if(remaining.length > 0) showToast("Sync Failed - Retrying...", 'error');
+
                 setOutbox(remaining);
-                localStorage.setItem(`vellora_${syncCode}_outbox`, JSON.stringify(remaining));
+                localStorage.setItem('vellora_MAIN_outbox', JSON.stringify(remaining));
+                setIsSyncing(false);
             };
 
             const updateMasterData = (key, value) => {
                 if (!masterData[key]) return;
-                // Correctly append new value to existing array
                 const currentArr = Array.isArray(masterData[key]) ? masterData[key] : [];
                 if (!currentArr.includes(value)) {
                     const newArr = [...currentArr, value];
                     const newMaster = { ...masterData, [key]: newArr };
+                    setMasterData(newMaster); // Immediate Update
                     addToOutbox('UPDATE_MASTER', newMaster);
                 }
             };
 
             return (
                 <ThemeContext.Provider value={{ currentTheme, themeKey, setThemeKey }}>
-                    <AppContext.Provider value={{ user, surveys, masterData, isOnline, outbox, addToOutbox, updateMasterData }}>
+                    <AppContext.Provider value={{ user, surveys, masterData, isOnline, outbox, isSyncing, addToOutbox, updateMasterData, flushOutbox, showToast }}>
                         {children}
+                        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
                     </AppContext.Provider>
                 </ThemeContext.Provider>
             );
         };
 
         /*******************************************************
-         * 4. REUSABLE UI COMPONENTS
+         * 4. COMPONENT LIBRARY
          *******************************************************/
         const Modal = ({ isOpen, onClose, title, children }) => {
             const { currentTheme } = React.useContext(ThemeContext);
             if (!isOpen) return null;
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`${currentTheme.card} ${currentTheme.text} w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-fade-in max-h-[90vh] overflow-y-auto`}>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                    <div className={`${currentTheme.card} ${currentTheme.text} w-full max-w-lg rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto`}>
                         <div className={`p-4 border-b ${currentTheme.border} flex justify-between items-center sticky top-0 ${currentTheme.card} z-10`}>
                             <h3 className="font-bold text-lg">{title}</h3>
-                            <button onClick={onClose} className="p-2 opacity-70 hover:opacity-100 font-bold text-xl">&times;</button>
+                            <button onClick={onClose} className="p-2 opacity-70 hover:opacity-100 font-bold text-xl"><Icons.X /></button>
                         </div>
                         <div className="p-4">{children}</div>
                     </div>
                 </div>
             );
         };
+
+        const ConfirmationModal = ({ isOpen, onConfirm, onCancel, message }) => {
+            const { currentTheme } = React.useContext(ThemeContext);
+            if(!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`${currentTheme.card} ${currentTheme.text} p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border ${currentTheme.border}`}>
+                        <div className="text-red-500 mb-4 flex justify-center"><Icons.Trash /></div>
+                        <h3 className="text-xl font-bold mb-2">Are you sure?</h3>
+                        <p className="opacity-70 mb-6 text-sm">{message}</p>
+                        <div className="flex gap-3">
+                            <button onClick={onCancel} className={`flex-1 py-3 rounded-xl font-bold border ${currentTheme.border}`}>Cancel</button>
+                            <button onClick={onConfirm} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white shadow-lg">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const ExportMenu = ({ isOpen, onClose, onExport }) => {
+            const { currentTheme } = React.useContext(ThemeContext);
+            if(!isOpen) return null;
+            return (
+                <Modal isOpen={isOpen} onClose={onClose} title="Export Data">
+                    <div className="grid gap-3">
+                        <button onClick={() => onExport('csv')} className={`p-4 rounded-xl border ${currentTheme.border} flex items-center gap-3 font-bold hover:bg-gray-50/10`}>
+                            <div className="p-2 bg-green-100 text-green-700 rounded-lg"><Icons.FileText /></div>
+                            <span>Export as CSV (Excel)</span>
+                        </button>
+                        <button onClick={() => onExport('json')} className={`p-4 rounded-xl border ${currentTheme.border} flex items-center gap-3 font-bold hover:bg-gray-50/10`}>
+                            <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg"><Icons.FileText /></div>
+                            <span>Export as JSON</span>
+                        </button>
+                        <button onClick={() => onExport('pdf')} className={`p-4 rounded-xl border ${currentTheme.border} flex items-center gap-3 font-bold hover:bg-gray-50/10`}>
+                            <div className="p-2 bg-red-100 text-red-700 rounded-lg"><Icons.FileText /></div>
+                            <span>Export as PDF Report</span>
+                        </button>
+                    </div>
+                </Modal>
+            );
+        }
 
         const ButtonGrid = ({ options, selected, onSelect, allowOther, onAddOther }) => {
             const { currentTheme } = React.useContext(ThemeContext);
@@ -411,12 +499,9 @@
             const handleAdd = () => {
                 if(otherVal.trim()) {
                     onAddOther(otherVal.trim());
-                    // Automatically select the new option
-                    if (Array.isArray(selected)) {
-                        onSelect([...selected, otherVal.trim()]);
-                    } else {
-                        onSelect(otherVal.trim());
-                    }
+                    // Keep existing selections and add new one
+                    if (Array.isArray(selected)) onSelect([...selected, otherVal.trim()]);
+                    else onSelect(otherVal.trim());
                     setOtherVal('');
                     setIsAdding(false);
                 }
@@ -453,112 +538,83 @@
         };
 
         // --- Step Components ---
-        const StepA_Business = ({ data, update, master, addMaster }) => {
+        const StepA = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
             const [loadingLoc, setLoadingLoc] = React.useState(false);
-
             const handleGeo = () => {
                 setLoadingLoc(true);
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(async (pos) => {
-                        const { latitude, longitude } = pos.coords;
-                        update('gps', { lat: latitude, lng: longitude });
-                        try {
-                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-                            const json = await res.json();
-                            const area = json.address.suburb || json.address.neighbourhood || json.address.town || json.address.village || json.address.city || '';
-                            if(area) update('locationArea', area);
-                        } catch(e) { console.error("Geo fail", e); } finally { setLoadingLoc(false); }
-                    }, () => { alert("GPS Error"); setLoadingLoc(false); }, { enableHighAccuracy: true });
-                } else { alert("GPS not supported"); setLoadingLoc(false); }
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    update('gps', { lat: latitude, lng: longitude });
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                        const json = await res.json();
+                        const area = json.address.suburb || json.address.neighbourhood || json.address.town || '';
+                        if(area) update('locationArea', area);
+                    } catch(e){} finally { setLoadingLoc(false); }
+                }, () => setLoadingLoc(false), { enableHighAccuracy: true });
             };
-
             return (
-                <div className="space-y-6 animate-fade-in pb-24">
+                <div className="space-y-6 pb-24">
                     <h2 className="text-xl font-bold">Business Profile</h2>
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Business Name *</label>
-                        <input value={data.businessName || ''} onChange={e => update('businessName', e.target.value)} className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input} outline-none transition-colors`} placeholder="e.g. Balaji General Store" />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Business Type</label>
-                        <ButtonGrid options={master.businessTypes} selected={data.businessType} onSelect={v => update('businessType', v)} allowOther={true} onAddOther={v => addMaster('businessTypes', v)} />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Daily Footfall</label>
-                        <ButtonGrid options={master.footfallRanges} selected={data.dailyFootfall} onSelect={v => update('dailyFootfall', v)} allowOther={true} onAddOther={v => addMaster('footfallRanges', v)} />
-                    </div>
+                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Business Name *</label><input value={data.businessName||''} onChange={e=>update('businessName', e.target.value)} className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} placeholder="Shop Name" /></div>
+                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Type</label><ButtonGrid options={master.businessTypes} selected={data.businessType} onSelect={v=>update('businessType',v)} allowOther={true} onAddOther={v=>addMaster('businessTypes',v)} /></div>
+                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Footfall</label><ButtonGrid options={master.footfallRanges} selected={data.dailyFootfall} onSelect={v=>update('dailyFootfall',v)} allowOther={true} onAddOther={v=>addMaster('footfallRanges',v)} /></div>
                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.bg} space-y-4`}>
-                        <div className="flex justify-between items-center"><label className="text-xs uppercase font-bold opacity-70">Location</label><button onClick={handleGeo} className={`flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full ${currentTheme.accent} ${currentTheme.accentText}`}>{loadingLoc ? 'Locating...' : <><Icons.MapPin /> Detect</>}</button></div>
-                        <input value={data.locationArea || ''} onChange={e => update('locationArea', e.target.value)} className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} placeholder="Area Name" />
+                        <div className="flex justify-between items-center"><label className="text-xs font-bold opacity-70">Location</label><button onClick={handleGeo} className={`flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full ${currentTheme.accent} ${currentTheme.accentText}`}>{loadingLoc?'...':'Detect'}</button></div>
+                        <input value={data.locationArea||''} onChange={e=>update('locationArea',e.target.value)} className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} placeholder="Area Name" />
                     </div>
                 </div>
             );
         };
 
-        // Extracted Slider to prevent re-render focus loss
         const QtySlider = ({ value, onChange, theme }) => (
             <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold">{value} <span className="text-sm opacity-60 font-normal">bottles/mo</span></span>
-                    <input type="number" value={value} onChange={e => onChange(e.target.value === '' ? '' : parseInt(e.target.value))} className={`w-24 p-2 text-center rounded border ${theme.border} ${theme.input}`} />
-                </div>
-                <input type="range" min="0" max="1000" step="5" value={value || 0} onChange={e => onChange(parseInt(e.target.value))} className={`range-slider ${theme.text}`} />
+                <div className="flex justify-between items-center"><span className="text-2xl font-bold">{value} <span className="text-sm opacity-60 font-normal">bottles/mo</span></span><input type="number" value={value||''} onChange={e=>onChange(e.target.value===''?'':parseInt(e.target.value))} className={`w-24 p-2 text-center rounded border ${theme.border} ${theme.input}`} /></div>
+                <input type="range" min="0" max="1000" step="5" value={value||0} onChange={e=>onChange(parseInt(e.target.value))} className={`range-slider ${theme.text}`} />
             </div>
         );
 
-        const StepB_Water = ({ data, update, master, addMaster }) => {
+        const StepB = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
             return (
-                <div className="space-y-8 animate-fade-in pb-24">
+                <div className="space-y-8 pb-24">
                     <h2 className="text-xl font-bold">Water Usage</h2>
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Brands Sold (Multi)</label>
-                        <ButtonGrid options={master.brands} selected={data.brands || []} onSelect={v => update('brands', v)} allowOther={true} onAddOther={v => addMaster('brands', v)} />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Bottle Sizes (Multi)</label>
-                        <ButtonGrid options={master.bottleSizes} selected={data.bottleSizes || []} onSelect={v => update('bottleSizes', v)} allowOther={true} onAddOther={v => addMaster('bottleSizes', v)} />
-                    </div>
-                    <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                         <label className="text-xs uppercase font-bold opacity-70 mb-4 block">Monthly Quantity</label>
-                         <QtySlider value={data.qtyMonthly || 0} onChange={v => update('qtyMonthly', v)} theme={currentTheme} />
-                    </div>
+                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Brands (Multi)</label><ButtonGrid options={master.brands} selected={data.brands||[]} onSelect={v=>update('brands',v)} allowOther={true} onAddOther={v=>addMaster('brands',v)} /></div>
+                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Sizes (Multi)</label><ButtonGrid options={master.bottleSizes} selected={data.bottleSizes||[]} onSelect={v=>update('bottleSizes',v)} allowOther={true} onAddOther={v=>addMaster('bottleSizes',v)} /></div>
+                    <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><label className="text-xs font-bold opacity-70 mb-4 block">Monthly Quantity</label><QtySlider value={data.qtyMonthly} onChange={v=>update('qtyMonthly',v)} theme={currentTheme} /></div>
                 </div>
             );
         };
 
-        const StepC_Pricing = ({ data, update }) => {
+        const StepC = ({ data, update }) => {
             const { currentTheme } = React.useContext(ThemeContext);
-            if(!data.brands?.length || !data.bottleSizes?.length) return <div className="p-8 text-center opacity-70">Please select Brands and Sizes first.</div>;
-            
-            const handlePriceChange = (type, key, val) => {
+            if(!data.brands?.length || !data.bottleSizes?.length) return <div className="p-8 text-center opacity-70">Select Brands/Sizes first.</div>;
+            const handlePrice = (type, key, val) => {
                 update(type, { ...data[type], [key]: val });
-                // Auto calc profit
                 if(type === 'buyingPrice' || type === 'sellingPrice') {
                     const buy = type === 'buyingPrice' ? val : (data.buyingPrice?.[key] || 0);
                     const sell = type === 'sellingPrice' ? val : (data.sellingPrice?.[key] || 0);
-                    update('profitPerBottle', { ...data.profitPerBottle, [key]: (parseFloat(sell)||0) - (parseFloat(buy)||0) });
+                    update('profitPerBottle', { ...data.profitPerBottle, [key]: (parseFloat(sell)||0)-(parseFloat(buy)||0) });
                 }
             };
-
             return (
-                <div className="space-y-6 animate-fade-in pb-24">
-                    <h2 className="text-xl font-bold">Smart Pricing Matrix</h2>
-                    <div className="overflow-x-auto no-scrollbar pb-4 flex flex-col gap-6">
-                        {data.brands.map(brand => (
-                            <div key={brand} className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                                <h3 className={`font-bold text-lg mb-3 ${currentTheme.accentText === 'text-white' ? 'text-current' : 'text-blue-600'}`}>{brand}</h3>
-                                <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-end mb-2 text-xs font-bold opacity-60"><span>Size</span><span>Buy (₹)</span><span>Sell (₹)</span><span>Profit</span></div>
+                <div className="space-y-6 pb-24">
+                    <h2 className="text-xl font-bold">Pricing Matrix</h2>
+                    <div className="flex flex-col gap-6">
+                        {data.brands.map(b => (
+                            <div key={b} className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
+                                <h3 className={`font-bold text-lg mb-3 ${currentTheme.accentText === 'text-white'?'text-current':'text-blue-600'}`}>{b}</h3>
+                                <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-end mb-2 text-xs font-bold opacity-60"><span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span></div>
                                 <div className="space-y-3">
-                                    {data.bottleSizes.map(size => {
-                                        const key = `${brand}|${size}`;
+                                    {data.bottleSizes.map(s => {
+                                        const k = `${b}|${s}`;
                                         return (
-                                            <div key={key} className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
-                                                <span className="text-sm font-medium truncate">{size}</span>
-                                                <input type="number" placeholder="0" value={data.buyingPrice?.[key] || ''} onChange={e => handlePriceChange('buyingPrice', key, e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
-                                                <input type="number" placeholder="0" value={data.sellingPrice?.[key] || ''} onChange={e => handlePriceChange('sellingPrice', key, e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
-                                                <div className={`text-center font-bold text-sm py-2 rounded ${data.profitPerBottle?.[key] > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>{data.profitPerBottle?.[key] || 0}</div>
+                                            <div key={k} className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
+                                                <span className="text-sm font-medium truncate">{s}</span>
+                                                <input type="number" placeholder="0" value={data.buyingPrice?.[k]||''} onChange={e=>handlePrice('buyingPrice',k,e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
+                                                <input type="number" placeholder="0" value={data.sellingPrice?.[k]||''} onChange={e=>handlePrice('sellingPrice',k,e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
+                                                <div className={`text-center font-bold text-sm py-2 rounded ${data.profitPerBottle?.[k]>0?'bg-green-100 text-green-800':'bg-gray-100 text-gray-500'}`}>{data.profitPerBottle?.[k]||0}</div>
                                             </div>
                                         );
                                     })}
@@ -570,84 +626,48 @@
             );
         };
 
-        const StepE_Distributor = ({ data, update, master, addMaster }) => {
+        const StepE = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
             return (
-                <div className="space-y-6 animate-fade-in pb-24">
-                     <h2 className="text-xl font-bold">Distributor & Service</h2>
-                     <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Distributors (Multi)</label>
-                        <ButtonGrid options={master.distributors} selected={data.distributorName || []} onSelect={v => update('distributorName', v)} allowOther={true} onAddOther={v => addMaster('distributors', v)} />
-                    </div>
-                    {data.distributorName?.includes('Direct Company') && (
-                        <div className="space-y-2 animate-fade-in">
-                            <label className="text-xs uppercase font-bold opacity-70">Company Details</label>
-                            <input placeholder="Name / Reg No" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.companyDetails || ''} onChange={e => update('companyDetails', e.target.value)} />
-                        </div>
-                    )}
-                    {data.distributorName?.includes('Local Vendor') && (
-                        <div className="space-y-2 animate-fade-in">
-                            <label className="text-xs uppercase font-bold opacity-70">Vendor Details</label>
-                             <input placeholder="Name" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input} mb-2`} value={data.localVendorName || ''} onChange={e => update('localVendorName', e.target.value)} />
-                             <input placeholder="Mobile" type="tel" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.localVendorMobile || ''} onChange={e => update('localVendorMobile', e.target.value)} />
-                        </div>
-                    )}
-                    <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Happy with Service?</label>
-                        <div className="flex gap-2">
-                            {['Yes', 'No'].map(opt => <button key={opt} onClick={() => update('happyWithService', opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.happyWithService === opt ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}
-                        </div>
-                    </div>
-                    {data.happyWithService === 'No' && (
-                        <div className="space-y-2 animate-fade-in">
-                             <label className="text-xs uppercase font-bold opacity-70 text-red-500">Main Problems (Multi)</label>
-                             <ButtonGrid options={master.problems} selected={data.mainProblems || []} onSelect={v => update('mainProblems', v)} allowOther={true} onAddOther={v => addMaster('problems', v)} />
-                        </div>
-                    )}
+                <div className="space-y-6 pb-24">
+                     <h2 className="text-xl font-bold">Distributor</h2>
+                     <div className="space-y-2"><label className="text-xs font-bold opacity-70">Source (Multi)</label><ButtonGrid options={master.distributors} selected={data.distributorName||[]} onSelect={v=>update('distributorName',v)} allowOther={true} onAddOther={v=>addMaster('distributors',v)} /></div>
+                     {data.distributorName?.includes('Direct Company') && <div className="space-y-2 animate-fade-in"><label className="text-xs font-bold opacity-70">Details</label><input placeholder="Company Info" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.companyDetails||''} onChange={e=>update('companyDetails',e.target.value)} /></div>}
+                     {data.distributorName?.includes('Local Vendor') && <div className="space-y-2 animate-fade-in"><label className="text-xs font-bold opacity-70">Vendor Info</label><input placeholder="Name" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input} mb-2`} value={data.localVendorName||''} onChange={e=>update('localVendorName',e.target.value)} /><input placeholder="Mobile" type="tel" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.localVendorMobile||''} onChange={e=>update('localVendorMobile',e.target.value)} /></div>}
+                     <div className="space-y-2"><label className="text-xs font-bold opacity-70">Happy?</label><div className="flex gap-2">{['Yes', 'No'].map(opt=><button key={opt} onClick={()=>update('happyWithService',opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.happyWithService===opt?`${currentTheme.accent} ${currentTheme.accentText}`:`${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}</div></div>
+                     {data.happyWithService === 'No' && <div className="space-y-2 animate-fade-in"><label className="text-xs font-bold opacity-70 text-red-500">Problems (Multi)</label><ButtonGrid options={master.problems} selected={data.mainProblems||[]} onSelect={v=>update('mainProblems',v)} allowOther={true} onAddOther={v=>addMaster('problems',v)} /></div>}
                 </div>
             );
         };
 
-        const StepG_WhiteLabel = ({ data, update, master, addMaster }) => {
+        const StepG = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
             return (
-                 <div className="space-y-6 animate-fade-in pb-24">
+                 <div className="space-y-6 pb-24">
                      <h2 className="text-xl font-bold">White Label</h2>
-                     <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Interested in Custom Logo?</label>
-                        <div className="flex gap-2">
-                            {['Yes', 'No'].map(opt => <button key={opt} onClick={() => update('interestedInCustomLogo', opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.interestedInCustomLogo === opt ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}
-                        </div>
-                    </div>
-                    {data.interestedInCustomLogo === 'Yes' && (
+                     <div className="space-y-2"><label className="text-xs font-bold opacity-70">Interested?</label><div className="flex gap-2">{['Yes', 'No'].map(opt=><button key={opt} onClick={()=>update('interestedInCustomLogo',opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.interestedInCustomLogo===opt?`${currentTheme.accent} ${currentTheme.accentText}`:`${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}</div></div>
+                     {data.interestedInCustomLogo === 'Yes' && (
                         <div className="space-y-6 animate-fade-in">
-                            <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold opacity-70">Purpose (Multi)</label>
-                                <ButtonGrid options={master.whiteLabelPurposes} selected={data.customPurpose || []} onSelect={v => update('customPurpose', v)} allowOther={true} onAddOther={v => addMaster('whiteLabelPurposes', v)} />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold opacity-70">Extra Willing To Pay (₹)</label>
-                                 <ButtonGrid options={master.willingToPayAmounts} selected={data.extraWillingToPay} onSelect={v => update('extraWillingToPay', v)} allowOther={true} onAddOther={v => addMaster('willingToPayAmounts', v)} />
-                            </div>
+                            <div className="space-y-2"><label className="text-xs font-bold opacity-70">Purpose (Multi)</label><ButtonGrid options={master.whiteLabelPurposes} selected={data.customPurpose||[]} onSelect={v=>update('customPurpose',v)} allowOther={true} onAddOther={v=>addMaster('whiteLabelPurposes',v)} /></div>
+                            <div className="space-y-2"><label className="text-xs font-bold opacity-70">Extra Pay (₹)</label><ButtonGrid options={master.willingToPayAmounts} selected={data.extraWillingToPay} onSelect={v=>update('extraWillingToPay',v)} allowOther={true} onAddOther={v=>addMaster('willingToPayAmounts',v)} /></div>
                         </div>
-                    )}
+                     )}
                  </div>
             );
         };
 
-        const StepI_Closing = ({ data, update, onSubmit }) => {
+        const StepI = ({ data, update, onSubmit }) => {
              const { currentTheme } = React.useContext(ThemeContext);
              return (
-                <div className="space-y-6 animate-fade-in pb-24">
-                    <h2 className="text-xl font-bold">Final Contact Details</h2>
-                    <input placeholder="Contact Name" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactName || ''} onChange={e => update('contactName', e.target.value)} />
-                     <input placeholder="Mobile Number *" type="tel" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactMobile || ''} onChange={e => update('contactMobile', e.target.value)} />
+                <div className="space-y-6 pb-24">
+                    <h2 className="text-xl font-bold">Final Contact</h2>
+                    <input placeholder="Name" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactName||''} onChange={e=>update('contactName',e.target.value)} />
+                     <input placeholder="Mobile Number *" type="tel" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactMobile||''} onChange={e=>update('contactMobile',e.target.value)} />
                     <div className={`p-4 rounded-xl ${currentTheme.bg} border ${currentTheme.border} text-sm opacity-80`}>
                         <p><strong>Business:</strong> {data.businessName}</p>
                         <p><strong>Area:</strong> {data.locationArea}</p>
-                        <p><strong>Brands:</strong> {data.brands?.join(', ')}</p>
                     </div>
-                    <button onClick={onSubmit} className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>COMPLETE & SAVE SURVEY</button>
+                    <button onClick={onSubmit} className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>SAVE SURVEY</button>
                 </div>
              );
         };
@@ -659,59 +679,42 @@
             const [data, setData] = React.useState({ id: generateUUID(), timestamp: new Date().toISOString(), syncCode: 'MAIN' });
 
             const update = (field, val) => setData(prev => ({ ...prev, [field]: val }));
-            const steps = [StepA_Business, StepB_Water, StepC_Pricing, StepE_Distributor, StepG_WhiteLabel, StepI_Closing];
-            const handleNext = () => {
-                if(step === 0 && !data.businessName) { alert("Business Name Required"); return; }
-                if(step < steps.length - 1) setStep(step + 1);
-            };
-            const handleSubmit = () => {
-                if(!data.contactMobile) { alert("Mobile Number Required"); return; }
-                addToOutbox('ADD_SURVEY', data);
-                onClose();
-            };
+            const steps = [StepA, StepB, StepC, StepE, StepG, StepI];
+            const handleNext = () => { if(step===0&&!data.businessName){alert("Name Required");return;} if(step<steps.length-1)setStep(step+1); };
+            const handleSubmit = () => { if(!data.contactMobile){alert("Mobile Required");return;} addToOutbox('ADD_SURVEY', data); onClose(); };
             const CurrentComp = steps[step];
 
             return (
-                <div className={`fixed inset-0 z-50 ${currentTheme.bg} ${currentTheme.text} flex flex-col h-full`}>
+                <div className={`fixed inset-0 z-50 ${currentTheme.bg} ${currentTheme.text} flex flex-col h-full animate-fade-in`}>
                     <div className={`p-4 flex items-center justify-between border-b ${currentTheme.border}`}>
                          <button onClick={onClose} className="p-2 opacity-60">Cancel</button>
                          <span className="font-bold">Step {step + 1}/{steps.length}</span>
                          <div className="w-10"></div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4"><CurrentComp data={data} update={update} master={masterData} addMaster={updateMasterData} onSubmit={handleSubmit} /></div>
-                    
-                    {/* CUSTOM NAVIGATION FOOTER */}
+                    {/* CUSTOM NAV BAR FOR WIZARD */}
                     <div className={`p-4 border-t ${currentTheme.border} ${currentTheme.card} flex items-center gap-4`}>
-                        {step > 0 ? (
-                            <button onClick={() => setStep(step-1)} className={`p-4 rounded-xl border ${currentTheme.border} font-bold`}><Icons.ChevronLeft /></button>
-                        ) : ( <div className="w-14"></div> )}
-                        
-                        {step < steps.length - 1 ? (
-                            <button onClick={handleNext} className={`flex-1 py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>NEXT</button>
-                        ) : (
-                            <div className="flex-1"></div> // Submit button is in component
-                        )}
+                        {step > 0 ? <button onClick={()=>setStep(step-1)} className={`p-4 rounded-xl border ${currentTheme.border} font-bold`}><Icons.ChevronLeft /></button> : <div className="w-14"></div>}
+                        {step < steps.length - 1 ? <button onClick={handleNext} className={`flex-1 py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>NEXT</button> : <div className="flex-1"></div>}
                     </div>
                 </div>
             );
         };
 
         const SurveyList = ({ onOpenDetail }) => {
-            const { surveys = [], currentTheme, outbox = [], isOnline } = React.useContext(AppContext);
+            const { surveys = [], currentTheme, outbox = [], isOnline, flushOutbox, isSyncing } = React.useContext(AppContext);
             const { currentTheme: theme } = React.useContext(ThemeContext);
             const [filter, setFilter] = React.useState('');
             const filtered = surveys.filter(s => (s.businessName?.toLowerCase().includes(filter.toLowerCase()) || s.locationArea?.toLowerCase().includes(filter.toLowerCase()))).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             return (
                 <div className="pb-24 pt-4 px-4 space-y-4">
-                    <div className="flex justify-between items-center text-xs font-bold opacity-60"><span className={isOnline ? 'text-green-600' : 'text-red-500'}>{isOnline ? '● ONLINE' : '● OFFLINE'}</span><span>{surveys.length} Surveys</span></div>
-                    <div className="flex gap-2">
-                        <div className={`flex-1 flex items-center px-3 rounded-lg border ${theme.border} ${theme.card}`}><Icons.Search /><input className={`w-full p-3 bg-transparent outline-none ${theme.input}`} placeholder="Search..." value={filter} onChange={e => setFilter(e.target.value)} /></div>
-                    </div>
+                    <div className="flex justify-between items-center text-xs font-bold opacity-60"><span className={isOnline?'text-green-600':'text-red-500'}>{isOnline?'● ONLINE':'● OFFLINE'}</span><span>{surveys.length} Surveys</span></div>
+                    <div className={`flex items-center px-3 rounded-lg border ${theme.border} ${theme.card}`}><Icons.Search /><input className={`w-full p-3 bg-transparent outline-none ${theme.input} border-none`} placeholder="Search..." value={filter} onChange={e=>setFilter(e.target.value)} /></div>
                     <div className="space-y-3">
-                        {outbox.length > 0 && <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-sm font-bold flex justify-between"><span>{outbox.length} unsynced items</span><Icons.WifiOff /></div>}
+                        {outbox.length > 0 && <div onClick={()=>flushOutbox()} className="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-sm font-bold flex justify-between cursor-pointer active:opacity-70 transition-opacity shadow-sm"><div className="flex items-center gap-2">{isSyncing?<div className="spinner border-yellow-600 border-t-transparent"></div>:<Icons.WifiOff />}<span>{outbox.length} unsynced. Tap to Sync.</span></div><Icons.Refresh /></div>}
                         {filtered.map(s => (
-                            <div key={s.id} onClick={() => onOpenDetail(s)} className={`p-4 rounded-xl border ${theme.border} ${theme.card} active:scale-[0.98] transition-transform`}>
+                            <div key={s.id} onClick={()=>onOpenDetail(s)} className={`p-4 rounded-xl border ${theme.border} ${theme.card} active:scale-[0.98] transition-transform`}>
                                 <div className="flex justify-between items-start mb-2"><h3 className="font-bold text-lg">{s.businessName}</h3><span className="text-xs opacity-50">{new Date(s.timestamp).toLocaleDateString()}</span></div>
                                 <div className="flex flex-wrap gap-2 text-xs font-medium opacity-70 mb-2"><span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.businessType}</span><span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.locationArea}</span></div>
                                 {s.interestedInCustomLogo === 'Yes' && <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">WHITE LABEL LEAD</div>}
@@ -725,64 +728,67 @@
         const DetailModal = ({ survey, onClose }) => {
             const { currentTheme: theme } = React.useContext(ThemeContext);
             const { addToOutbox } = React.useContext(AppContext);
+            const [showConfirm, setShowConfirm] = React.useState(false);
             
-            const handleDelete = () => { if(confirm('Delete?')) { addToOutbox('DELETE_SURVEY', survey); onClose(); } };
             const handleExport = () => generatePDF(survey);
-
             if(!survey) return null;
+
             return (
-                <Modal isOpen={!!survey} onClose={onClose} title={survey.businessName}>
-                    <div className="space-y-6">
-                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
-                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Business Profile</h4>
-                            <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                <div><span className="opacity-60 block text-xs">Type</span><span className="font-medium">{survey.businessType}</span></div>
-                                <div><span className="opacity-60 block text-xs">Footfall</span><span className="font-medium">{survey.dailyFootfall || 'N/A'}</span></div>
-                                <div><span className="opacity-60 block text-xs">Area</span><span className="font-medium">{survey.locationArea}</span></div>
-                                <div><span className="opacity-60 block text-xs">Date</span><span className="font-medium">{new Date(survey.timestamp).toLocaleDateString()}</span></div>
-                                {survey.gps && <div className="col-span-2 mt-1"><span className="opacity-60 block text-xs">GPS</span><span className="font-mono text-xs opacity-80">{survey.gps.lat.toFixed(5)}, {survey.gps.lng.toFixed(5)}</span></div>}
-                            </div>
-                        </div>
-                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
-                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Contact</h4>
-                            <div className="text-sm"><div className="font-bold text-lg">{survey.contactName}</div><div className="font-mono opacity-80">{survey.contactMobile}</div></div>
-                        </div>
-                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
-                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Supply Chain</h4>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between items-center"><span className="opacity-70">Volume</span><span className="font-bold text-lg">{survey.qtyMonthly} <span className="text-xs font-normal opacity-60">bottles</span></span></div>
-                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-2 border-t border-dashed border-gray-200">
-                                    <div><span className="opacity-60 block text-xs">Distributors</span><span className="font-medium">{Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName}</span></div>
-                                    <div><span className="opacity-60 block text-xs">Satisfaction</span><span className={`font-bold ${survey.happyWithService === 'No' ? 'text-red-500' : 'text-green-600'}`}>{survey.happyWithService}</span></div>
-                                    {survey.companyDetails && <div className="col-span-2"><span className="opacity-60 block text-xs">Company Details</span><span className="font-medium">{survey.companyDetails}</span></div>}
-                                    {(survey.localVendorName || survey.localVendorMobile) && <div className="col-span-2"><span className="opacity-60 block text-xs">Local Vendor</span><span className="font-medium">{survey.localVendorName} ({survey.localVendorMobile})</span></div>}
-                                </div>
-                                {survey.mainProblems && survey.mainProblems.length > 0 && <div className="pt-2"><span className="opacity-60 block text-xs mb-1">Issues</span><div className="flex flex-wrap gap-2">{survey.mainProblems.map(p => <span key={p} className="px-2 py-1 bg-red-50 text-red-700 border border-red-100 text-[10px] rounded-md font-bold">{p}</span>)}</div></div>}
-                            </div>
-                        </div>
-                        {survey.interestedInCustomLogo === 'Yes' && (
-                            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900">
-                                <h4 className="font-bold text-xs uppercase opacity-60 mb-3 border-b border-amber-200 pb-1">White Label</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><span className="opacity-60 block text-xs">Purpose</span><span className="font-bold">{Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose}</span></div>
-                                    <div><span className="opacity-60 block text-xs">Extra Willingness</span><span className="font-bold">₹{survey.extraWillingToPay}</span></div>
+                <>
+                    <Modal isOpen={!!survey} onClose={onClose} title={survey.businessName}>
+                        <div className="space-y-6">
+                            <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
+                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Business Profile</h4>
+                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                                    <div><span className="opacity-60 block text-xs">Type</span><span className="font-medium">{survey.businessType}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Footfall</span><span className="font-medium">{survey.dailyFootfall || 'N/A'}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Area</span><span className="font-medium">{survey.locationArea}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Date</span><span className="font-medium">{new Date(survey.timestamp).toLocaleDateString()}</span></div>
+                                    {survey.gps && <div className="col-span-2 mt-1"><span className="opacity-60 block text-xs">GPS</span><span className="font-mono text-xs opacity-80">{survey.gps.lat.toFixed(5)}, {survey.gps.lng.toFixed(5)}</span></div>}
                                 </div>
                             </div>
-                        )}
-                        <div className={`p-4 rounded-xl border ${theme.border} bg-opacity-50`}>
-                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Pricing</h4>
-                            {survey.brands?.map(b => (
-                                <div key={b} className="mb-3 last:mb-0"><div className="font-bold text-sm mb-1">{b}</div><div className="grid grid-cols-4 gap-1 text-[10px] opacity-60 uppercase font-bold mb-1"><span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span></div>{survey.bottleSizes?.map(s => { const k = `${b}|${s}`; if(!survey.buyingPrice?.[k]) return null; return <div key={k} className="grid grid-cols-4 gap-1 text-xs border-b border-dashed border-gray-300 py-1"><span>{s}</span><span>{survey.buyingPrice[k]}</span><span>{survey.sellingPrice[k]}</span><span className="font-bold text-green-600">{survey.profitPerBottle?.[k]}</span></div>; })}</div>
-                            ))}
+                            <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
+                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Contact</h4>
+                                <div className="text-sm"><div className="font-bold text-lg">{survey.contactName}</div><div className="font-mono opacity-80">{survey.contactMobile}</div></div>
+                            </div>
+                            <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
+                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Supply Chain</h4>
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex justify-between items-center"><span className="opacity-70">Volume</span><span className="font-bold text-lg">{survey.qtyMonthly} <span className="text-xs font-normal opacity-60">bottles</span></span></div>
+                                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-2 border-t border-dashed border-gray-200">
+                                        <div><span className="opacity-60 block text-xs">Distributors</span><span className="font-medium">{Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName}</span></div>
+                                        <div><span className="opacity-60 block text-xs">Satisfaction</span><span className={`font-bold ${survey.happyWithService === 'No' ? 'text-red-500' : 'text-green-600'}`}>{survey.happyWithService}</span></div>
+                                        {survey.companyDetails && <div className="col-span-2"><span className="opacity-60 block text-xs">Company Details</span><span className="font-medium">{survey.companyDetails}</span></div>}
+                                        {(survey.localVendorName || survey.localVendorMobile) && <div className="col-span-2"><span className="opacity-60 block text-xs">Local Vendor</span><span className="font-medium">{survey.localVendorName} ({survey.localVendorMobile})</span></div>}
+                                    </div>
+                                    {survey.mainProblems && survey.mainProblems.length > 0 && <div className="pt-2"><span className="opacity-60 block text-xs mb-1">Issues</span><div className="flex flex-wrap gap-2">{survey.mainProblems.map(p => <span key={p} className="px-2 py-1 bg-red-50 text-red-700 border border-red-100 text-[10px] rounded-md font-bold">{p}</span>)}</div></div>}
+                                </div>
+                            </div>
+                            {survey.interestedInCustomLogo === 'Yes' && (
+                                <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900">
+                                    <h4 className="font-bold text-xs uppercase opacity-60 mb-3 border-b border-amber-200 pb-1">White Label</h4>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div><span className="opacity-60 block text-xs">Purpose</span><span className="font-bold">{Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose}</span></div>
+                                        <div><span className="opacity-60 block text-xs">Extra Willingness</span><span className="font-bold">₹{survey.extraWillingToPay}</span></div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className={`p-4 rounded-xl border ${theme.border} bg-opacity-50`}>
+                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Pricing</h4>
+                                {survey.brands?.map(b => (
+                                    <div key={b} className="mb-3 last:mb-0"><div className="font-bold text-sm mb-1">{b}</div><div className="grid grid-cols-4 gap-1 text-[10px] opacity-60 uppercase font-bold mb-1"><span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span></div>{survey.bottleSizes?.map(s => { const k = `${b}|${s}`; if(!survey.buyingPrice?.[k]) return null; return <div key={k} className="grid grid-cols-4 gap-1 text-xs border-b border-dashed border-gray-300 py-1"><span>{s}</span><span>{survey.buyingPrice[k]}</span><span>{survey.sellingPrice[k]}</span><span className="font-bold text-green-600">{survey.profitPerBottle?.[k]}</span></div>; })}</div>
+                                ))}
+                            </div>
+                            <div className="flex flex-wrap gap-2 pt-2 sticky bottom-0 bg-white/80 backdrop-blur-sm pb-2 border-t mt-4">
+                                <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2 shadow-sm`}>Call</a>
+                                {survey.gps && <a href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2 shadow-sm`}><Icons.Map /> Map</a>}
+                                <button onClick={handleExport} className={`px-4 py-3 rounded-lg font-bold ${theme.bg} border ${theme.border} text-blue-600 flex items-center justify-center shadow-sm`}><Icons.Download /></button>
+                                <button onClick={()=>setShowConfirm(true)} className="px-4 py-3 rounded-lg font-bold bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shadow-sm"><Icons.Trash /></button>
+                            </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 pt-2 sticky bottom-0 bg-white/80 backdrop-blur-sm pb-2 border-t mt-4">
-                            <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2 shadow-sm`}>Call</a>
-                            {survey.gps && <a href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2 shadow-sm`}><Icons.Map /> Map</a>}
-                            <button onClick={handleExport} className={`px-4 py-3 rounded-lg font-bold ${theme.bg} border ${theme.border} text-blue-600 flex items-center justify-center shadow-sm`}><Icons.Download /></button>
-                            <button onClick={handleDelete} className="px-4 py-3 rounded-lg font-bold bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shadow-sm"><Icons.Trash /></button>
-                        </div>
-                    </div>
-                </Modal>
+                    </Modal>
+                    <ConfirmationModal isOpen={showConfirm} message="This will permanently delete this survey." onConfirm={()=>{ addToOutbox('DELETE_SURVEY', survey); setShowConfirm(false); onClose(); }} onCancel={()=>setShowConfirm(false)} />
+                </>
             );
         };
 
@@ -791,31 +797,17 @@
              const { currentTheme } = React.useContext(ThemeContext);
              const total = surveys.length;
              const today = surveys.filter(s => new Date(s.timestamp).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)).length;
-             const wlLeads = surveys.filter(s => s.interestedInCustomLogo === 'Yes').length;
-             let totalProfit = 0, count = 0;
-             surveys.forEach(s => { if(s.profitPerBottle) Object.values(s.profitPerBottle).forEach(v => { totalProfit += (parseFloat(v)||0); count++; }); });
-             const avgMargin = count ? (totalProfit / count).toFixed(1) : 0;
-             
-             const getCounts = (field) => {
-                 const counts = {};
-                 surveys.forEach(s => { const val = s[field]; if(Array.isArray(val)) val.forEach(v => counts[v]=(counts[v]||0)+1); else if(val) counts[val]=(counts[val]||0)+1; });
-                 return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-             };
-             const typeData = getCounts('businessType');
-             const brandData = getCounts('brands');
+             let totalProfit = 0, count = 0; surveys.forEach(s => { if(s.profitPerBottle) Object.values(s.profitPerBottle).forEach(v => { totalProfit += (parseFloat(v)||0); count++; }); });
+             const brandData = Object.entries(surveys.flatMap(s=>s.brands||[]).reduce((a,c)=>{a[c]=(a[c]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
              return (
                  <div className="pb-24 pt-4 px-4 space-y-4 animate-fade-in">
                      <div className="grid grid-cols-2 gap-3">
                          <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold">{total}</div><div className="text-xs opacity-60">Total</div></div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold text-green-500">₹{avgMargin}</div><div className="text-xs opacity-60">Avg Margin</div></div>
+                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold text-green-500">₹{count?(totalProfit/count).toFixed(1):0}</div><div className="text-xs opacity-60">Avg Margin</div></div>
                          <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold">{today}</div><div className="text-xs opacity-60">Today</div></div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold text-orange-500">{wlLeads}</div><div className="text-xs opacity-60">WL Leads</div></div>
                      </div>
-                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                         <h3 className="font-bold mb-4">Top Brands</h3>
-                         <div className="space-y-2">{brandData.map(([label, val]) => <div key={label}><div className="flex justify-between text-xs mb-1"><span>{label}</span><span>{val}</span></div><div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full ${currentTheme.accent}`} style={{width: `${(val/total)*100}%`}}></div></div></div>)}</div>
-                     </div>
+                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><h3 className="font-bold mb-4">Top Brands</h3><div className="space-y-2">{brandData.map(([l,v])=><div key={l}><div className="flex justify-between text-xs mb-1"><span>{l}</span><span>{v}</span></div><div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full ${currentTheme.accent}`} style={{width: `${(v/total)*100}%`}}></div></div></div>)}</div></div>
                  </div>
              );
         };
@@ -823,13 +815,26 @@
         const Settings = () => {
              const { currentTheme, setThemeKey, themeKey } = React.useContext(ThemeContext);
              const { surveys } = React.useContext(AppContext);
-             const handleExportAll = (format) => {
-                 if(format === 'csv') { const url = window.URL.createObjectURL(new Blob([convertToCSV(surveys)], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = `vellora_export.csv`; a.click(); }
+             const [showExport, setShowExport] = React.useState(false);
+
+             const handleExport = (type) => {
+                 if(type === 'csv') {
+                     const url = window.URL.createObjectURL(new Blob([convertToCSV(surveys)], { type: 'text/csv' }));
+                     const a = document.createElement('a'); a.href = url; a.download = `vellora_data.csv`; a.click();
+                 } else if (type === 'json') {
+                     const url = window.URL.createObjectURL(new Blob([JSON.stringify(surveys,null,2)], { type: 'application/json' }));
+                     const a = document.createElement('a'); a.href = url; a.download = `vellora_data.json`; a.click();
+                 } else if (type === 'pdf') {
+                     generatePDF(surveys);
+                 }
+                 setShowExport(false);
              };
+
              return (
                  <div className="pb-24 pt-4 px-4 space-y-6 animate-fade-in">
                      <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Theme</label><div className="grid grid-cols-2 gap-2">{Object.entries(THEMES).map(([key, t]) => <button key={key} onClick={() => setThemeKey(key)} className={`p-3 text-xs font-bold rounded-lg border flex items-center gap-2 ${themeKey === key ? 'ring-2 ring-blue-500' : ''} ${t.bg} ${t.text} ${t.border}`}><div className={`w-4 h-4 rounded-full ${t.accent}`}></div>{t.name}</button>)}</div></div>
-                     <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Data</label><button onClick={() => handleExportAll('csv')} className={`w-full py-3 rounded-lg border ${currentTheme.border} font-bold flex items-center justify-center gap-2 ${currentTheme.card}`}><Icons.Download /> Export All CSV</button></div>
+                     <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Data</label><button onClick={() => setShowExport(true)} className={`w-full py-3 rounded-lg border ${currentTheme.border} font-bold flex items-center justify-center gap-2 ${currentTheme.card}`}><Icons.Download /> Export Data</button></div>
+                     <ExportMenu isOpen={showExport} onClose={()=>setShowExport(false)} onExport={handleExport} />
                  </div>
              );
         };
@@ -850,15 +855,21 @@
                         {view === 'analytics' && <Analytics />}
                         {view === 'settings' && <Settings />}
                     </div>
-                    {/* HIDE NAV IF WIZARD IS OPEN */}
+                    {/* FULL WIDTH START BUTTON */}
+                    {!isWizardOpen && view === 'list' && (
+                        <div className="fixed bottom-[80px] left-4 right-4 z-40 max-w-2xl mx-auto">
+                            <button onClick={() => setWizardOpen(true)} className={`w-full py-4 rounded-xl shadow-xl flex items-center justify-center gap-2 font-bold text-lg ${currentTheme.accent} ${currentTheme.accentText} active:scale-95 transition-transform`}>
+                                <Icons.Plus /> START NEW SURVEY
+                            </button>
+                        </div>
+                    )}
                     {!isWizardOpen && (
-                        <div className={`fixed bottom-0 left-0 right-0 h-16 ${currentTheme.card} border-t ${currentTheme.border} flex justify-around items-center z-40 max-w-2xl mx-auto`}>
+                        <div className={`fixed bottom-0 left-0 right-0 h-16 ${currentTheme.card} border-t ${currentTheme.border} flex justify-around items-center z-50 max-w-2xl mx-auto`}>
                             <NavBtn v="list" icon={Icons.Home} label="Surveys" />
                             <NavBtn v="analytics" icon={Icons.BarChart} label="Analytics" />
                             <NavBtn v="settings" icon={Icons.Settings} label="Settings" />
                         </div>
                     )}
-                    {!isWizardOpen && view === 'list' && <button onClick={() => setWizardOpen(true)} className={`fixed bottom-20 right-6 w-14 h-14 rounded-full shadow-xl flex items-center justify-center ${currentTheme.accent} ${currentTheme.accentText} z-40 transition-transform active:scale-90`}><Icons.Plus /></button>}
                     {isWizardOpen && <SurveyWizard onClose={() => setWizardOpen(false)} />}
                     {selectedSurvey && <DetailModal survey={selectedSurvey} onClose={() => setSelectedSurvey(null)} />}
                 </div>
