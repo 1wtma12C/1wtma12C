@@ -28,53 +28,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- CUSTOM STYLES for Sliders & Scrollbars -->
+    <!-- CUSTOM STYLES -->
     <style>
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        /* Hide scrollbar for IE, Edge and Firefox */
-        .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Custom Slider Styling */
         .range-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            border-radius: 5px;
-            background: rgba(0,0,0,0.1);
-            outline: none;
-            opacity: 0.9;
-            transition: opacity .2s;
+            -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px;
+            background: rgba(0,0,0,0.1); outline: none; opacity: 0.9; transition: opacity .2s;
         }
         .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: currentColor; /* Uses text color of parent */
-            cursor: pointer;
+            -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+            border-radius: 50%; background: currentColor; cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
-        .range-slider::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: currentColor;
-            cursor: pointer;
-        }
-
-        /* Animation Classes */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 select-none">
@@ -119,7 +88,7 @@
         };
 
         /*******************************************************
-         * 1. HELPERS
+         * 1. HELPERS & PDF GENERATOR
          *******************************************************/
         const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
             const r = Math.random() * 16 | 0;
@@ -132,82 +101,105 @@
             return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
         };
 
-        // CSV Export Helper
         const convertToCSV = (data) => {
             if (!data || !data.length) return '';
-            
             const flattenRow = (row) => {
                 const { buyingPrice, sellingPrice, profitPerBottle, gps, ...rest } = row;
                 const flat = { ...rest, lat: gps?.lat || '', lng: gps?.lng || '' };
-                
-                if (buyingPrice) {
-                    Object.keys(buyingPrice).forEach(key => {
-                        flat[`Buying_${key}`] = buyingPrice[key];
-                    });
-                }
-                if (sellingPrice) {
-                    Object.keys(sellingPrice).forEach(key => {
-                        flat[`Selling_${key}`] = sellingPrice[key];
-                    });
-                }
-                 if (profitPerBottle) {
-                    Object.keys(profitPerBottle).forEach(key => {
-                        flat[`Profit_${key}`] = profitPerBottle[key];
-                    });
-                }
+                if (buyingPrice) Object.keys(buyingPrice).forEach(key => flat[`Buying_${key}`] = buyingPrice[key]);
+                if (sellingPrice) Object.keys(sellingPrice).forEach(key => flat[`Selling_${key}`] = sellingPrice[key]);
+                if (profitPerBottle) Object.keys(profitPerBottle).forEach(key => flat[`Profit_${key}`] = profitPerBottle[key]);
                 return flat;
             };
-
             const flatData = data.map(flattenRow);
             const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
-            
-            const csvRows = [
-                headers.join(','), 
-                ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', replacer = null, space = 0)).join(','))
-            ];
+            const csvRows = [headers.join(','), ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', replacer=null, space=0)).join(','))];
             return csvRows.join('\n');
         };
 
-        // PDF Generator Helper
+        // --- ENHANCED PDF GENERATOR (CARD STYLE) ---
         const generatePDF = (survey) => {
-            if (!window.jspdf) {
-                alert("PDF library not loaded. Please try again in a moment.");
-                return;
-            }
+            if (!window.jspdf) { alert("PDF library not loaded."); return; }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
-            // Branding & Header
+            const pageWidth = doc.internal.pageSize.getWidth();
+            let y = 20;
+
+            // Helper for drawing "Cards"
+            const drawCard = (title, contentLines, startY, color = [255, 255, 255]) => {
+                doc.setFillColor(...color);
+                doc.setDrawColor(220, 220, 220);
+                doc.roundedRect(14, startY, pageWidth - 28, (contentLines.length * 7) + 12, 3, 3, 'FD');
+                
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.setFont("helvetica", "bold");
+                doc.text(title.toUpperCase(), 18, startY + 8);
+                
+                doc.setTextColor(0);
+                doc.setFont("helvetica", "normal");
+                contentLines.forEach((line, i) => {
+                    doc.text(line, 18, startY + 16 + (i * 7));
+                });
+                return startY + (contentLines.length * 7) + 20;
+            };
+
+            // Title
             doc.setFontSize(22);
-            doc.setTextColor(41, 128, 185); // Blue
-            doc.text("VELLORA", 14, 20);
+            doc.setTextColor(41, 128, 185);
+            doc.text("VELLORA", 14, y);
+            y += 15;
+
+            // 1. Business Profile Card
+            const bizLines = [
+                `Name: ${survey.businessName}`,
+                `Type: ${survey.businessType}`,
+                `Area: ${survey.locationArea}`,
+                `Footfall: ${survey.dailyFootfall || 'N/A'}`,
+                `GPS: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`
+            ];
+            y = drawCard("Business Profile", bizLines, y);
+
+            // 2. Contact Card
+            const contactLines = [
+                `Name: ${survey.contactName}`,
+                `Mobile: ${survey.contactMobile}`,
+                `Date: ${new Date(survey.timestamp).toLocaleString()}`
+            ];
+            y = drawCard("Contact Details", contactLines, y);
+
+            // 3. Supply Chain Card
+            const distributors = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
+            const problems = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
             
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text("Market Survey Report", 14, 26);
-            
-            // Business Details
-            doc.setFontSize(16);
-            doc.setTextColor(0);
-            doc.text(survey.businessName || "Unnamed Business", 14, 40);
-            
-            doc.setFontSize(11);
-            doc.setTextColor(80);
-            doc.text(`Type: ${survey.businessType || '-'}`, 14, 48);
-            doc.text(`Date: ${new Date(survey.timestamp).toLocaleString()}`, 14, 54);
-            doc.text(`Contact: ${survey.contactName || '-'} (${survey.contactMobile || '-'})`, 14, 60);
-            doc.text(`Location: ${survey.locationArea || '-'}`, 14, 66);
-            
-            if (survey.gps) {
-                 doc.text(`GPS: ${survey.gps.lat}, ${survey.gps.lng}`, 14, 72);
-                 doc.setTextColor(41, 128, 185);
-                 // Changed from "dir" (direction) to "q" (query/pin) to ensure it points to the location
-                 doc.textWithLink("Open in Google Maps", 14, 78, { url: `https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}` });
+            const supplyLines = [
+                `Volume: ${survey.qtyMonthly} bottles/mo`,
+                `Distributors: ${distributors}`,
+                `Satisfaction: ${survey.happyWithService}`,
+                ...(survey.companyDetails ? [`Company Details: ${survey.companyDetails}`] : []),
+                ...(survey.localVendorName ? [`Local Vendor: ${survey.localVendorName} (${survey.localVendorMobile || ''})`] : []),
+                ...(problems ? [`Issues: ${problems}`] : [])
+            ];
+            y = drawCard("Supply Chain", supplyLines, y);
+
+            // 4. White Label Card (If applicable)
+            if (survey.interestedInCustomLogo === 'Yes') {
+                const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
+                const wlLines = [
+                    `Interested: YES`,
+                    `Purpose: ${purposes}`,
+                    `Extra Willing to Pay: INR ${survey.extraWillingToPay}`
+                ];
+                y = drawCard("White Label Intelligence", wlLines, y, [255, 248, 225]); // Light yellow bg
             }
 
-            doc.setTextColor(0);
+            // 5. Pricing Matrix
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.setFont("helvetica", "bold");
+            doc.text("PRICING MATRIX", 14, y);
+            y += 5;
 
-            // Pricing Data Table
             const rows = [];
             if (survey.brands) {
                 survey.brands.forEach(b => {
@@ -215,13 +207,7 @@
                         survey.bottleSizes.forEach(s => {
                             const k = `${b}|${s}`;
                             if (survey.buyingPrice && survey.buyingPrice[k]) {
-                                rows.push([
-                                    b,
-                                    s,
-                                    survey.buyingPrice[k] || '-',
-                                    survey.sellingPrice?.[k] || '-',
-                                    survey.profitPerBottle?.[k] || '-'
-                                ]);
+                                rows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
                             }
                         });
                     }
@@ -230,31 +216,20 @@
 
             if (rows.length > 0) {
                 doc.autoTable({
-                    startY: 85,
-                    head: [['Brand', 'Size', 'Buy (INR)', 'Sell (INR)', 'Profit']],
+                    startY: y,
+                    head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']],
                     body: rows,
-                    theme: 'striped',
+                    theme: 'grid',
                     headStyles: { fillColor: [41, 128, 185] },
-                    styles: { fontSize: 10 }
+                    styles: { fontSize: 10, cellPadding: 3 }
                 });
-            } else {
-                 doc.text("No pricing data recorded.", 14, 90);
-            }
-            
-            // Footer
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text('Generated by Vellora Enterprise App', 14, doc.internal.pageSize.height - 10);
             }
 
-            doc.save(`Survey_${survey.businessName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+            doc.save(`Survey_${survey.businessName}.pdf`);
         };
 
         /*******************************************************
-         * 2. ICONS (Lucide Style SVGs)
+         * 2. ICONS
          *******************************************************/
         const Icons = {
             Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
@@ -274,157 +249,81 @@
         };
 
         /*******************************************************
-         * 3. DATA LAYER (CONTEXT & FIREBASE)
+         * 3. DATA LAYER
          *******************************************************/
-        
-        // Theme Context
         const ThemeContext = React.createContext();
-
-        // Main App Context
         const AppContext = React.createContext();
 
-        // Error Boundary
         class ErrorBoundary extends React.Component {
-            constructor(props) {
-                super(props);
-                this.state = { hasError: false, error: null };
-            }
-            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            constructor(props) { super(props); this.state = { hasError: false }; }
+            static getDerivedStateFromError(error) { return { hasError: true }; }
             componentDidCatch(error, errorInfo) { console.error("Uncaught error:", error, errorInfo); }
             render() {
-                if (this.state.hasError) {
-                    return (
-                        <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-red-50 text-red-900">
-                            <h2 className="text-2xl font-bold mb-4">Something went wrong.</h2>
-                            <p className="mb-4 text-sm">{this.state.error && this.state.error.toString()}</p>
-                            <button onClick={() => window.location.reload()} className="px-6 py-3 bg-red-600 text-white rounded-lg shadow">Reload App</button>
-                        </div>
-                    );
-                }
+                if (this.state.hasError) return <div className="p-6"><h2>Something went wrong.</h2><button onClick={() => window.location.reload()} className="mt-4 p-2 bg-red-500 text-white rounded">Reload</button></div>;
                 return this.props.children;
             }
         }
 
         const AppProvider = ({ children }) => {
             const [user, setUser] = React.useState(null);
-            const [syncCode, setSyncCode] = React.useState(localStorage.getItem('vellora_syncCode') || 'MAIN');
+            const [syncCode] = React.useState('MAIN'); // Fixed to MAIN as requested
             const [surveys, setSurveys] = React.useState([]);
             const [masterData, setMasterData] = React.useState(INITIAL_MASTER_DATA);
             const [outbox, setOutbox] = React.useState([]);
             const [isOnline, setIsOnline] = React.useState(navigator.onLine);
             const [themeKey, setThemeKey] = React.useState(localStorage.getItem('vellora_theme') || 'corporate');
-            const [hideSyncBox, setHideSyncBox] = React.useState(localStorage.getItem('vellora_hideSyncBox') === 'true');
 
-            // --- Theme Effect ---
-            React.useEffect(() => {
-                localStorage.setItem('vellora_theme', themeKey);
-            }, [themeKey]);
-
+            React.useEffect(() => { localStorage.setItem('vellora_theme', themeKey); }, [themeKey]);
             const currentTheme = THEMES[themeKey] || THEMES.corporate;
 
-            // --- Init Firebase ---
             React.useEffect(() => {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(FIREBASE_CONFIG);
-                }
-                
-                // Auth
-                firebase.auth().onAuthStateChanged(u => {
-                    if (u) setUser(u);
-                    else firebase.auth().signInAnonymously();
-                });
-
-                // Online/Offline Listeners
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                firebase.auth().onAuthStateChanged(u => u ? setUser(u) : firebase.auth().signInAnonymously());
                 const handleOnline = () => { setIsOnline(true); flushOutbox(); };
                 const handleOffline = () => setIsOnline(false);
                 window.addEventListener('online', handleOnline);
                 window.addEventListener('offline', handleOffline);
-
-                // Load Local Data
                 loadLocalData();
-
-                return () => {
-                    window.removeEventListener('online', handleOnline);
-                    window.removeEventListener('offline', handleOffline);
-                };
+                return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
             }, []);
 
-            // --- Data Sync Logic ---
             React.useEffect(() => {
-                localStorage.setItem('vellora_syncCode', syncCode);
-                localStorage.setItem('vellora_hideSyncBox', hideSyncBox);
-                
                 if (!user) return;
-                
-                // Firestore Listeners
                 const db = firebase.firestore();
                 
-                // 1. Master Data Listener
+                // Master Data Listener
                 const unsubscribeMaster = db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData')
                     .onSnapshot(doc => {
                         if (doc.exists) {
-                            const remoteData = doc.data();
+                            const remote = doc.data();
                             setMasterData(prev => {
-                                const newData = { ...prev, ...remoteData };
-                                localStorage.setItem(`vellora_${syncCode}_master`, JSON.stringify(newData));
-                                return newData;
+                                // Merge remote arrays with local to ensure nothing lost
+                                const merged = { ...prev, ...remote };
+                                localStorage.setItem(`vellora_${syncCode}_master`, JSON.stringify(merged));
+                                return merged;
                             });
-                        } else {
-                            // Init master data if missing
-                            doc.ref.set(INITIAL_MASTER_DATA);
-                        }
+                        } else doc.ref.set(INITIAL_MASTER_DATA);
                     });
 
-                // 2. Surveys Listener
+                // Survey Listener
                 const unsubscribeSurveys = db.collection('artifacts').doc(syncCode).collection('data')
                     .onSnapshot(snapshot => {
                         const remoteSurveys = [];
                         snapshot.forEach(doc => remoteSurveys.push(doc.data()));
-                        
-                        setSurveys(prev => {
-                            // Merge strategy: Remote wins if conflict, but keep local optimistics not yet synced
-                            const merged = [...remoteSurveys];
-                            
-                            // Check local outbox to see if we have pending surveys
-                            // Simple strategy here: just replace local cache with remote source of truth for simplicity in this constraints
-                            // Real app would merge strictly based on timestamp
-                            
-                            localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(merged));
-                            return merged;
-                        });
+                        setSurveys(remoteSurveys);
+                        localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(remoteSurveys));
                     });
 
-                return () => {
-                    unsubscribeMaster();
-                    unsubscribeSurveys();
-                };
-
-            }, [user, syncCode]);
+                return () => { unsubscribeMaster(); unsubscribeSurveys(); };
+            }, [user]);
 
             const loadLocalData = () => {
-                const localSurveys = localStorage.getItem(`vellora_${syncCode}_surveys`);
-                if (localSurveys) {
-                     try {
-                        const parsed = JSON.parse(localSurveys);
-                        if (Array.isArray(parsed)) setSurveys(parsed);
-                     } catch(e) { console.error("Error parsing local surveys", e); }
-                }
-
-                const localMaster = localStorage.getItem(`vellora_${syncCode}_master`);
-                if (localMaster) {
-                    try {
-                        const parsed = JSON.parse(localMaster);
-                        if (parsed) setMasterData(parsed);
-                    } catch(e) { console.error("Error parsing master", e); }
-                }
-
-                const localOutbox = localStorage.getItem(`vellora_${syncCode}_outbox`);
-                if (localOutbox) {
-                    try {
-                        const parsed = JSON.parse(localOutbox);
-                        if (Array.isArray(parsed)) setOutbox(parsed);
-                    } catch(e) { console.error("Error parsing outbox", e); }
-                }
+                const ls = localStorage.getItem(`vellora_${syncCode}_surveys`);
+                if (ls) try { setSurveys(JSON.parse(ls)); } catch(e){}
+                const lm = localStorage.getItem(`vellora_${syncCode}_master`);
+                if (lm) try { setMasterData(JSON.parse(lm)); } catch(e){}
+                const lo = localStorage.getItem(`vellora_${syncCode}_outbox`);
+                if (lo) try { setOutbox(JSON.parse(lo)); } catch(e){}
             };
 
             const addToOutbox = (action, payload) => {
@@ -433,7 +332,6 @@
                 setOutbox(newOutbox);
                 localStorage.setItem(`vellora_${syncCode}_outbox`, JSON.stringify(newOutbox));
                 
-                // Optimistic UI Update
                 if (action === 'ADD_SURVEY') {
                     const newSurveyList = [payload, ...surveys];
                     setSurveys(newSurveyList);
@@ -443,7 +341,8 @@
                      setSurveys(newSurveyList);
                      localStorage.setItem(`vellora_${syncCode}_surveys`, JSON.stringify(newSurveyList));
                 } else if (action === 'UPDATE_MASTER') {
-                    setMasterData(payload); // payload is full new master object
+                    // Update local state immediately for "Others" logic
+                    setMasterData(payload);
                     localStorage.setItem(`vellora_${syncCode}_master`, JSON.stringify(payload));
                 }
 
@@ -454,39 +353,31 @@
                 if (!currentOutbox.length) return;
                 const db = firebase.firestore();
                 const remaining = [];
-
                 for (const item of currentOutbox) {
                     try {
-                        if (item.action === 'ADD_SURVEY') {
-                            await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).set(item.payload);
-                        } else if (item.action === 'DELETE_SURVEY') {
-                            await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).delete();
-                        } else if (item.action === 'UPDATE_MASTER') {
-                             await db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData').set(item.payload);
-                        }
-                    } catch (e) {
-                        console.error("Sync fail", e);
-                        remaining.push(item);
-                    }
+                        if (item.action === 'ADD_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).set(item.payload);
+                        else if (item.action === 'DELETE_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).delete();
+                        else if (item.action === 'UPDATE_MASTER') await db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData').set(item.payload);
+                    } catch (e) { remaining.push(item); }
                 }
                 setOutbox(remaining);
                 localStorage.setItem(`vellora_${syncCode}_outbox`, JSON.stringify(remaining));
             };
 
             const updateMasterData = (key, value) => {
-                if (masterData[key] && masterData[key].includes(value)) return;
-                const currentArr = masterData[key] || [];
-                const newArr = [...currentArr, value];
-                const newMaster = { ...masterData, [key]: newArr };
-                addToOutbox('UPDATE_MASTER', newMaster);
+                if (!masterData[key]) return;
+                // Correctly append new value to existing array
+                const currentArr = Array.isArray(masterData[key]) ? masterData[key] : [];
+                if (!currentArr.includes(value)) {
+                    const newArr = [...currentArr, value];
+                    const newMaster = { ...masterData, [key]: newArr };
+                    addToOutbox('UPDATE_MASTER', newMaster);
+                }
             };
 
             return (
                 <ThemeContext.Provider value={{ currentTheme, themeKey, setThemeKey }}>
-                    <AppContext.Provider value={{ 
-                        user, syncCode, setSyncCode, surveys, masterData, isOnline, outbox,
-                        addToOutbox, updateMasterData, hideSyncBox, setHideSyncBox 
-                    }}>
+                    <AppContext.Provider value={{ user, surveys, masterData, isOnline, outbox, addToOutbox, updateMasterData }}>
                         {children}
                     </AppContext.Provider>
                 </ThemeContext.Provider>
@@ -506,9 +397,7 @@
                             <h3 className="font-bold text-lg">{title}</h3>
                             <button onClick={onClose} className="p-2 opacity-70 hover:opacity-100 font-bold text-xl">&times;</button>
                         </div>
-                        <div className="p-4">
-                            {children}
-                        </div>
+                        <div className="p-4">{children}</div>
                     </div>
                 </div>
             );
@@ -522,7 +411,12 @@
             const handleAdd = () => {
                 if(otherVal.trim()) {
                     onAddOther(otherVal.trim());
-                    onSelect(otherVal.trim());
+                    // Automatically select the new option
+                    if (Array.isArray(selected)) {
+                        onSelect([...selected, otherVal.trim()]);
+                    } else {
+                        onSelect(otherVal.trim());
+                    }
                     setOtherVal('');
                     setIsAdding(false);
                 }
@@ -533,45 +427,33 @@
                     {options.map(opt => {
                         const isSelected = Array.isArray(selected) ? selected.includes(opt) : selected === opt;
                         return (
-                            <button key={opt}
-                                onClick={() => onSelect(opt)}
-                                className={`px-4 py-3 rounded-lg text-sm font-medium transition-all shadow-sm active:scale-95
-                                    ${isSelected 
-                                        ? `${currentTheme.accent} ${currentTheme.accentText} ring-2 ring-offset-1 ring-offset-transparent ring-opacity-50` 
-                                        : `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}`
-                                    }`}
-                            >
+                            <button key={opt} onClick={() => {
+                                if (Array.isArray(selected)) {
+                                    const newSel = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
+                                    onSelect(newSel);
+                                } else {
+                                    onSelect(opt);
+                                }
+                            }}
+                            className={`px-4 py-3 rounded-lg text-sm font-medium transition-all shadow-sm active:scale-95 ${isSelected ? `${currentTheme.accent} ${currentTheme.accentText} ring-2 ring-offset-1 ring-offset-transparent ring-opacity-50` : `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}`}`}>
                                 {opt}
                             </button>
                         );
                     })}
-                    {allowOther && (
-                        !isAdding ? (
-                            <button onClick={() => setIsAdding(true)} className={`px-4 py-3 border border-dashed ${currentTheme.border} rounded-lg text-sm opacity-70 hover:opacity-100`}>
-                                + Other
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-2">
-                                <input 
-                                    autoFocus
-                                    value={otherVal}
-                                    onChange={e => setOtherVal(e.target.value)}
-                                    className={`px-3 py-2 rounded-lg border ${currentTheme.border} ${currentTheme.input} text-sm w-32`}
-                                    placeholder="Type..."
-                                />
-                                <button onClick={handleAdd} className={`${currentTheme.accent} ${currentTheme.accentText} p-2 rounded-lg`}>
-                                    <Icons.Check />
-                                </button>
-                            </div>
-                        )
-                    )}
+                    {allowOther && (!isAdding ? (
+                        <button onClick={() => setIsAdding(true)} className={`px-4 py-3 border border-dashed ${currentTheme.border} rounded-lg text-sm opacity-70 hover:opacity-100`}>+ Other</button>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <input autoFocus value={otherVal} onChange={e => setOtherVal(e.target.value)} className={`px-3 py-2 rounded-lg border ${currentTheme.border} ${currentTheme.input} text-sm w-32`} placeholder="Type..." />
+                            <button onClick={handleAdd} className={`${currentTheme.accent} ${currentTheme.accentText} p-2 rounded-lg`}><Icons.Check /></button>
+                        </div>
+                    ))}
                 </div>
             );
         };
 
         // --- Step Components ---
-
-        const StepA_Business = ({ data, update, next, master, addMaster }) => {
+        const StepA_Business = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
             const [loadingLoc, setLoadingLoc] = React.useState(false);
 
@@ -581,149 +463,66 @@
                     navigator.geolocation.getCurrentPosition(async (pos) => {
                         const { latitude, longitude } = pos.coords;
                         update('gps', { lat: latitude, lng: longitude });
-                        
                         try {
                             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
                             const json = await res.json();
-                            // Try to find best address part
                             const area = json.address.suburb || json.address.neighbourhood || json.address.town || json.address.village || json.address.city || '';
                             if(area) update('locationArea', area);
-                        } catch(e) {
-                            console.error("Geo fail", e);
-                        } finally {
-                            setLoadingLoc(false);
-                        }
-                    }, (err) => {
-                        alert("Could not get location. Ensure GPS is on.");
-                        setLoadingLoc(false);
-                    }, { enableHighAccuracy: true });
-                } else {
-                    alert("Geolocation not supported");
-                    setLoadingLoc(false);
-                }
+                        } catch(e) { console.error("Geo fail", e); } finally { setLoadingLoc(false); }
+                    }, () => { alert("GPS Error"); setLoadingLoc(false); }, { enableHighAccuracy: true });
+                } else { alert("GPS not supported"); setLoadingLoc(false); }
             };
 
             return (
                 <div className="space-y-6 animate-fade-in pb-24">
                     <h2 className="text-xl font-bold">Business Profile</h2>
-                    
                     <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Business Name *</label>
-                        <input 
-                            value={data.businessName || ''}
-                            onChange={e => update('businessName', e.target.value)}
-                            className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input} focus:ring-2 focus:ring-blue-500 outline-none transition-colors`}
-                            placeholder="e.g. Balaji General Store"
-                        />
+                        <input value={data.businessName || ''} onChange={e => update('businessName', e.target.value)} className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input} outline-none transition-colors`} placeholder="e.g. Balaji General Store" />
                     </div>
-
                     <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Business Type</label>
-                        <ButtonGrid 
-                            options={master.businessTypes} 
-                            selected={data.businessType} 
-                            onSelect={v => update('businessType', v)}
-                            allowOther={true}
-                            onAddOther={v => addMaster('businessTypes', v)}
-                        />
+                        <ButtonGrid options={master.businessTypes} selected={data.businessType} onSelect={v => update('businessType', v)} allowOther={true} onAddOther={v => addMaster('businessTypes', v)} />
                     </div>
-
                     <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Daily Footfall</label>
-                        <ButtonGrid 
-                            options={master.footfallRanges} 
-                            selected={data.dailyFootfall} 
-                            onSelect={v => update('dailyFootfall', v)}
-                            allowOther={true}
-                            onAddOther={v => addMaster('footfallRanges', v)}
-                        />
+                        <ButtonGrid options={master.footfallRanges} selected={data.dailyFootfall} onSelect={v => update('dailyFootfall', v)} allowOther={true} onAddOther={v => addMaster('footfallRanges', v)} />
                     </div>
-
                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.bg} space-y-4`}>
-                        <div className="flex justify-between items-center">
-                            <label className="text-xs uppercase font-bold opacity-70">Location</label>
-                            <button onClick={handleGeo} className={`flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full ${currentTheme.accent} ${currentTheme.accentText}`}>
-                                {loadingLoc ? 'Locating...' : <><Icons.MapPin /> Detect</>}
-                            </button>
-                        </div>
-                        <input 
-                             value={data.locationArea || ''}
-                             onChange={e => update('locationArea', e.target.value)}
-                             className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`}
-                             placeholder="Area Name (e.g. Malviya Nagar)"
-                        />
-                        {data.gps && (
-                             <div className="text-xs opacity-60 font-mono">
-                                 Lat: {data.gps.lat.toFixed(5)}, Lng: {data.gps.lng.toFixed(5)}
-                             </div>
-                        )}
+                        <div className="flex justify-between items-center"><label className="text-xs uppercase font-bold opacity-70">Location</label><button onClick={handleGeo} className={`flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full ${currentTheme.accent} ${currentTheme.accentText}`}>{loadingLoc ? 'Locating...' : <><Icons.MapPin /> Detect</>}</button></div>
+                        <input value={data.locationArea || ''} onChange={e => update('locationArea', e.target.value)} className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} placeholder="Area Name" />
                     </div>
                 </div>
             );
         };
 
+        // Extracted Slider to prevent re-render focus loss
+        const QtySlider = ({ value, onChange, theme }) => (
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold">{value} <span className="text-sm opacity-60 font-normal">bottles/mo</span></span>
+                    <input type="number" value={value} onChange={e => onChange(e.target.value === '' ? '' : parseInt(e.target.value))} className={`w-24 p-2 text-center rounded border ${theme.border} ${theme.input}`} />
+                </div>
+                <input type="range" min="0" max="1000" step="5" value={value || 0} onChange={e => onChange(parseInt(e.target.value))} className={`range-slider ${theme.text}`} />
+            </div>
+        );
+
         const StepB_Water = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
-            
-            const toggleSelection = (field, value) => {
-                const current = data[field] || [];
-                const next = current.includes(value) ? current.filter(x => x !== value) : [...current, value];
-                update(field, next);
-            };
-
-            const Slider = () => {
-                const val = data.qtyMonthly || 0;
-                return (
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <span className="text-2xl font-bold">{val} <span className="text-sm opacity-60 font-normal">bottles/mo</span></span>
-                            <input 
-                                type="number" 
-                                value={val} 
-                                onChange={e => update('qtyMonthly', parseInt(e.target.value) || 0)} 
-                                className={`w-24 p-2 text-center rounded border ${currentTheme.border} ${currentTheme.input}`}
-                            />
-                        </div>
-                        <input 
-                            type="range" 
-                            min="0" max="1000" step="5" 
-                            value={val}
-                            onChange={e => update('qtyMonthly', parseInt(e.target.value))}
-                            className={`range-slider ${currentTheme.text}`}
-                        />
-                    </div>
-                );
-            };
-
             return (
                 <div className="space-y-8 animate-fade-in pb-24">
                     <h2 className="text-xl font-bold">Water Usage</h2>
-                    
                     <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Brands Sold (Multi)</label>
-                        <ButtonGrid 
-                            options={master.brands} 
-                            selected={data.brands || []} 
-                            onSelect={v => toggleSelection('brands', v)}
-                            allowOther={true}
-                            onAddOther={v => addMaster('brands', v)}
-                        />
+                        <ButtonGrid options={master.brands} selected={data.brands || []} onSelect={v => update('brands', v)} allowOther={true} onAddOther={v => addMaster('brands', v)} />
                     </div>
-
                     <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Bottle Sizes (Multi)</label>
-                        <ButtonGrid 
-                            options={master.bottleSizes} 
-                            selected={data.bottleSizes || []} 
-                            onSelect={v => toggleSelection('bottleSizes', v)}
-                            allowOther={true}
-                            onAddOther={v => addMaster('bottleSizes', v)}
-                        />
+                        <ButtonGrid options={master.bottleSizes} selected={data.bottleSizes || []} onSelect={v => update('bottleSizes', v)} allowOther={true} onAddOther={v => addMaster('bottleSizes', v)} />
                     </div>
-
                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
                          <label className="text-xs uppercase font-bold opacity-70 mb-4 block">Monthly Quantity</label>
-                         <Slider />
+                         <QtySlider value={data.qtyMonthly || 0} onChange={v => update('qtyMonthly', v)} theme={currentTheme} />
                     </div>
                 </div>
             );
@@ -731,72 +530,41 @@
 
         const StepC_Pricing = ({ data, update }) => {
             const { currentTheme } = React.useContext(ThemeContext);
+            if(!data.brands?.length || !data.bottleSizes?.length) return <div className="p-8 text-center opacity-70">Please select Brands and Sizes first.</div>;
             
-            if(!data.brands?.length || !data.bottleSizes?.length) {
-                return <div className="p-8 text-center opacity-70">Please select Brands and Sizes in the previous step first.</div>
-            }
-
             const handlePriceChange = (type, key, val) => {
-                const currentObj = data[type] || {};
-                const newData = { ...currentObj, [key]: val };
-                update(type, newData);
-                
-                // Calc Profit
+                update(type, { ...data[type], [key]: val });
+                // Auto calc profit
                 if(type === 'buyingPrice' || type === 'sellingPrice') {
                     const buy = type === 'buyingPrice' ? val : (data.buyingPrice?.[key] || 0);
                     const sell = type === 'sellingPrice' ? val : (data.sellingPrice?.[key] || 0);
-                    const profit = (parseFloat(sell) || 0) - (parseFloat(buy) || 0);
-                    
-                    const curProfit = data.profitPerBottle || {};
-                    update('profitPerBottle', { ...curProfit, [key]: profit });
+                    update('profitPerBottle', { ...data.profitPerBottle, [key]: (parseFloat(sell)||0) - (parseFloat(buy)||0) });
                 }
             };
 
             return (
                 <div className="space-y-6 animate-fade-in pb-24">
                     <h2 className="text-xl font-bold">Smart Pricing Matrix</h2>
-                    <div className="overflow-x-auto no-scrollbar pb-4">
-                        <div className="flex flex-col gap-6">
-                            {data.brands.map(brand => (
-                                <div key={brand} className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                                    <h3 className={`font-bold text-lg mb-3 ${currentTheme.accentText === 'text-white' ? 'text-current' : 'text-blue-600'}`}>{brand}</h3>
-                                    <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-end mb-2 text-xs font-bold opacity-60">
-                                        <span>Size</span>
-                                        <span>Buy (₹)</span>
-                                        <span>Sell (₹)</span>
-                                        <span>Profit</span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {data.bottleSizes.map(size => {
-                                            const key = `${brand}|${size}`;
-                                            const profit = data.profitPerBottle?.[key] || 0;
-                                            return (
-                                                <div key={key} className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
-                                                    <span className="text-sm font-medium truncate">{size}</span>
-                                                    <input 
-                                                        type="number" 
-                                                        placeholder="0"
-                                                        value={data.buyingPrice?.[key] || ''}
-                                                        onChange={e => handlePriceChange('buyingPrice', key, e.target.value)}
-                                                        className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`}
-                                                    />
-                                                    <input 
-                                                        type="number"
-                                                        placeholder="0" 
-                                                        value={data.sellingPrice?.[key] || ''}
-                                                        onChange={e => handlePriceChange('sellingPrice', key, e.target.value)}
-                                                        className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`}
-                                                    />
-                                                    <div className={`text-center font-bold text-sm py-2 rounded ${profit > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
-                                                        {profit}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
+                    <div className="overflow-x-auto no-scrollbar pb-4 flex flex-col gap-6">
+                        {data.brands.map(brand => (
+                            <div key={brand} className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
+                                <h3 className={`font-bold text-lg mb-3 ${currentTheme.accentText === 'text-white' ? 'text-current' : 'text-blue-600'}`}>{brand}</h3>
+                                <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-end mb-2 text-xs font-bold opacity-60"><span>Size</span><span>Buy (₹)</span><span>Sell (₹)</span><span>Profit</span></div>
+                                <div className="space-y-3">
+                                    {data.bottleSizes.map(size => {
+                                        const key = `${brand}|${size}`;
+                                        return (
+                                            <div key={key} className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
+                                                <span className="text-sm font-medium truncate">{size}</span>
+                                                <input type="number" placeholder="0" value={data.buyingPrice?.[key] || ''} onChange={e => handlePriceChange('buyingPrice', key, e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
+                                                <input type="number" placeholder="0" value={data.sellingPrice?.[key] || ''} onChange={e => handlePriceChange('sellingPrice', key, e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
+                                                <div className={`text-center font-bold text-sm py-2 rounded ${data.profitPerBottle?.[key] > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>{data.profitPerBottle?.[key] || 0}</div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
@@ -804,67 +572,36 @@
 
         const StepE_Distributor = ({ data, update, master, addMaster }) => {
             const { currentTheme } = React.useContext(ThemeContext);
-            
-            const toggleProblem = (val) => {
-                const cur = data.mainProblems || [];
-                update('mainProblems', cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val]);
-            };
-
             return (
                 <div className="space-y-6 animate-fade-in pb-24">
                      <h2 className="text-xl font-bold">Distributor & Service</h2>
-
                      <div className="space-y-2">
-                        <label className="text-xs uppercase font-bold opacity-70">Distributor Type</label>
-                        <ButtonGrid 
-                            options={master.distributors} 
-                            selected={data.distributorName} 
-                            onSelect={v => update('distributorName', v)}
-                            allowOther={true}
-                            onAddOther={v => addMaster('distributors', v)}
-                        />
+                        <label className="text-xs uppercase font-bold opacity-70">Distributors (Multi)</label>
+                        <ButtonGrid options={master.distributors} selected={data.distributorName || []} onSelect={v => update('distributorName', v)} allowOther={true} onAddOther={v => addMaster('distributors', v)} />
                     </div>
-
-                    {data.distributorName === 'Direct Company' && (
+                    {data.distributorName?.includes('Direct Company') && (
                         <div className="space-y-2 animate-fade-in">
-                            <label className="text-xs uppercase font-bold opacity-70">Company Details (Optional)</label>
-                            <input placeholder="Company Name / Reg No" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} 
-                                value={data.companyDetails || ''} onChange={e => update('companyDetails', e.target.value)} />
+                            <label className="text-xs uppercase font-bold opacity-70">Company Details</label>
+                            <input placeholder="Name / Reg No" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.companyDetails || ''} onChange={e => update('companyDetails', e.target.value)} />
                         </div>
                     )}
-                    
-                    {data.distributorName === 'Local Vendor' && (
+                    {data.distributorName?.includes('Local Vendor') && (
                         <div className="space-y-2 animate-fade-in">
-                            <label className="text-xs uppercase font-bold opacity-70">Vendor Details (Optional)</label>
-                             <input placeholder="Vendor Name" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input} mb-2`} 
-                                value={data.localVendorName || ''} onChange={e => update('localVendorName', e.target.value)} />
-                             <input placeholder="Mobile Number" type="tel" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} 
-                                value={data.localVendorMobile || ''} onChange={e => update('localVendorMobile', e.target.value)} />
+                            <label className="text-xs uppercase font-bold opacity-70">Vendor Details</label>
+                             <input placeholder="Name" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input} mb-2`} value={data.localVendorName || ''} onChange={e => update('localVendorName', e.target.value)} />
+                             <input placeholder="Mobile" type="tel" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.localVendorMobile || ''} onChange={e => update('localVendorMobile', e.target.value)} />
                         </div>
                     )}
-
                     <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Happy with Service?</label>
                         <div className="flex gap-2">
-                            {['Yes', 'No'].map(opt => (
-                                <button key={opt} onClick={() => update('happyWithService', opt)}
-                                    className={`flex-1 p-3 rounded-lg border font-bold ${data.happyWithService === opt ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.border} ${currentTheme.card}`}`}>
-                                    {opt}
-                                </button>
-                            ))}
+                            {['Yes', 'No'].map(opt => <button key={opt} onClick={() => update('happyWithService', opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.happyWithService === opt ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}
                         </div>
                     </div>
-
                     {data.happyWithService === 'No' && (
                         <div className="space-y-2 animate-fade-in">
-                             <label className="text-xs uppercase font-bold opacity-70 text-red-500">Main Problems</label>
-                             <ButtonGrid 
-                                options={master.problems} 
-                                selected={data.mainProblems || []} 
-                                onSelect={toggleProblem}
-                                allowOther={true}
-                                onAddOther={v => addMaster('problems', v)}
-                            />
+                             <label className="text-xs uppercase font-bold opacity-70 text-red-500">Main Problems (Multi)</label>
+                             <ButtonGrid options={master.problems} selected={data.mainProblems || []} onSelect={v => update('mainProblems', v)} allowOther={true} onAddOther={v => addMaster('problems', v)} />
                         </div>
                     )}
                 </div>
@@ -875,40 +612,22 @@
             const { currentTheme } = React.useContext(ThemeContext);
             return (
                  <div className="space-y-6 animate-fade-in pb-24">
-                     <h2 className="text-xl font-bold">White Label (Custom Branding)</h2>
+                     <h2 className="text-xl font-bold">White Label</h2>
                      <div className="space-y-2">
                         <label className="text-xs uppercase font-bold opacity-70">Interested in Custom Logo?</label>
                         <div className="flex gap-2">
-                            {['Yes', 'No'].map(opt => (
-                                <button key={opt} onClick={() => update('interestedInCustomLogo', opt)}
-                                    className={`flex-1 p-3 rounded-lg border font-bold ${data.interestedInCustomLogo === opt ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.border} ${currentTheme.card}`}`}>
-                                    {opt}
-                                </button>
-                            ))}
+                            {['Yes', 'No'].map(opt => <button key={opt} onClick={() => update('interestedInCustomLogo', opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.interestedInCustomLogo === opt ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}
                         </div>
                     </div>
-
                     {data.interestedInCustomLogo === 'Yes' && (
                         <div className="space-y-6 animate-fade-in">
                             <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold opacity-70">Purpose</label>
-                                <ButtonGrid 
-                                    options={master.whiteLabelPurposes} 
-                                    selected={data.customPurpose} 
-                                    onSelect={v => update('customPurpose', v)}
-                                    allowOther={true}
-                                    onAddOther={v => addMaster('whiteLabelPurposes', v)}
-                                />
+                                <label className="text-xs uppercase font-bold opacity-70">Purpose (Multi)</label>
+                                <ButtonGrid options={master.whiteLabelPurposes} selected={data.customPurpose || []} onSelect={v => update('customPurpose', v)} allowOther={true} onAddOther={v => addMaster('whiteLabelPurposes', v)} />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs uppercase font-bold opacity-70">Extra Willing To Pay (₹)</label>
-                                 <ButtonGrid 
-                                    options={master.willingToPayAmounts || ["1", "2", "3", "5", "10"]} 
-                                    selected={data.extraWillingToPay} 
-                                    onSelect={v => update('extraWillingToPay', v)}
-                                    allowOther={true}
-                                    onAddOther={v => addMaster('willingToPayAmounts', v)}
-                                />
+                                 <ButtonGrid options={master.willingToPayAmounts} selected={data.extraWillingToPay} onSelect={v => update('extraWillingToPay', v)} allowOther={true} onAddOther={v => addMaster('willingToPayAmounts', v)} />
                             </div>
                         </div>
                     )}
@@ -921,177 +640,81 @@
              return (
                 <div className="space-y-6 animate-fade-in pb-24">
                     <h2 className="text-xl font-bold">Final Contact Details</h2>
-                    <input 
-                        placeholder="Contact Name" 
-                        className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`}
-                        value={data.contactName || ''}
-                        onChange={e => update('contactName', e.target.value)}
-                    />
-                     <input 
-                        placeholder="Mobile Number *" 
-                        type="tel"
-                        className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`}
-                        value={data.contactMobile || ''}
-                        onChange={e => update('contactMobile', e.target.value)}
-                    />
-
+                    <input placeholder="Contact Name" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactName || ''} onChange={e => update('contactName', e.target.value)} />
+                     <input placeholder="Mobile Number *" type="tel" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactMobile || ''} onChange={e => update('contactMobile', e.target.value)} />
                     <div className={`p-4 rounded-xl ${currentTheme.bg} border ${currentTheme.border} text-sm opacity-80`}>
                         <p><strong>Business:</strong> {data.businessName}</p>
                         <p><strong>Area:</strong> {data.locationArea}</p>
                         <p><strong>Brands:</strong> {data.brands?.join(', ')}</p>
                     </div>
-
-                    <button onClick={onSubmit} className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>
-                        COMPLETE & SAVE SURVEY
-                    </button>
+                    <button onClick={onSubmit} className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>COMPLETE & SAVE SURVEY</button>
                 </div>
              );
         };
 
-        // --- Main Wizard Controller ---
         const SurveyWizard = ({ onClose }) => {
             const { currentTheme } = React.useContext(ThemeContext);
-            const { masterData, updateMasterData, addToOutbox, syncCode } = React.useContext(AppContext);
+            const { masterData, updateMasterData, addToOutbox } = React.useContext(AppContext);
             const [step, setStep] = React.useState(0);
-            const [data, setData] = React.useState({ id: generateUUID(), timestamp: new Date().toISOString(), syncCode });
+            const [data, setData] = React.useState({ id: generateUUID(), timestamp: new Date().toISOString(), syncCode: 'MAIN' });
 
             const update = (field, val) => setData(prev => ({ ...prev, [field]: val }));
-
-            const steps = [
-                { id: 'A', comp: StepA_Business },
-                { id: 'B', comp: StepB_Water },
-                { id: 'C', comp: StepC_Pricing },
-                { id: 'E', comp: StepE_Distributor },
-                { id: 'G', comp: StepG_WhiteLabel },
-                { id: 'I', comp: StepI_Closing }
-            ];
-
+            const steps = [StepA_Business, StepB_Water, StepC_Pricing, StepE_Distributor, StepG_WhiteLabel, StepI_Closing];
             const handleNext = () => {
-                // Validation
-                if(step === 0 && !data.businessName) { alert("Business Name is required"); return; }
+                if(step === 0 && !data.businessName) { alert("Business Name Required"); return; }
                 if(step < steps.length - 1) setStep(step + 1);
             };
-
             const handleSubmit = () => {
-                if(!data.contactMobile) { alert("Mobile number is required"); return; }
+                if(!data.contactMobile) { alert("Mobile Number Required"); return; }
                 addToOutbox('ADD_SURVEY', data);
                 onClose();
             };
-
-            const CurrentComp = steps[step].comp;
+            const CurrentComp = steps[step];
 
             return (
-                <div className={`fixed inset-0 z-40 ${currentTheme.bg} ${currentTheme.text} flex flex-col h-full`}>
-                    {/* Header */}
+                <div className={`fixed inset-0 z-50 ${currentTheme.bg} ${currentTheme.text} flex flex-col h-full`}>
                     <div className={`p-4 flex items-center justify-between border-b ${currentTheme.border}`}>
-                         <button onClick={() => step > 0 ? setStep(step-1) : onClose()} className="p-2">
-                             <Icons.ChevronLeft />
-                         </button>
-                         <span className="font-bold">Step {step + 1} of {steps.length}</span>
-                         <button onClick={handleNext} className={`p-2 font-bold ${currentTheme.accentText === 'text-white' ? 'text-blue-600' : 'text-current'} ${step === steps.length - 1 ? 'invisible' : ''}`}>
-                             Next
-                         </button>
+                         <button onClick={onClose} className="p-2 opacity-60">Cancel</button>
+                         <span className="font-bold">Step {step + 1}/{steps.length}</span>
+                         <div className="w-10"></div>
                     </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-4">
-                        <CurrentComp 
-                            data={data} 
-                            update={update} 
-                            master={masterData} 
-                            addMaster={updateMasterData}
-                            next={handleNext}
-                            onSubmit={handleSubmit}
-                        />
+                    <div className="flex-1 overflow-y-auto p-4"><CurrentComp data={data} update={update} master={masterData} addMaster={updateMasterData} onSubmit={handleSubmit} /></div>
+                    
+                    {/* CUSTOM NAVIGATION FOOTER */}
+                    <div className={`p-4 border-t ${currentTheme.border} ${currentTheme.card} flex items-center gap-4`}>
+                        {step > 0 ? (
+                            <button onClick={() => setStep(step-1)} className={`p-4 rounded-xl border ${currentTheme.border} font-bold`}><Icons.ChevronLeft /></button>
+                        ) : ( <div className="w-14"></div> )}
+                        
+                        {step < steps.length - 1 ? (
+                            <button onClick={handleNext} className={`flex-1 py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>NEXT</button>
+                        ) : (
+                            <div className="flex-1"></div> // Submit button is in component
+                        )}
                     </div>
                 </div>
             );
         };
 
-        /*******************************************************
-         * 5. DASHBOARD VIEWS
-         *******************************************************/
-        
         const SurveyList = ({ onOpenDetail }) => {
-            const { surveys = [], currentTheme, syncCode, hideSyncBox, setSyncCode, isOnline, outbox = [] } = React.useContext(AppContext);
+            const { surveys = [], currentTheme, outbox = [], isOnline } = React.useContext(AppContext);
             const { currentTheme: theme } = React.useContext(ThemeContext);
             const [filter, setFilter] = React.useState('');
-            const [showFilters, setShowFilters] = React.useState(false);
-            
-            // Filter logic
-            const filtered = surveys.filter(s => {
-                const search = filter.toLowerCase();
-                return (s.businessName?.toLowerCase().includes(search) || 
-                       s.locationArea?.toLowerCase().includes(search));
-            }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-            const pendingCount = outbox.length;
+            const filtered = surveys.filter(s => (s.businessName?.toLowerCase().includes(filter.toLowerCase()) || s.locationArea?.toLowerCase().includes(filter.toLowerCase()))).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             return (
                 <div className="pb-24 pt-4 px-4 space-y-4">
-                    {/* Status Bar */}
-                    <div className="flex justify-between items-center text-xs font-bold opacity-60">
-                        <span className={isOnline ? 'text-green-600' : 'text-red-500'}>
-                            {isOnline ? '● ONLINE' : '● OFFLINE'}
-                        </span>
-                        <span>{surveys.length} Surveys</span>
-                    </div>
-
-                    {/* Sync Box */}
-                    {(!hideSyncBox) && (
-                        <div className={`p-4 rounded-xl border ${theme.border} ${theme.card} flex items-center gap-2`}>
-                            <div className="flex-1">
-                                <label className="text-xs uppercase font-bold opacity-50 block mb-1">Workspace Sync Code</label>
-                                <input 
-                                    className={`w-full bg-transparent font-mono font-bold outline-none uppercase ${theme.text}`}
-                                    value={syncCode}
-                                    onChange={e => setSyncCode(e.target.value.toUpperCase())}
-                                />
-                            </div>
-                            <div className="text-xs max-w-[100px] opacity-60 leading-tight text-right">Devices with this code share data.</div>
-                        </div>
-                    )}
-
-                    {/* Search & Export */}
+                    <div className="flex justify-between items-center text-xs font-bold opacity-60"><span className={isOnline ? 'text-green-600' : 'text-red-500'}>{isOnline ? '● ONLINE' : '● OFFLINE'}</span><span>{surveys.length} Surveys</span></div>
                     <div className="flex gap-2">
-                        <div className={`flex-1 flex items-center px-3 rounded-lg border ${theme.border} ${theme.card}`}>
-                            <Icons.Search />
-                            <input 
-                                className={`w-full p-3 bg-transparent outline-none ${theme.input}`} 
-                                placeholder="Search..." 
-                                value={filter}
-                                onChange={e => setFilter(e.target.value)}
-                            />
-                        </div>
-                        <button onClick={() => setShowFilters(!showFilters)} className={`p-3 rounded-lg border ${theme.border} ${theme.card}`}>
-                            <Icons.Filter />
-                        </button>
+                        <div className={`flex-1 flex items-center px-3 rounded-lg border ${theme.border} ${theme.card}`}><Icons.Search /><input className={`w-full p-3 bg-transparent outline-none ${theme.input}`} placeholder="Search..." value={filter} onChange={e => setFilter(e.target.value)} /></div>
                     </div>
-
-                    {/* List */}
                     <div className="space-y-3">
-                        {pendingCount > 0 && (
-                            <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-sm font-bold flex justify-between">
-                                <span>{pendingCount} unsynced items in queue</span>
-                                <Icons.WifiOff />
-                            </div>
-                        )}
-
+                        {outbox.length > 0 && <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-sm font-bold flex justify-between"><span>{outbox.length} unsynced items</span><Icons.WifiOff /></div>}
                         {filtered.map(s => (
                             <div key={s.id} onClick={() => onOpenDetail(s)} className={`p-4 rounded-xl border ${theme.border} ${theme.card} active:scale-[0.98] transition-transform`}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-lg">{s.businessName}</h3>
-                                    <span className="text-xs opacity-50">{new Date(s.timestamp).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex flex-wrap gap-2 text-xs font-medium opacity-70 mb-2">
-                                    <span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.businessType}</span>
-                                    <span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.locationArea}</span>
-                                </div>
-                                {s.interestedInCustomLogo === 'Yes' && (
-                                    <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                                        WHITE LABEL LEAD
-                                    </div>
-                                )}
+                                <div className="flex justify-between items-start mb-2"><h3 className="font-bold text-lg">{s.businessName}</h3><span className="text-xs opacity-50">{new Date(s.timestamp).toLocaleDateString()}</span></div>
+                                <div className="flex flex-wrap gap-2 text-xs font-medium opacity-70 mb-2"><span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.businessType}</span><span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.locationArea}</span></div>
+                                {s.interestedInCustomLogo === 'Yes' && <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">WHITE LABEL LEAD</div>}
                             </div>
                         ))}
                     </div>
@@ -1102,24 +725,14 @@
         const DetailModal = ({ survey, onClose }) => {
             const { currentTheme: theme } = React.useContext(ThemeContext);
             const { addToOutbox } = React.useContext(AppContext);
-
-            const handleDelete = () => {
-                if(confirm('Are you sure you want to delete this survey?')) {
-                    addToOutbox('DELETE_SURVEY', survey);
-                    onClose();
-                }
-            };
-
-            const handleExport = () => {
-                generatePDF(survey);
-            };
+            
+            const handleDelete = () => { if(confirm('Delete?')) { addToOutbox('DELETE_SURVEY', survey); onClose(); } };
+            const handleExport = () => generatePDF(survey);
 
             if(!survey) return null;
-
             return (
                 <Modal isOpen={!!survey} onClose={onClose} title={survey.businessName}>
                     <div className="space-y-6">
-                        {/* 1. Business & Location Section */}
                         <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
                             <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Business Profile</h4>
                             <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
@@ -1127,112 +740,44 @@
                                 <div><span className="opacity-60 block text-xs">Footfall</span><span className="font-medium">{survey.dailyFootfall || 'N/A'}</span></div>
                                 <div><span className="opacity-60 block text-xs">Area</span><span className="font-medium">{survey.locationArea}</span></div>
                                 <div><span className="opacity-60 block text-xs">Date</span><span className="font-medium">{new Date(survey.timestamp).toLocaleDateString()}</span></div>
-                                {survey.gps && (
-                                    <div className="col-span-2 mt-1">
-                                        <span className="opacity-60 block text-xs">GPS Coordinates</span>
-                                        <span className="font-mono text-xs opacity-80">{survey.gps.lat.toFixed(5)}, {survey.gps.lng.toFixed(5)}</span>
-                                    </div>
-                                )}
+                                {survey.gps && <div className="col-span-2 mt-1"><span className="opacity-60 block text-xs">GPS</span><span className="font-mono text-xs opacity-80">{survey.gps.lat.toFixed(5)}, {survey.gps.lng.toFixed(5)}</span></div>}
                             </div>
                         </div>
-
-                        {/* 2. Contact Section */}
                         <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
                             <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Contact</h4>
-                            <div className="text-sm">
-                                <div className="font-bold text-lg">{survey.contactName}</div>
-                                <div className="font-mono opacity-80">{survey.contactMobile}</div>
-                            </div>
+                            <div className="text-sm"><div className="font-bold text-lg">{survey.contactName}</div><div className="font-mono opacity-80">{survey.contactMobile}</div></div>
                         </div>
-
-                        {/* 3. Supply & Distributor Section */}
                         <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
                             <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Supply Chain</h4>
                             <div className="space-y-3 text-sm">
-                                <div className="flex justify-between items-center">
-                                    <span className="opacity-70">Monthly Volume</span>
-                                    <span className="font-bold text-lg">{survey.qtyMonthly} <span className="text-xs font-normal opacity-60">bottles</span></span>
-                                </div>
+                                <div className="flex justify-between items-center"><span className="opacity-70">Volume</span><span className="font-bold text-lg">{survey.qtyMonthly} <span className="text-xs font-normal opacity-60">bottles</span></span></div>
                                 <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-2 border-t border-dashed border-gray-200">
-                                    <div><span className="opacity-60 block text-xs">Distributor</span><span className="font-medium">{survey.distributorName}</span></div>
-                                    <div>
-                                        <span className="opacity-60 block text-xs">Service Satisfaction</span>
-                                        <span className={`font-bold ${survey.happyWithService === 'No' ? 'text-red-500' : 'text-green-600'}`}>
-                                            {survey.happyWithService}
-                                        </span>
-                                    </div>
-                                    
-                                    {/* Conditional Distributor Details */}
-                                    {survey.companyDetails && (
-                                        <div className="col-span-2"><span className="opacity-60 block text-xs">Company Details</span><span className="font-medium">{survey.companyDetails}</span></div>
-                                    )}
-                                    {(survey.localVendorName || survey.localVendorMobile) && (
-                                        <div className="col-span-2">
-                                            <span className="opacity-60 block text-xs">Local Vendor</span>
-                                            <span className="font-medium">{survey.localVendorName} ({survey.localVendorMobile})</span>
-                                        </div>
-                                    )}
+                                    <div><span className="opacity-60 block text-xs">Distributors</span><span className="font-medium">{Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Satisfaction</span><span className={`font-bold ${survey.happyWithService === 'No' ? 'text-red-500' : 'text-green-600'}`}>{survey.happyWithService}</span></div>
+                                    {survey.companyDetails && <div className="col-span-2"><span className="opacity-60 block text-xs">Company Details</span><span className="font-medium">{survey.companyDetails}</span></div>}
+                                    {(survey.localVendorName || survey.localVendorMobile) && <div className="col-span-2"><span className="opacity-60 block text-xs">Local Vendor</span><span className="font-medium">{survey.localVendorName} ({survey.localVendorMobile})</span></div>}
                                 </div>
-
-                                {survey.mainProblems && survey.mainProblems.length > 0 && (
-                                    <div className="pt-2">
-                                        <span className="opacity-60 block text-xs mb-1">Reported Issues</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {survey.mainProblems.map(p => (
-                                                <span key={p} className="px-2 py-1 bg-red-50 text-red-700 border border-red-100 text-[10px] rounded-md font-bold">{p}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                {survey.mainProblems && survey.mainProblems.length > 0 && <div className="pt-2"><span className="opacity-60 block text-xs mb-1">Issues</span><div className="flex flex-wrap gap-2">{survey.mainProblems.map(p => <span key={p} className="px-2 py-1 bg-red-50 text-red-700 border border-red-100 text-[10px] rounded-md font-bold">{p}</span>)}</div></div>}
                             </div>
                         </div>
-
-                        {/* 4. White Label Section (Conditional) */}
                         {survey.interestedInCustomLogo === 'Yes' && (
                             <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900">
-                                <h4 className="font-bold text-xs uppercase opacity-60 mb-3 border-b border-amber-200 pb-1">White Label Opportunity</h4>
+                                <h4 className="font-bold text-xs uppercase opacity-60 mb-3 border-b border-amber-200 pb-1">White Label</h4>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><span className="opacity-60 block text-xs">Purpose</span><span className="font-bold">{survey.customPurpose}</span></div>
-                                    <div><span className="opacity-60 block text-xs">Extra Willing to Pay</span><span className="font-bold">₹{survey.extraWillingToPay}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Purpose</span><span className="font-bold">{Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose}</span></div>
+                                    <div><span className="opacity-60 block text-xs">Extra Willingness</span><span className="font-bold">₹{survey.extraWillingToPay}</span></div>
                                 </div>
                             </div>
                         )}
-
-                        {/* 5. Pricing Table (Existing) */}
                         <div className={`p-4 rounded-xl border ${theme.border} bg-opacity-50`}>
-                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Pricing Matrix</h4>
+                            <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Pricing</h4>
                             {survey.brands?.map(b => (
-                                <div key={b} className="mb-3 last:mb-0">
-                                    <div className="font-bold text-sm mb-1">{b}</div>
-                                    <div className="grid grid-cols-4 gap-1 text-[10px] opacity-60 uppercase font-bold mb-1">
-                                        <span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span>
-                                    </div>
-                                    {survey.bottleSizes?.map(s => {
-                                        const k = `${b}|${s}`;
-                                        if(!survey.buyingPrice?.[k]) return null;
-                                        return (
-                                            <div key={k} className="grid grid-cols-4 gap-1 text-xs border-b border-dashed border-gray-300 py-1">
-                                                <span>{s}</span>
-                                                <span>{survey.buyingPrice[k]}</span>
-                                                <span>{survey.sellingPrice[k]}</span>
-                                                <span className="font-bold text-green-600">{survey.profitPerBottle?.[k]}</span>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
+                                <div key={b} className="mb-3 last:mb-0"><div className="font-bold text-sm mb-1">{b}</div><div className="grid grid-cols-4 gap-1 text-[10px] opacity-60 uppercase font-bold mb-1"><span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span></div>{survey.bottleSizes?.map(s => { const k = `${b}|${s}`; if(!survey.buyingPrice?.[k]) return null; return <div key={k} className="grid grid-cols-4 gap-1 text-xs border-b border-dashed border-gray-300 py-1"><span>{s}</span><span>{survey.buyingPrice[k]}</span><span>{survey.sellingPrice[k]}</span><span className="font-bold text-green-600">{survey.profitPerBottle?.[k]}</span></div>; })}</div>
                             ))}
                         </div>
-
-                        {/* Actions */}
                         <div className="flex flex-wrap gap-2 pt-2 sticky bottom-0 bg-white/80 backdrop-blur-sm pb-2 border-t mt-4">
-                            <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2 shadow-sm`}>
-                                Call
-                            </a>
-                            {survey.gps && (
-                                <a href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2 shadow-sm`}>
-                                    <Icons.Map /> Map
-                                </a>
-                            )}
+                            <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2 shadow-sm`}>Call</a>
+                            {survey.gps && <a href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2 shadow-sm`}><Icons.Map /> Map</a>}
                             <button onClick={handleExport} className={`px-4 py-3 rounded-lg font-bold ${theme.bg} border ${theme.border} text-blue-600 flex items-center justify-center shadow-sm`}><Icons.Download /></button>
                             <button onClick={handleDelete} className="px-4 py-3 rounded-lg font-bold bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shadow-sm"><Icons.Trash /></button>
                         </div>
@@ -1244,118 +789,32 @@
         const Analytics = () => {
              const { surveys, currentTheme: theme } = React.useContext(AppContext);
              const { currentTheme } = React.useContext(ThemeContext);
-
-             // Stats
              const total = surveys.length;
              const today = surveys.filter(s => new Date(s.timestamp).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)).length;
              const wlLeads = surveys.filter(s => s.interestedInCustomLogo === 'Yes').length;
-             
-             // Calc Avg Margin
-             let totalProfit = 0;
-             let count = 0;
-             surveys.forEach(s => {
-                 if(s.profitPerBottle) {
-                     Object.values(s.profitPerBottle).forEach(v => {
-                         totalProfit += (parseFloat(v) || 0);
-                         count++;
-                     });
-                 }
-             });
+             let totalProfit = 0, count = 0;
+             surveys.forEach(s => { if(s.profitPerBottle) Object.values(s.profitPerBottle).forEach(v => { totalProfit += (parseFloat(v)||0); count++; }); });
              const avgMargin = count ? (totalProfit / count).toFixed(1) : 0;
-
-             // Charts Data
+             
              const getCounts = (field) => {
                  const counts = {};
-                 surveys.forEach(s => {
-                     const val = s[field];
-                     if(Array.isArray(val)) val.forEach(v => counts[v] = (counts[v]||0)+1);
-                     else if(val) counts[val] = (counts[val]||0)+1;
-                 });
+                 surveys.forEach(s => { const val = s[field]; if(Array.isArray(val)) val.forEach(v => counts[v]=(counts[v]||0)+1); else if(val) counts[val]=(counts[val]||0)+1; });
                  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
              };
-
              const typeData = getCounts('businessType');
              const brandData = getCounts('brands');
 
-             // Simple SVG Donut Component
-             const Donut = ({ data, colorBase }) => {
-                 let cumPercent = 0;
-                 const total = data.reduce((a,b)=>a+b[1],0);
-                 if(total === 0) return null;
-                 
-                 const getCoords = (percent) => {
-                     const x = Math.cos(2 * Math.PI * percent);
-                     const y = Math.sin(2 * Math.PI * percent);
-                     return [x, y];
-                 }
-
-                 return (
-                     <div className="flex items-center gap-4">
-                        <svg viewBox="-1 -1 2 2" className="w-24 h-24 rotate-[-90deg]">
-                            {data.map((slice, i) => {
-                                const [label, val] = slice;
-                                const percent = val / total;
-                                const start = getCoords(cumPercent);
-                                cumPercent += percent;
-                                const end = getCoords(cumPercent);
-                                const largeArc = percent > 0.5 ? 1 : 0;
-                                const path = `M ${start[0]} ${start[1]} A 1 1 0 ${largeArc} 1 ${end[0]} ${end[1]}`;
-                                return <path key={i} d={path} fill="none" stroke={`hsl(${200 + (i*40)}, 70%, 50%)`} strokeWidth="0.5" />
-                            })}
-                        </svg>
-                        <div className="text-xs space-y-1">
-                            {data.map((slice, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full" style={{background: `hsl(${200 + (i*40)}, 70%, 50%)`}}></div>
-                                    <span className="opacity-70">{slice[0]}</span>
-                                    <span className="font-bold">{Math.round((slice[1]/total)*100)}%</span>
-                                </div>
-                            ))}
-                        </div>
-                     </div>
-                 )
-             };
-
              return (
                  <div className="pb-24 pt-4 px-4 space-y-4 animate-fade-in">
-                     <h2 className="text-xl font-bold">Analytics Hub</h2>
-                     
                      <div className="grid grid-cols-2 gap-3">
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                             <div className="text-3xl font-bold">{total}</div>
-                             <div className="text-xs opacity-60">Total Surveys</div>
-                         </div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                             <div className="text-3xl font-bold text-green-500">₹{avgMargin}</div>
-                             <div className="text-xs opacity-60">Avg Margin</div>
-                         </div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                             <div className="text-3xl font-bold">{today}</div>
-                             <div className="text-xs opacity-60">Today</div>
-                         </div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                             <div className="text-3xl font-bold text-orange-500">{wlLeads}</div>
-                             <div className="text-xs opacity-60">WL Leads</div>
-                         </div>
+                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold">{total}</div><div className="text-xs opacity-60">Total</div></div>
+                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold text-green-500">₹{avgMargin}</div><div className="text-xs opacity-60">Avg Margin</div></div>
+                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold">{today}</div><div className="text-xs opacity-60">Today</div></div>
+                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold text-orange-500">{wlLeads}</div><div className="text-xs opacity-60">WL Leads</div></div>
                      </div>
-
-                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                         <h3 className="font-bold mb-4">Market Composition</h3>
-                         <Donut data={typeData} />
-                     </div>
-
                      <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
                          <h3 className="font-bold mb-4">Top Brands</h3>
-                         <div className="space-y-2">
-                             {brandData.map(([label, val]) => (
-                                 <div key={label}>
-                                     <div className="flex justify-between text-xs mb-1"><span>{label}</span><span>{val}</span></div>
-                                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                         <div className={`h-full ${currentTheme.accent}`} style={{width: `${(val/total)*100}%`}}></div>
-                                     </div>
-                                 </div>
-                             ))}
-                         </div>
+                         <div className="space-y-2">{brandData.map(([label, val]) => <div key={label}><div className="flex justify-between text-xs mb-1"><span>{label}</span><span>{val}</span></div><div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full ${currentTheme.accent}`} style={{width: `${(val/total)*100}%`}}></div></div></div>)}</div>
                      </div>
                  </div>
              );
@@ -1363,131 +822,50 @@
 
         const Settings = () => {
              const { currentTheme, setThemeKey, themeKey } = React.useContext(ThemeContext);
-             const { surveys, hideSyncBox, setHideSyncBox, addToOutbox } = React.useContext(AppContext);
-
+             const { surveys } = React.useContext(AppContext);
              const handleExportAll = (format) => {
-                 if(format === 'csv') {
-                     const csv = convertToCSV(surveys);
-                     const blob = new Blob([csv], { type: 'text/csv' });
-                     const url = window.URL.createObjectURL(blob);
-                     const a = document.createElement('a');
-                     a.href = url;
-                     a.download = `vellora_export_${new Date().toISOString()}.csv`;
-                     a.click();
-                 } else if (format === 'json') {
-                     const blob = new Blob([JSON.stringify(surveys, null, 2)], { type: 'application/json' });
-                     const url = window.URL.createObjectURL(blob);
-                     const a = document.createElement('a');
-                     a.href = url;
-                     a.download = `vellora_export_${new Date().toISOString()}.json`;
-                     a.click();
-                 }
+                 if(format === 'csv') { const url = window.URL.createObjectURL(new Blob([convertToCSV(surveys)], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = `vellora_export.csv`; a.click(); }
              };
-
              return (
                  <div className="pb-24 pt-4 px-4 space-y-6 animate-fade-in">
-                     <h2 className="text-xl font-bold">App Settings</h2>
-
-                     <div className="space-y-2">
-                         <label className="text-xs uppercase font-bold opacity-70">Theme</label>
-                         <div className="grid grid-cols-2 gap-2">
-                             {Object.entries(THEMES).map(([key, t]) => (
-                                 <button key={key} onClick={() => setThemeKey(key)}
-                                     className={`p-3 text-xs font-bold rounded-lg border flex items-center gap-2 ${themeKey === key ? 'ring-2 ring-blue-500' : ''} ${t.bg} ${t.text} ${t.border}`}>
-                                     <div className={`w-4 h-4 rounded-full ${t.accent}`}></div>
-                                     {t.name}
-                                 </button>
-                             ))}
-                         </div>
-                     </div>
-
-                     <div className="space-y-2">
-                         <label className="text-xs uppercase font-bold opacity-70">Workspace</label>
-                         <div className={`p-3 rounded-lg border ${currentTheme.border} ${currentTheme.card} flex justify-between items-center`}>
-                             <span>Show Sync Box in List</span>
-                             <button onClick={() => setHideSyncBox(!hideSyncBox)} className={`w-10 h-6 rounded-full transition-colors ${!hideSyncBox ? 'bg-green-500' : 'bg-gray-300'} relative`}>
-                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${!hideSyncBox ? 'left-5' : 'left-1'}`}></div>
-                             </button>
-                         </div>
-                     </div>
-
-                     <div className="space-y-2">
-                         <label className="text-xs uppercase font-bold opacity-70">Data Management</label>
-                         <div className="flex gap-2">
-                             <button onClick={() => handleExportAll('csv')} className={`flex-1 py-3 rounded-lg border ${currentTheme.border} font-bold flex items-center justify-center gap-2 ${currentTheme.card}`}>
-                                 <Icons.Download /> CSV
-                             </button>
-                             <button onClick={() => handleExportAll('json')} className={`flex-1 py-3 rounded-lg border ${currentTheme.border} font-bold flex items-center justify-center gap-2 ${currentTheme.card}`}>
-                                 <Icons.Download /> JSON
-                             </button>
-                         </div>
-                     </div>
+                     <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Theme</label><div className="grid grid-cols-2 gap-2">{Object.entries(THEMES).map(([key, t]) => <button key={key} onClick={() => setThemeKey(key)} className={`p-3 text-xs font-bold rounded-lg border flex items-center gap-2 ${themeKey === key ? 'ring-2 ring-blue-500' : ''} ${t.bg} ${t.text} ${t.border}`}><div className={`w-4 h-4 rounded-full ${t.accent}`}></div>{t.name}</button>)}</div></div>
+                     <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Data</label><button onClick={() => handleExportAll('csv')} className={`w-full py-3 rounded-lg border ${currentTheme.border} font-bold flex items-center justify-center gap-2 ${currentTheme.card}`}><Icons.Download /> Export All CSV</button></div>
                  </div>
              );
         };
 
-        /*******************************************************
-         * 6. MAIN APP LAYOUT
-         *******************************************************/
         const App = () => {
             const { currentTheme } = React.useContext(ThemeContext);
-            const [view, setView] = React.useState('list'); // list, analytics, settings
+            const [view, setView] = React.useState('list');
             const [isWizardOpen, setWizardOpen] = React.useState(false);
             const [selectedSurvey, setSelectedSurvey] = React.useState(null);
 
-            const NavBtn = ({ v, icon: Icon, label }) => (
-                <button onClick={() => setView(v)} className={`flex flex-col items-center justify-center space-y-1 w-full h-full ${view === v ? currentTheme.accentText === 'text-white' ? 'text-blue-600' : 'opacity-100 font-bold' : 'opacity-50'}`}>
-                    <Icon />
-                    <span className="text-[10px] font-bold">{label}</span>
-                </button>
-            );
+            const NavBtn = ({ v, icon: Icon, label }) => (<button onClick={() => setView(v)} className={`flex flex-col items-center justify-center space-y-1 w-full h-full ${view === v ? currentTheme.accentText === 'text-white' ? 'text-blue-600' : 'opacity-100 font-bold' : 'opacity-50'}`}><Icon /><span className="text-[10px] font-bold">{label}</span></button>);
 
             return (
                 <div className={`min-h-screen transition-colors duration-300 ${currentTheme.bg} ${currentTheme.text}`}>
-                    {/* Top Bar */}
-                    <div className={`h-16 flex items-center justify-center border-b ${currentTheme.border} ${currentTheme.card} sticky top-0 z-30 shadow-sm`}>
-                         <h1 className="font-bold text-lg tracking-wide">VELLORA</h1>
-                    </div>
-
-                    {/* Main Content */}
+                    <div className={`h-16 flex items-center justify-center border-b ${currentTheme.border} ${currentTheme.card} sticky top-0 z-30 shadow-sm`}><h1 className="font-bold text-lg tracking-wide">VELLORA</h1></div>
                     <div className="max-w-2xl mx-auto min-h-[80vh]">
                         {view === 'list' && <SurveyList onOpenDetail={setSelectedSurvey} />}
                         {view === 'analytics' && <Analytics />}
                         {view === 'settings' && <Settings />}
                     </div>
-
-                    {/* Bottom Nav */}
-                    <div className={`fixed bottom-0 left-0 right-0 h-16 ${currentTheme.card} border-t ${currentTheme.border} flex justify-around items-center z-50 max-w-2xl mx-auto`}>
-                        <NavBtn v="list" icon={Icons.Home} label="Surveys" />
-                        <NavBtn v="analytics" icon={Icons.BarChart} label="Analytics" />
-                        <NavBtn v="settings" icon={Icons.Settings} label="Settings" />
-                    </div>
-
-                    {/* FAB (Add Button) */}
-                    {!isWizardOpen && view === 'list' && (
-                        <button 
-                            onClick={() => setWizardOpen(true)}
-                            className={`fixed bottom-20 right-6 w-14 h-14 rounded-full shadow-xl flex items-center justify-center ${currentTheme.accent} ${currentTheme.accentText} z-40 transition-transform active:scale-90`}
-                        >
-                            <Icons.Plus />
-                        </button>
+                    {/* HIDE NAV IF WIZARD IS OPEN */}
+                    {!isWizardOpen && (
+                        <div className={`fixed bottom-0 left-0 right-0 h-16 ${currentTheme.card} border-t ${currentTheme.border} flex justify-around items-center z-40 max-w-2xl mx-auto`}>
+                            <NavBtn v="list" icon={Icons.Home} label="Surveys" />
+                            <NavBtn v="analytics" icon={Icons.BarChart} label="Analytics" />
+                            <NavBtn v="settings" icon={Icons.Settings} label="Settings" />
+                        </div>
                     )}
-
-                    {/* Modals */}
+                    {!isWizardOpen && view === 'list' && <button onClick={() => setWizardOpen(true)} className={`fixed bottom-20 right-6 w-14 h-14 rounded-full shadow-xl flex items-center justify-center ${currentTheme.accent} ${currentTheme.accentText} z-40 transition-transform active:scale-90`}><Icons.Plus /></button>}
                     {isWizardOpen && <SurveyWizard onClose={() => setWizardOpen(false)} />}
                     {selectedSurvey && <DetailModal survey={selectedSurvey} onClose={() => setSelectedSurvey(null)} />}
                 </div>
             );
         };
 
-        const Root = () => (
-            <ErrorBoundary>
-                <AppProvider>
-                    <App />
-                </AppProvider>
-            </ErrorBoundary>
-        );
-
+        const Root = () => <ErrorBoundary><AppProvider><App /></AppProvider></ErrorBoundary>;
         ReactDOM.render(<Root />, document.getElementById('root'));
     </script>
 </body>
