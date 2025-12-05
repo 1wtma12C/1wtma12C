@@ -98,180 +98,189 @@
         };
 
         /*******************************************************
-         * 1. EXPORT ENGINES (CSV & PDF)
+         * 1. EXPORT ENGINES (Fixed)
          *******************************************************/
         const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); });
         const formatDate = (iso) => !iso ? '' : new Date(iso).toLocaleDateString() + ' ' + new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
 
-        // --- CSV GENERATOR ---
+        // --- ROBUST CSV GENERATOR ---
         const convertToCSV = (data) => {
-            if (!data || !data.length) return '';
-            // Determine input: array or single object
+            if (!data || !data.length) return null;
             const items = Array.isArray(data) ? data : [data];
             
-            const flattenRow = (row) => {
-                // Flatten nested objects for CSV columns
+            // 1. Flatten Data
+            const flatData = items.map(row => {
                 const { buyingPrice, sellingPrice, profitPerBottle, gps, ...rest } = row;
                 const flat = { ...rest, lat: gps?.lat || '', lng: gps?.lng || '' };
                 
-                // Add price columns dynamically (Flatten the Matrix)
-                if (buyingPrice) Object.keys(buyingPrice).forEach(key => flat[`Buying_${key}`] = buyingPrice[key]);
-                if (sellingPrice) Object.keys(sellingPrice).forEach(key => flat[`Selling_${key}`] = sellingPrice[key]);
-                if (profitPerBottle) Object.keys(profitPerBottle).forEach(key => flat[`Profit_${key}`] = profitPerBottle[key]);
+                // Expand Pricing
+                if (buyingPrice) Object.keys(buyingPrice).forEach(k => flat[`Buy_${k}`] = buyingPrice[k]);
+                if (sellingPrice) Object.keys(sellingPrice).forEach(k => flat[`Sell_${k}`] = sellingPrice[k]);
+                if (profitPerBottle) Object.keys(profitPerBottle).forEach(k => flat[`Profit_${k}`] = profitPerBottle[k]);
                 
-                // Handle Arrays (Distributors, etc)
-                ['distributorName', 'brands', 'bottleSizes', 'mainProblems', 'customPurpose'].forEach(field => {
-                    if (Array.isArray(flat[field])) flat[field] = flat[field].join('; ');
+                // Join Arrays
+                ['distributorName', 'brands', 'bottleSizes', 'mainProblems', 'customPurpose'].forEach(f => {
+                    if (Array.isArray(flat[f])) flat[f] = flat[f].join('; ');
                 });
-                
                 return flat;
-            };
-
-            const flatData = items.map(flattenRow);
-            const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
-            
-            const csvRows = [
-                headers.join(','), 
-                ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', replacer=null, space=0)).join(','))
-            ];
-            return csvRows.join('\n');
-        };
-
-        // --- PDF GENERATOR (BULK SUPPORTED) ---
-        const generatePDF = (inputData) => {
-            if (!window.jspdf) { alert("PDF library not loaded. Refresh?"); return; }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            
-            // Normalize input to Array
-            const surveys = Array.isArray(inputData) ? inputData : [inputData];
-
-            surveys.forEach((survey, index) => {
-                // Add new page for every survey except the first
-                if (index > 0) doc.addPage();
-
-                let y = 20;
-
-                // --- Helper: Draw Section Card ---
-                const drawCard = (title, contentLines, startY, color = [255, 255, 255]) => {
-                    doc.setFillColor(...color);
-                    doc.setDrawColor(220, 220, 220);
-                    // Calculate height based on lines
-                    const height = (contentLines.length * 7) + 16;
-                    doc.roundedRect(14, startY, pageWidth - 28, height, 3, 3, 'FD');
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(150);
-                    doc.setFont("helvetica", "bold");
-                    doc.text(title.toUpperCase(), 18, startY + 8);
-                    
-                    doc.setTextColor(0);
-                    doc.setFont("helvetica", "normal");
-                    contentLines.forEach((line, i) => {
-                        doc.text(String(line), 18, startY + 18 + (i * 7));
-                    });
-                    return startY + height + 8; // Return next Y position
-                };
-
-                // --- HEADER ---
-                doc.setFontSize(22);
-                doc.setTextColor(41, 128, 185);
-                doc.setFont("helvetica", "bold");
-                doc.text("VELLORA", 14, y);
-                doc.setFontSize(10);
-                doc.setTextColor(100);
-                doc.setFont("helvetica", "normal");
-                doc.text("Market Survey Report", 14, y + 6);
-                y += 20;
-
-                // --- 1. Business Profile ---
-                const bizLines = [
-                    `Business: ${survey.businessName}`,
-                    `Type: ${survey.businessType}`,
-                    `Area: ${survey.locationArea}`,
-                    `Footfall: ${survey.dailyFootfall || 'N/A'}`,
-                    `GPS: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`
-                ];
-                y = drawCard("Business Profile", bizLines, y);
-
-                // --- 2. Contact ---
-                const contactLines = [
-                    `Contact Name: ${survey.contactName}`,
-                    `Mobile: ${survey.contactMobile}`,
-                    `Captured: ${new Date(survey.timestamp).toLocaleString()}`
-                ];
-                y = drawCard("Contact Information", contactLines, y);
-
-                // --- 3. Supply Chain ---
-                const dists = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
-                const probs = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
-                
-                const supplyLines = [
-                    `Monthly Volume: ${survey.qtyMonthly} bottles`,
-                    `Distributors: ${dists}`,
-                    `Service Satisfaction: ${survey.happyWithService}`,
-                ];
-                if(survey.companyDetails) supplyLines.push(`Company Details: ${survey.companyDetails}`);
-                if(survey.localVendorName) supplyLines.push(`Local Vendor: ${survey.localVendorName} (${survey.localVendorMobile || '-'})`);
-                if(probs) supplyLines.push(`Issues Reported: ${probs}`);
-                
-                y = drawCard("Supply Chain & Logistics", supplyLines, y);
-
-                // --- 4. White Label (Conditional) ---
-                if (survey.interestedInCustomLogo === 'Yes') {
-                    const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
-                    const wlLines = [
-                        `Interested: YES`,
-                        `Primary Purpose: ${purposes}`,
-                        `Extra Willingness to Pay: INR ${survey.extraWillingToPay}`
-                    ];
-                    y = drawCard("White Label Intelligence", wlLines, y, [255, 250, 230]); // Pale yellow highlight
-                }
-
-                // --- 5. Pricing Matrix Table ---
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.setFont("helvetica", "bold");
-                doc.text("PRICING MATRIX", 14, y + 5);
-                y += 10;
-
-                const rows = [];
-                if (survey.brands) {
-                    survey.brands.forEach(b => {
-                        if (survey.bottleSizes) {
-                            survey.bottleSizes.forEach(s => {
-                                const k = `${b}|${s}`;
-                                if (survey.buyingPrice && survey.buyingPrice[k]) {
-                                    rows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                if (rows.length > 0) {
-                    doc.autoTable({
-                        startY: y,
-                        head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']],
-                        body: rows,
-                        theme: 'grid',
-                        headStyles: { fillColor: [41, 128, 185] },
-                        styles: { fontSize: 10, cellPadding: 3 },
-                        margin: { left: 14, right: 14 }
-                    });
-                } else {
-                    doc.setFont("helvetica", "italic");
-                    doc.text("No pricing data recorded.", 14, y + 5);
-                }
             });
 
-            // Save File
-            const filename = surveys.length > 1 
-                ? `Vellora_Bulk_Export_${new Date().toISOString().split('T')[0]}.pdf` 
-                : `Survey_${inputData.businessName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
-                
-            doc.save(filename);
+            // 2. Extract Headers
+            const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
+
+            // 3. Escape Helper
+            const escapeCSV = (val) => {
+                if (val === null || val === undefined) return '';
+                const str = String(val);
+                if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            };
+
+            // 4. Build Rows
+            const csvContent = [
+                headers.join(','),
+                ...flatData.map(row => headers.map(h => escapeCSV(row[h])).join(','))
+            ].join('\n');
+
+            return csvContent;
+        };
+
+        // --- ROBUST PDF GENERATOR ---
+        const generatePDF = async (inputData) => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { 
+                alert("PDF Engine loading... please try again in 5 seconds."); 
+                return; 
+            }
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const surveys = Array.isArray(inputData) ? inputData : [inputData];
+
+                if(surveys.length === 0) { alert("No data to export."); return; }
+
+                surveys.forEach((survey, index) => {
+                    if (index > 0) doc.addPage();
+                    let y = 20;
+
+                    // Header
+                    doc.setFontSize(22);
+                    doc.setTextColor(41, 128, 185);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("VELLORA", 14, y);
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Survey Report | ID: ${survey.id ? survey.id.slice(0,8) : 'N/A'}`, 14, y + 6);
+                    y += 20;
+
+                    // -- Helpers --
+                    const drawSection = (title, lines, bgColor = [255, 255, 255]) => {
+                        doc.setFillColor(...bgColor);
+                        doc.setDrawColor(220, 220, 220);
+                        const boxHeight = (lines.length * 6) + 14;
+                        doc.roundedRect(14, y, pageWidth - 28, boxHeight, 2, 2, 'FD');
+                        
+                        doc.setFontSize(9);
+                        doc.setTextColor(150);
+                        doc.setFont("helvetica", "bold");
+                        doc.text(title.toUpperCase(), 18, y + 8);
+                        
+                        doc.setTextColor(0);
+                        doc.setFont("helvetica", "normal");
+                        lines.forEach((l, i) => doc.text(String(l), 18, y + 16 + (i*6)));
+                        
+                        y += boxHeight + 6;
+                    };
+
+                    // 1. Profile
+                    drawSection("Business Profile", [
+                        `Name: ${survey.businessName}`,
+                        `Type: ${survey.businessType}`,
+                        `Location: ${survey.locationArea}`,
+                        `Footfall: ${survey.dailyFootfall || '-'}`,
+                        `Coordinates: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`
+                    ]);
+
+                    // 2. Contact
+                    drawSection("Contact", [
+                        `Person: ${survey.contactName}`,
+                        `Mobile: ${survey.contactMobile}`,
+                        `Captured: ${new Date(survey.timestamp).toLocaleString()}`
+                    ]);
+
+                    // 3. Supply Chain
+                    const dists = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
+                    const probs = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
+                    const supplyLines = [
+                        `Monthly Volume: ${survey.qtyMonthly} bottles`,
+                        `Distributors: ${dists}`,
+                        `Satisfaction: ${survey.happyWithService}`
+                    ];
+                    if(survey.companyDetails) supplyLines.push(`Company: ${survey.companyDetails}`);
+                    if(survey.localVendorName) supplyLines.push(`Local Vendor: ${survey.localVendorName}`);
+                    if(probs) supplyLines.push(`Issues: ${probs}`);
+                    
+                    drawSection("Supply Chain", supplyLines);
+
+                    // 4. White Label
+                    if (survey.interestedInCustomLogo === 'Yes') {
+                        const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
+                        drawSection("White Label Lead", [
+                            `Interested: YES`,
+                            `Purpose: ${purposes}`,
+                            `Extra Pay: INR ${survey.extraWillingToPay}`
+                        ], [255, 250, 235]);
+                    }
+
+                    // 5. Pricing Table
+                    doc.setFontSize(10);
+                    doc.setTextColor(50);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("PRICING MATRIX", 14, y + 4);
+                    y += 8;
+
+                    const tableRows = [];
+                    if (survey.brands) {
+                        survey.brands.forEach(b => {
+                            if (survey.bottleSizes) {
+                                survey.bottleSizes.forEach(s => {
+                                    const k = `${b}|${s}`;
+                                    if (survey.buyingPrice && survey.buyingPrice[k]) {
+                                        tableRows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    if (tableRows.length > 0) {
+                        doc.autoTable({
+                            startY: y,
+                            head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']],
+                            body: tableRows,
+                            theme: 'grid',
+                            headStyles: { fillColor: [41, 128, 185], fontSize: 9 },
+                            styles: { fontSize: 8, cellPadding: 2 },
+                            margin: { left: 14, right: 14 }
+                        });
+                    } else {
+                        doc.setFont("helvetica", "italic");
+                        doc.setFontSize(9);
+                        doc.text("No pricing data recorded.", 14, y + 5);
+                    }
+                });
+
+                const fname = surveys.length > 1 ? `Vellora_Bulk_Export_${new Date().toISOString().split('T')[0]}.pdf` : `Survey_${inputData.businessName}.pdf`;
+                doc.save(fname);
+
+            } catch(e) {
+                console.error("PDF Gen Error", e);
+                alert("Error generating PDF. Please check console or try refreshing.");
+            }
         };
 
         /*******************************************************
@@ -827,9 +836,14 @@
              const [showExport, setShowExport] = React.useState(false);
 
              const handleExport = (type) => {
+                 if (surveys.length === 0) { alert("No data to export."); return; }
+                 
                  if(type === 'csv') {
-                     const url = window.URL.createObjectURL(new Blob([convertToCSV(surveys)], { type: 'text/csv' }));
-                     const a = document.createElement('a'); a.href = url; a.download = `vellora_data.csv`; a.click();
+                     const csvContent = convertToCSV(surveys);
+                     if(csvContent) {
+                         const url = window.URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+                         const a = document.createElement('a'); a.href = url; a.download = `vellora_data.csv`; a.click();
+                     }
                  } else if (type === 'json') {
                      const url = window.URL.createObjectURL(new Blob([JSON.stringify(surveys,null,2)], { type: 'application/json' }));
                      const a = document.createElement('a'); a.href = url; a.download = `vellora_data.json`; a.click();
