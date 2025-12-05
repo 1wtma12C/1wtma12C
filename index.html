@@ -59,32 +59,6 @@
 <body class="bg-gray-50 text-gray-900 select-none">
     <div id="root"></div>
 
-    <!-- OFFLINE WORKER -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            const swContent = `
-                const CACHE_NAME = 'vellora-offline-v4';
-                const urlsToCache = [
-                    'https://cdn.tailwindcss.com',
-                    'https://unpkg.com/react@18/umd/react.production.min.js',
-                    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-                    'https://unpkg.com/@babel/standalone/babel.min.js',
-                    'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
-                    'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-                    'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js'
-                ];
-                self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))); self.skipWaiting(); });
-                self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
-            `;
-            try {
-                navigator.serviceWorker.register(URL.createObjectURL(new Blob([swContent], {type: 'text/javascript'})))
-                .then(() => console.log('SW Registered')).catch(e => console.log('SW Fail', e));
-            } catch(e){}
-        }
-    </script>
-
     <script type="text/babel">
         /*******************************************************
          * 0. CONFIG & CONSTANTS
@@ -124,135 +98,180 @@
         };
 
         /*******************************************************
-         * 1. HELPERS & PDF GENERATOR
+         * 1. EXPORT ENGINES (CSV & PDF)
          *******************************************************/
         const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); });
         const formatDate = (iso) => !iso ? '' : new Date(iso).toLocaleDateString() + ' ' + new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
 
+        // --- CSV GENERATOR ---
         const convertToCSV = (data) => {
             if (!data || !data.length) return '';
+            // Determine input: array or single object
+            const items = Array.isArray(data) ? data : [data];
+            
             const flattenRow = (row) => {
+                // Flatten nested objects for CSV columns
                 const { buyingPrice, sellingPrice, profitPerBottle, gps, ...rest } = row;
                 const flat = { ...rest, lat: gps?.lat || '', lng: gps?.lng || '' };
+                
+                // Add price columns dynamically (Flatten the Matrix)
                 if (buyingPrice) Object.keys(buyingPrice).forEach(key => flat[`Buying_${key}`] = buyingPrice[key]);
                 if (sellingPrice) Object.keys(sellingPrice).forEach(key => flat[`Selling_${key}`] = sellingPrice[key]);
                 if (profitPerBottle) Object.keys(profitPerBottle).forEach(key => flat[`Profit_${key}`] = profitPerBottle[key]);
+                
+                // Handle Arrays (Distributors, etc)
+                ['distributorName', 'brands', 'bottleSizes', 'mainProblems', 'customPurpose'].forEach(field => {
+                    if (Array.isArray(flat[field])) flat[field] = flat[field].join('; ');
+                });
+                
                 return flat;
             };
-            const flatData = data.map(flattenRow);
+
+            const flatData = items.map(flattenRow);
             const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
-            return [headers.join(','), ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', null, 0)).join(','))].join('\n');
+            
+            const csvRows = [
+                headers.join(','), 
+                ...flatData.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '', replacer=null, space=0)).join(','))
+            ];
+            return csvRows.join('\n');
         };
 
-        // --- ENHANCED PDF GENERATOR (CARD STYLE) ---
-        const generatePDF = (survey) => {
-            if (!window.jspdf) { alert("PDF library not loaded."); return; }
+        // --- PDF GENERATOR (BULK SUPPORTED) ---
+        const generatePDF = (inputData) => {
+            if (!window.jspdf) { alert("PDF library not loaded. Refresh?"); return; }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
-            let y = 20;
+            
+            // Normalize input to Array
+            const surveys = Array.isArray(inputData) ? inputData : [inputData];
 
-            // Helper for drawing "Cards"
-            const drawCard = (title, contentLines, startY, color = [255, 255, 255]) => {
-                doc.setFillColor(...color);
-                doc.setDrawColor(220, 220, 220);
-                doc.roundedRect(14, startY, pageWidth - 28, (contentLines.length * 7) + 12, 3, 3, 'FD');
+            surveys.forEach((survey, index) => {
+                // Add new page for every survey except the first
+                if (index > 0) doc.addPage();
+
+                let y = 20;
+
+                // --- Helper: Draw Section Card ---
+                const drawCard = (title, contentLines, startY, color = [255, 255, 255]) => {
+                    doc.setFillColor(...color);
+                    doc.setDrawColor(220, 220, 220);
+                    // Calculate height based on lines
+                    const height = (contentLines.length * 7) + 16;
+                    doc.roundedRect(14, startY, pageWidth - 28, height, 3, 3, 'FD');
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(150);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(title.toUpperCase(), 18, startY + 8);
+                    
+                    doc.setTextColor(0);
+                    doc.setFont("helvetica", "normal");
+                    contentLines.forEach((line, i) => {
+                        doc.text(String(line), 18, startY + 18 + (i * 7));
+                    });
+                    return startY + height + 8; // Return next Y position
+                };
+
+                // --- HEADER ---
+                doc.setFontSize(22);
+                doc.setTextColor(41, 128, 185);
+                doc.setFont("helvetica", "bold");
+                doc.text("VELLORA", 14, y);
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.setFont("helvetica", "normal");
+                doc.text("Market Survey Report", 14, y + 6);
+                y += 20;
+
+                // --- 1. Business Profile ---
+                const bizLines = [
+                    `Business: ${survey.businessName}`,
+                    `Type: ${survey.businessType}`,
+                    `Area: ${survey.locationArea}`,
+                    `Footfall: ${survey.dailyFootfall || 'N/A'}`,
+                    `GPS: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`
+                ];
+                y = drawCard("Business Profile", bizLines, y);
+
+                // --- 2. Contact ---
+                const contactLines = [
+                    `Contact Name: ${survey.contactName}`,
+                    `Mobile: ${survey.contactMobile}`,
+                    `Captured: ${new Date(survey.timestamp).toLocaleString()}`
+                ];
+                y = drawCard("Contact Information", contactLines, y);
+
+                // --- 3. Supply Chain ---
+                const dists = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
+                const probs = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
                 
+                const supplyLines = [
+                    `Monthly Volume: ${survey.qtyMonthly} bottles`,
+                    `Distributors: ${dists}`,
+                    `Service Satisfaction: ${survey.happyWithService}`,
+                ];
+                if(survey.companyDetails) supplyLines.push(`Company Details: ${survey.companyDetails}`);
+                if(survey.localVendorName) supplyLines.push(`Local Vendor: ${survey.localVendorName} (${survey.localVendorMobile || '-'})`);
+                if(probs) supplyLines.push(`Issues Reported: ${probs}`);
+                
+                y = drawCard("Supply Chain & Logistics", supplyLines, y);
+
+                // --- 4. White Label (Conditional) ---
+                if (survey.interestedInCustomLogo === 'Yes') {
+                    const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
+                    const wlLines = [
+                        `Interested: YES`,
+                        `Primary Purpose: ${purposes}`,
+                        `Extra Willingness to Pay: INR ${survey.extraWillingToPay}`
+                    ];
+                    y = drawCard("White Label Intelligence", wlLines, y, [255, 250, 230]); // Pale yellow highlight
+                }
+
+                // --- 5. Pricing Matrix Table ---
                 doc.setFontSize(10);
                 doc.setTextColor(150);
                 doc.setFont("helvetica", "bold");
-                doc.text(title.toUpperCase(), 18, startY + 8);
+                doc.text("PRICING MATRIX", 14, y + 5);
+                y += 10;
+
+                const rows = [];
+                if (survey.brands) {
+                    survey.brands.forEach(b => {
+                        if (survey.bottleSizes) {
+                            survey.bottleSizes.forEach(s => {
+                                const k = `${b}|${s}`;
+                                if (survey.buyingPrice && survey.buyingPrice[k]) {
+                                    rows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (rows.length > 0) {
+                    doc.autoTable({
+                        startY: y,
+                        head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']],
+                        body: rows,
+                        theme: 'grid',
+                        headStyles: { fillColor: [41, 128, 185] },
+                        styles: { fontSize: 10, cellPadding: 3 },
+                        margin: { left: 14, right: 14 }
+                    });
+                } else {
+                    doc.setFont("helvetica", "italic");
+                    doc.text("No pricing data recorded.", 14, y + 5);
+                }
+            });
+
+            // Save File
+            const filename = surveys.length > 1 
+                ? `Vellora_Bulk_Export_${new Date().toISOString().split('T')[0]}.pdf` 
+                : `Survey_${inputData.businessName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
                 
-                doc.setTextColor(0);
-                doc.setFont("helvetica", "normal");
-                contentLines.forEach((line, i) => {
-                    doc.text(line, 18, startY + 16 + (i * 7));
-                });
-                return startY + (contentLines.length * 7) + 20;
-            };
-
-            // Title
-            doc.setFontSize(22);
-            doc.setTextColor(41, 128, 185);
-            doc.text("VELLORA", 14, y);
-            y += 15;
-
-            // 1. Business Profile Card
-            const bizLines = [
-                `Name: ${survey.businessName}`,
-                `Type: ${survey.businessType}`,
-                `Area: ${survey.locationArea}`,
-                `Footfall: ${survey.dailyFootfall || 'N/A'}`,
-                `GPS: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`
-            ];
-            y = drawCard("Business Profile", bizLines, y);
-
-            // 2. Contact Card
-            const contactLines = [
-                `Name: ${survey.contactName}`,
-                `Mobile: ${survey.contactMobile}`,
-                `Date: ${new Date(survey.timestamp).toLocaleString()}`
-            ];
-            y = drawCard("Contact Details", contactLines, y);
-
-            // 3. Supply Chain Card
-            const distributors = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
-            const problems = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
-            
-            const supplyLines = [
-                `Volume: ${survey.qtyMonthly} bottles/mo`,
-                `Distributors: ${distributors}`,
-                `Satisfaction: ${survey.happyWithService}`,
-                ...(survey.companyDetails ? [`Company Details: ${survey.companyDetails}`] : []),
-                ...(survey.localVendorName ? [`Local Vendor: ${survey.localVendorName} (${survey.localVendorMobile || ''})`] : []),
-                ...(problems ? [`Issues: ${problems}`] : [])
-            ];
-            y = drawCard("Supply Chain", supplyLines, y);
-
-            // 4. White Label Card (If applicable)
-            if (survey.interestedInCustomLogo === 'Yes') {
-                const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
-                const wlLines = [
-                    `Interested: YES`,
-                    `Purpose: ${purposes}`,
-                    `Extra Willing to Pay: INR ${survey.extraWillingToPay}`
-                ];
-                y = drawCard("White Label Intelligence", wlLines, y, [255, 248, 225]); // Light yellow bg
-            }
-
-            // 5. Pricing Matrix
-            doc.setFontSize(10);
-            doc.setTextColor(150);
-            doc.setFont("helvetica", "bold");
-            doc.text("PRICING MATRIX", 14, y);
-            y += 5;
-
-            const rows = [];
-            if (survey.brands) {
-                survey.brands.forEach(b => {
-                    if (survey.bottleSizes) {
-                        survey.bottleSizes.forEach(s => {
-                            const k = `${b}|${s}`;
-                            if (survey.buyingPrice && survey.buyingPrice[k]) {
-                                rows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
-                            }
-                        });
-                    }
-                });
-            }
-
-            if (rows.length > 0) {
-                doc.autoTable({
-                    startY: y,
-                    head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']],
-                    body: rows,
-                    theme: 'grid',
-                    headStyles: { fillColor: [41, 128, 185] },
-                    styles: { fontSize: 10, cellPadding: 3 }
-                });
-            }
-
-            doc.save(`Survey_${survey.businessName}.pdf`);
+            doc.save(filename);
         };
 
         /*******************************************************
@@ -308,7 +327,7 @@
             const [isOnline, setIsOnline] = React.useState(navigator.onLine);
             const [isSyncing, setIsSyncing] = React.useState(false);
             const [themeKey, setThemeKey] = React.useState(localStorage.getItem('vellora_theme') || 'corporate');
-            const [toast, setToast] = React.useState(null); // { msg, type }
+            const [toast, setToast] = React.useState(null);
 
             React.useEffect(() => { localStorage.setItem('vellora_theme', themeKey); }, [themeKey]);
             const currentTheme = THEMES[themeKey] || THEMES.corporate;
@@ -329,7 +348,6 @@
             React.useEffect(() => {
                 if (!user) return;
                 const db = firebase.firestore();
-                // We use 'MAIN' as the default hardcoded sync code
                 const syncCode = 'MAIN';
                 
                 const unsubscribeMaster = db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData')
@@ -390,21 +408,14 @@
 
                 for (const item of currentOutbox) {
                     try {
-                        // Sanitize Payload for Firestore (No undefined values)
                         const cleanPayload = JSON.parse(JSON.stringify(item.payload)); 
-                        
                         if (item.action === 'ADD_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).set(cleanPayload);
                         else if (item.action === 'DELETE_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).delete();
                         else if (item.action === 'UPDATE_MASTER') await db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData').set(cleanPayload);
-                    } catch (e) {
-                        console.error("Sync Item Failed", e);
-                        remaining.push(item);
-                    }
+                    } catch (e) { remaining.push(item); }
                 }
                 
                 if(remaining.length < currentOutbox.length) showToast("Cloud Sync Complete", 'success');
-                else if(remaining.length > 0) showToast("Sync Failed - Retrying...", 'error');
-
                 setOutbox(remaining);
                 localStorage.setItem('vellora_MAIN_outbox', JSON.stringify(remaining));
                 setIsSyncing(false);
@@ -416,7 +427,7 @@
                 if (!currentArr.includes(value)) {
                     const newArr = [...currentArr, value];
                     const newMaster = { ...masterData, [key]: newArr };
-                    setMasterData(newMaster); // Immediate Update
+                    setMasterData(newMaster);
                     addToOutbox('UPDATE_MASTER', newMaster);
                 }
             };
@@ -499,7 +510,6 @@
             const handleAdd = () => {
                 if(otherVal.trim()) {
                     onAddOther(otherVal.trim());
-                    // Keep existing selections and add new one
                     if (Array.isArray(selected)) onSelect([...selected, otherVal.trim()]);
                     else onSelect(otherVal.trim());
                     setOtherVal('');
@@ -692,7 +702,6 @@
                          <div className="w-10"></div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4"><CurrentComp data={data} update={update} master={masterData} addMaster={updateMasterData} onSubmit={handleSubmit} /></div>
-                    {/* CUSTOM NAV BAR FOR WIZARD */}
                     <div className={`p-4 border-t ${currentTheme.border} ${currentTheme.card} flex items-center gap-4`}>
                         {step > 0 ? <button onClick={()=>setStep(step-1)} className={`p-4 rounded-xl border ${currentTheme.border} font-bold`}><Icons.ChevronLeft /></button> : <div className="w-14"></div>}
                         {step < steps.length - 1 ? <button onClick={handleNext} className={`flex-1 py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>NEXT</button> : <div className="flex-1"></div>}
