@@ -107,28 +107,18 @@
         const convertToCSV = (data) => {
             if (!data || !data.length) return null;
             const items = Array.isArray(data) ? data : [data];
-            
-            // 1. Flatten Data
             const flatData = items.map(row => {
                 const { buyingPrice, sellingPrice, profitPerBottle, gps, ...rest } = row;
                 const flat = { ...rest, lat: gps?.lat || '', lng: gps?.lng || '' };
-                
-                // Expand Pricing
                 if (buyingPrice) Object.keys(buyingPrice).forEach(k => flat[`Buy_${k}`] = buyingPrice[k]);
                 if (sellingPrice) Object.keys(sellingPrice).forEach(k => flat[`Sell_${k}`] = sellingPrice[k]);
                 if (profitPerBottle) Object.keys(profitPerBottle).forEach(k => flat[`Profit_${k}`] = profitPerBottle[k]);
-                
-                // Join Arrays
                 ['distributorName', 'brands', 'bottleSizes', 'mainProblems', 'customPurpose'].forEach(f => {
                     if (Array.isArray(flat[f])) flat[f] = flat[f].join('; ');
                 });
                 return flat;
             });
-
-            // 2. Extract Headers
             const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
-
-            // 3. Escape Helper
             const escapeCSV = (val) => {
                 if (val === null || val === undefined) return '';
                 const str = String(val);
@@ -137,150 +127,72 @@
                 }
                 return str;
             };
-
-            // 4. Build Rows
-            const csvContent = [
-                headers.join(','),
-                ...flatData.map(row => headers.map(h => escapeCSV(row[h])).join(','))
-            ].join('\n');
-
+            const csvContent = [headers.join(','), ...flatData.map(row => headers.map(h => escapeCSV(row[h])).join(','))].join('\n');
             return csvContent;
         };
 
         // --- ROBUST PDF GENERATOR ---
         const generatePDF = async (inputData) => {
-            if (!window.jspdf || !window.jspdf.jsPDF) { 
-                alert("PDF Engine loading... please try again in 5 seconds."); 
-                return; 
-            }
-            
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert("PDF Engine loading... please try again."); return; }
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
                 const surveys = Array.isArray(inputData) ? inputData : [inputData];
-
                 if(surveys.length === 0) { alert("No data to export."); return; }
 
                 surveys.forEach((survey, index) => {
                     if (index > 0) doc.addPage();
                     let y = 20;
+                    doc.setFontSize(22); doc.setTextColor(41, 128, 185); doc.setFont("helvetica", "bold"); doc.text("VELLORA", 14, y);
+                    doc.setFontSize(10); doc.setTextColor(100); doc.setFont("helvetica", "normal"); doc.text(`Survey Report | ID: ${survey.id ? survey.id.slice(0,8) : 'N/A'}`, 14, y + 6); y += 20;
 
-                    // Header
-                    doc.setFontSize(22);
-                    doc.setTextColor(41, 128, 185);
-                    doc.setFont("helvetica", "bold");
-                    doc.text("VELLORA", 14, y);
-                    doc.setFontSize(10);
-                    doc.setTextColor(100);
-                    doc.setFont("helvetica", "normal");
-                    doc.text(`Survey Report | ID: ${survey.id ? survey.id.slice(0,8) : 'N/A'}`, 14, y + 6);
-                    y += 20;
-
-                    // -- Helpers --
                     const drawSection = (title, lines, bgColor = [255, 255, 255]) => {
-                        doc.setFillColor(...bgColor);
-                        doc.setDrawColor(220, 220, 220);
+                        doc.setFillColor(...bgColor); doc.setDrawColor(220, 220, 220);
                         const boxHeight = (lines.length * 6) + 14;
                         doc.roundedRect(14, y, pageWidth - 28, boxHeight, 2, 2, 'FD');
-                        
-                        doc.setFontSize(9);
-                        doc.setTextColor(150);
-                        doc.setFont("helvetica", "bold");
-                        doc.text(title.toUpperCase(), 18, y + 8);
-                        
-                        doc.setTextColor(0);
-                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(9); doc.setTextColor(150); doc.setFont("helvetica", "bold"); doc.text(title.toUpperCase(), 18, y + 8);
+                        doc.setTextColor(0); doc.setFont("helvetica", "normal");
                         lines.forEach((l, i) => doc.text(String(l), 18, y + 16 + (i*6)));
-                        
                         y += boxHeight + 6;
                     };
 
-                    // 1. Profile
-                    drawSection("Business Profile", [
-                        `Name: ${survey.businessName}`,
-                        `Type: ${survey.businessType}`,
-                        `Location: ${survey.locationArea}`,
-                        `Footfall: ${survey.dailyFootfall || '-'}`,
-                        `Coordinates: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`
-                    ]);
-
-                    // 2. Contact
-                    drawSection("Contact", [
-                        `Person: ${survey.contactName}`,
-                        `Mobile: ${survey.contactMobile}`,
-                        `Captured: ${new Date(survey.timestamp).toLocaleString()}`
-                    ]);
-
-                    // 3. Supply Chain
+                    drawSection("Business Profile", [`Name: ${survey.businessName}`, `Type: ${survey.businessType}`, `Location: ${survey.locationArea}`, `Footfall: ${survey.dailyFootfall || '-'}`, `Coordinates: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`]);
+                    drawSection("Contact", [`Person: ${survey.contactName}`, `Mobile: ${survey.contactMobile}`, `Captured: ${new Date(survey.timestamp).toLocaleString()}`]);
                     const dists = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
                     const probs = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
-                    const supplyLines = [
-                        `Monthly Volume: ${survey.qtyMonthly} bottles`,
-                        `Distributors: ${dists}`,
-                        `Satisfaction: ${survey.happyWithService}`
-                    ];
+                    const supplyLines = [`Monthly Volume: ${survey.qtyMonthly} bottles`, `Distributors: ${dists}`, `Satisfaction: ${survey.happyWithService}`];
                     if(survey.companyDetails) supplyLines.push(`Company: ${survey.companyDetails}`);
                     if(survey.localVendorName) supplyLines.push(`Local Vendor: ${survey.localVendorName}`);
                     if(probs) supplyLines.push(`Issues: ${probs}`);
-                    
                     drawSection("Supply Chain", supplyLines);
 
-                    // 4. White Label
                     if (survey.interestedInCustomLogo === 'Yes') {
                         const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
-                        drawSection("White Label Lead", [
-                            `Interested: YES`,
-                            `Purpose: ${purposes}`,
-                            `Extra Pay: INR ${survey.extraWillingToPay}`
-                        ], [255, 250, 235]);
+                        drawSection("White Label Lead", [`Interested: YES`, `Purpose: ${purposes}`, `Extra Pay: INR ${survey.extraWillingToPay}`], [255, 250, 235]);
                     }
 
-                    // 5. Pricing Table
-                    doc.setFontSize(10);
-                    doc.setTextColor(50);
-                    doc.setFont("helvetica", "bold");
-                    doc.text("PRICING MATRIX", 14, y + 4);
-                    y += 8;
-
+                    doc.setFontSize(10); doc.setTextColor(50); doc.setFont("helvetica", "bold"); doc.text("PRICING MATRIX", 14, y + 4); y += 8;
                     const tableRows = [];
                     if (survey.brands) {
                         survey.brands.forEach(b => {
                             if (survey.bottleSizes) {
                                 survey.bottleSizes.forEach(s => {
                                     const k = `${b}|${s}`;
-                                    if (survey.buyingPrice && survey.buyingPrice[k]) {
-                                        tableRows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
-                                    }
+                                    if (survey.buyingPrice && survey.buyingPrice[k]) tableRows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
                                 });
                             }
                         });
                     }
-
                     if (tableRows.length > 0) {
-                        doc.autoTable({
-                            startY: y,
-                            head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']],
-                            body: tableRows,
-                            theme: 'grid',
-                            headStyles: { fillColor: [41, 128, 185], fontSize: 9 },
-                            styles: { fontSize: 8, cellPadding: 2 },
-                            margin: { left: 14, right: 14 }
-                        });
+                        doc.autoTable({ startY: y, head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']], body: tableRows, theme: 'grid', headStyles: { fillColor: [41, 128, 185], fontSize: 9 }, styles: { fontSize: 8, cellPadding: 2 }, margin: { left: 14, right: 14 } });
                     } else {
-                        doc.setFont("helvetica", "italic");
-                        doc.setFontSize(9);
-                        doc.text("No pricing data recorded.", 14, y + 5);
+                        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.text("No pricing data recorded.", 14, y + 5);
                     }
                 });
-
                 const fname = surveys.length > 1 ? `Vellora_Bulk_Export_${new Date().toISOString().split('T')[0]}.pdf` : `Survey_${inputData.businessName}.pdf`;
                 doc.save(fname);
-
-            } catch(e) {
-                console.error("PDF Gen Error", e);
-                alert("Error generating PDF. Please check console or try refreshing.");
-            }
+            } catch(e) { console.error("PDF Gen Error", e); alert("Error generating PDF. Please check console or try refreshing."); }
         };
 
         /*******************************************************
@@ -810,22 +722,182 @@
             );
         };
 
+        // --- NEW CHART COMPONENT ---
+        const ChartRenderer = ({ type, data, theme }) => {
+            const height = 200;
+            const width = 300;
+            const padding = 20;
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+            if (!data || data.length === 0) return <div className="h-48 flex items-center justify-center opacity-50">No Data</div>;
+
+            if (type === 'bar') {
+                const maxVal = Math.max(...data.map(d => d.value));
+                const barWidth = (width - (padding*2)) / data.length;
+                return (
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
+                        {data.map((d, i) => {
+                            const h = (d.value / maxVal) * (height - padding * 2);
+                            return (
+                                <g key={i}>
+                                    <rect x={padding + (i * barWidth)} y={height - padding - h} width={barWidth - 5} height={h} fill={colors[i % colors.length]} rx="2" />
+                                    <text x={padding + (i * barWidth) + (barWidth/2)} y={height - 5} fontSize="8" textAnchor="middle" fill="currentColor" className="opacity-60">{d.label.substring(0,6)}</text>
+                                </g>
+                            );
+                        })}
+                    </svg>
+                );
+            }
+            if (type === 'pie') {
+                const total = data.reduce((acc, d) => acc + d.value, 0);
+                let cumulativePercent = 0;
+                const getCoordinatesForPercent = (percent) => {
+                    const x = Math.cos(2 * Math.PI * percent);
+                    const y = Math.sin(2 * Math.PI * percent);
+                    return [x, y];
+                };
+                return (
+                    <div className="flex items-center gap-4">
+                        <svg viewBox="-1 -1 2 2" className="w-32 h-32 transform -rotate-90">
+                            {data.map((d, i) => {
+                                const percent = d.value / total;
+                                const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
+                                cumulativePercent += percent;
+                                const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
+                                const largeArcFlag = percent > .5 ? 1 : 0;
+                                const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`;
+                                return <path key={i} d={pathData} fill={colors[i % colors.length]} stroke="white" strokeWidth="0.02" />;
+                            })}
+                        </svg>
+                        <div className="text-xs space-y-1">
+                            {data.map((d, i) => (
+                                <div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background:colors[i%colors.length]}}></div><span className="opacity-70">{d.label}</span><span className="font-bold">{Math.round((d.value/total)*100)}%</span></div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+            if (type === 'line' || type === 'area') {
+                const maxVal = Math.max(...data.map(d => d.value));
+                if (maxVal === 0) return <div className="h-48 flex items-center justify-center opacity-50">No Data</div>;
+                const points = data.map((d, i) => {
+                    const x = padding + (i * ((width - padding*2) / (data.length - 1)));
+                    const y = height - padding - ((d.value / maxVal) * (height - padding*2));
+                    return `${x},${y}`;
+                }).join(' ');
+                
+                return (
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
+                        {type === 'area' && <polygon points={`${padding},${height-padding} ${points} ${width-padding},${height-padding}`} fill={colors[0]} fillOpacity="0.2" />}
+                        <polyline points={points} fill="none" stroke={colors[0]} strokeWidth="2" />
+                        {data.map((d, i) => {
+                             const x = padding + (i * ((width - padding*2) / (data.length - 1)));
+                             const y = height - padding - ((d.value / maxVal) * (height - padding*2));
+                             return <circle key={i} cx={x} cy={y} r="3" fill={colors[0]} />
+                        })}
+                    </svg>
+                );
+            }
+            // Fallback for Scatter/Histogram (Simplified as Bars for now or custom logic)
+            return <div className="text-center p-4">Select a different chart type for this data.</div>;
+        };
+
         const Analytics = () => {
              const { surveys, currentTheme: theme } = React.useContext(AppContext);
              const { currentTheme } = React.useContext(ThemeContext);
+             const [chartType, setChartType] = React.useState('bar');
+             const [metric, setMetric] = React.useState('brands'); // brands, types, profit, volume_trend, wl_purpose
+
+             // --- Data Processing Helpers ---
+             const getAggregatedData = () => {
+                 if (metric === 'brands') {
+                     const counts = surveys.flatMap(s => s.brands || []).reduce((acc, b) => { acc[b] = (acc[b] || 0) + 1; return acc; }, {});
+                     return Object.entries(counts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value).slice(0, 6);
+                 }
+                 if (metric === 'types') {
+                     const counts = surveys.reduce((acc, s) => { acc[s.businessType] = (acc[s.businessType] || 0) + 1; return acc; }, {});
+                     return Object.entries(counts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value).slice(0, 6);
+                 }
+                 if (metric === 'profit') {
+                     const profits = {};
+                     surveys.forEach(s => {
+                         if(s.profitPerBottle) {
+                             Object.entries(s.profitPerBottle).forEach(([key, val]) => {
+                                 const brand = key.split('|')[0];
+                                 if(!profits[brand]) profits[brand] = { sum: 0, count: 0 };
+                                 profits[brand].sum += (parseFloat(val) || 0);
+                                 profits[brand].count++;
+                             });
+                         }
+                     });
+                     return Object.entries(profits).map(([label, {sum, count}]) => ({ label, value: Math.round(sum/count) })).sort((a,b) => b.value - a.value);
+                 }
+                 if (metric === 'volume_trend') {
+                     // Group by date (simple sorted)
+                     const sorted = [...surveys].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+                     // Take last 10 points for readability
+                     return sorted.slice(-10).map(s => ({ label: new Date(s.timestamp).toLocaleDateString(undefined, {month:'short', day:'numeric'}), value: s.qtyMonthly || 0 }));
+                 }
+                 if (metric === 'wl_purpose') {
+                     const counts = surveys.flatMap(s => s.customPurpose || []).reduce((acc, p) => { acc[p] = (acc[p] || 0) + 1; return acc; }, {});
+                     return Object.entries(counts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value);
+                 }
+                 return [];
+             };
+
+             const data = getAggregatedData();
+
+             // Stats
              const total = surveys.length;
-             const today = surveys.filter(s => new Date(s.timestamp).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)).length;
-             let totalProfit = 0, count = 0; surveys.forEach(s => { if(s.profitPerBottle) Object.values(s.profitPerBottle).forEach(v => { totalProfit += (parseFloat(v)||0); count++; }); });
-             const brandData = Object.entries(surveys.flatMap(s=>s.brands||[]).reduce((a,c)=>{a[c]=(a[c]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
+             const wlLeads = surveys.filter(s => s.interestedInCustomLogo === 'Yes').length;
+             const totalVol = surveys.reduce((acc, s) => acc + (s.qtyMonthly || 0), 0);
 
              return (
-                 <div className="pb-24 pt-4 px-4 space-y-4 animate-fade-in">
-                     <div className="grid grid-cols-2 gap-3">
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold">{total}</div><div className="text-xs opacity-60">Total</div></div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold text-green-500">₹{count?(totalProfit/count).toFixed(1):0}</div><div className="text-xs opacity-60">Avg Margin</div></div>
-                         <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><div className="text-3xl font-bold">{today}</div><div className="text-xs opacity-60">Today</div></div>
+                 <div className="pb-24 pt-4 px-4 space-y-6 animate-fade-in">
+                     {/* KPI Cards */}
+                     <div className="grid grid-cols-3 gap-2">
+                         <div className={`p-3 rounded-xl border ${currentTheme.border} ${currentTheme.card} text-center`}><div className="text-2xl font-bold">{total}</div><div className="text-[10px] opacity-60 uppercase">Surveys</div></div>
+                         <div className={`p-3 rounded-xl border ${currentTheme.border} ${currentTheme.card} text-center`}><div className="text-2xl font-bold text-blue-500">{totalVol}</div><div className="text-[10px] opacity-60 uppercase">Vol/Mo</div></div>
+                         <div className={`p-3 rounded-xl border ${currentTheme.border} ${currentTheme.card} text-center`}><div className="text-2xl font-bold text-orange-500">{wlLeads}</div><div className="text-[10px] opacity-60 uppercase">Leads</div></div>
                      </div>
-                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><h3 className="font-bold mb-4">Top Brands</h3><div className="space-y-2">{brandData.map(([l,v])=><div key={l}><div className="flex justify-between text-xs mb-1"><span>{l}</span><span>{v}</span></div><div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full ${currentTheme.accent}`} style={{width: `${(v/total)*100}%`}}></div></div></div>)}</div></div>
+
+                     {/* Dashboard Controls */}
+                     <div className="space-y-4">
+                         <div>
+                             <label className="text-xs font-bold opacity-60 uppercase mb-2 block">Visualization Type</label>
+                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                 {['bar', 'line', 'pie', 'area'].map(t => (
+                                     <button key={t} onClick={() => setChartType(t)} className={`px-4 py-2 rounded-lg text-xs font-bold capitalize border transition-colors whitespace-nowrap ${chartType === t ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.card} ${currentTheme.border}`}`}>
+                                         {t} Chart
+                                     </button>
+                                 ))}
+                             </div>
+                         </div>
+                         <div>
+                             <label className="text-xs font-bold opacity-60 uppercase mb-2 block">Data Metric</label>
+                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                 {[
+                                     { id: 'brands', label: 'Top Brands' },
+                                     { id: 'types', label: 'Biz Types' },
+                                     { id: 'volume_trend', label: 'Volume Trend' },
+                                     { id: 'profit', label: 'Avg Profit' },
+                                     { id: 'wl_purpose', label: 'WL Purpose' }
+                                 ].map(m => (
+                                     <button key={m.id} onClick={() => setMetric(m.id)} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap ${metric === m.id ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.card} ${currentTheme.border}`}`}>
+                                         {m.label}
+                                     </button>
+                                 ))}
+                             </div>
+                         </div>
+                     </div>
+
+                     {/* Main Chart Area */}
+                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card} min-h-[300px] flex flex-col`}>
+                         <h3 className="font-bold text-lg mb-4 capitalize">{metric.replace('_', ' ')} Analysis</h3>
+                         <div className="flex-1 flex items-center justify-center">
+                             <ChartRenderer type={chartType} data={data} theme={currentTheme} />
+                         </div>
+                     </div>
                  </div>
              );
         };
