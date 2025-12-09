@@ -1,1043 +1,868 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VELLORA v4.0 — Single File PWA</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VELLORA | Market Survey Architect</title>
+    
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- Tailwind via CDN (play CDN for standalone) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- React & ReactDOM UMD -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-  <!-- Babel standalone to transpile JSX in-browser -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase v9 compat (CDN) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-  <!-- jsPDF + autoTable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-  <style>
-    /* Basic reset for Tailwind with Obsidian-ready variables */
-    :root {
-      --bg: #0a0a0a;
-      --card: #0a0a0a;
-      --text: #ffffff;
-      --accent: #ffffff;
-      --muted: #9ca3af;
-    }
-    [data-theme="light"] {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #0f172a;
-      --accent: #0f172a;
-      --muted: #6b7280;
-    }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-    }
-    .card {
-      background: var(--card);
-      color: var(--text);
-      border-radius: .5rem;
-      box-shadow: 0 6px 18px rgba(2,6,23,0.5);
-      padding: 1rem;
-    }
-    .muted { color: var(--muted); }
-    /* Header theme-sensitive text */
-    .brand-text-light { color: black; }
-    .brand-text-dark { color: white; }
-    /* small helpers */
-    .input {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: .5rem;
-      border-radius: .375rem;
-      color: var(--text);
-    }
-    .btn {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: .5rem .75rem;
-      border-radius: .375rem;
-      color: var(--text);
-      cursor: pointer;
-    }
-    .fab {
-      position: fixed;
-      right: 1.25rem;
-      bottom: 4.5rem;
-      z-index: 60;
-      width: 64px;
-      height: 64px;
-      border-radius: 9999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-    }
-    /* small modal */
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:80;
-      padding: 1rem;
-    }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-
-  <script type="text/babel">
-
-/** FIREBASE_CONFIG (exactly as provided) **/
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
-  authDomain: "vellora-3828d.firebaseapp.com",
-  projectId: "vellora-3828d",
-  storageBucket: "vellora-3828d.firebasestorage.app",
-  messagingSenderId: "1045366360458",
-  appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
-  measurementId: "G-WLKMJNBJTP"
-};
-
-/** Initialize Firebase (compat) **/
-firebase.initializeApp(FIREBASE_CONFIG);
-const db = firebase.firestore();
-
-/** Utilities **/
-const uid = () => 's_'+Math.random().toString(36).slice(2,9);
-const nowISO = ()=> new Date().toISOString();
-const saveLocal = (k,v) => localStorage.setItem(k, JSON.stringify(v));
-const loadLocal = (k, fallback=null) => {
-  const raw=localStorage.getItem(k); if(!raw) return fallback; try { return JSON.parse(raw); } catch(e){return fallback;}
-};
-const removeLocal = k => localStorage.removeItem(k);
-
-/** App constants **/
-const LOCAL_KEY = 'vellora_surveys_v4';
-const OUTBOX_KEY = 'vellora_outbox_v4';
-const SETTINGS_KEY = 'vellora_settings_v4';
-const MASTERDATA_KEY = 'vellora_masterdata_v4';
-
-/** Basic MasterData management for "Other" options */
-const defaultMasterData = {
-  types: ['Grocery','Restaurant','Pharmacy'],
-  brands: ['Brand A','Brand B','Brand C'],
-  sizes: ['Small','Medium','Large']
-};
-if (!loadLocal(MASTERDATA_KEY)) saveLocal(MASTERDATA_KEY, defaultMasterData);
-
-/** Sync Engine: Online-First with Outbox queue **/
-class SyncEngine {
-  constructor() {
-    this.online = navigator.onLine;
-    this.outbox = loadLocal(OUTBOX_KEY, []);
-    window.addEventListener('online', ()=>{ this.online = true; this.flush(); });
-    window.addEventListener('offline', ()=>{ this.online = false; });
-  }
-
-  enqueue(op) {
-    this.outbox.push(op);
-    saveLocal(OUTBOX_KEY, this.outbox);
-  }
-
-  async flush() {
-    if (!navigator.onLine) return;
-    if (!this.outbox.length) return;
-    // attempt to push each op to firebase
-    const queue = [...this.outbox];
-    for (const op of queue) {
-      try {
-        if (op.type === 'create' || op.type === 'update') {
-          await db.collection('surveys').doc(op.id).set(op.payload, {merge:true});
-        } else if (op.type === 'delete') {
-          // soft-delete mark persisted
-          await db.collection('surveys').doc(op.id).set({isDeleted: true, deletedAt: nowISO()}, {merge:true});
-        } else if (op.type === 'restore') {
-          await db.collection('surveys').doc(op.id).set({isDeleted:false, deletedAt: firebase.firestore.FieldValue.delete()}, {merge:true});
-        } else if (op.type === 'permanent_delete') {
-          await db.collection('surveys').doc(op.id).delete();
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#000000',
+                        charcoal: '#0a0a0a',
+                        vellora: {
+                            500: '#3b82f6', // Primary Blue
+                            600: '#2563eb',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
         }
-        // remove op from local outbox on success
-        const idx = this.outbox.findIndex(o => o._opId === op._opId);
-        if (idx>=0) this.outbox.splice(idx,1);
-        saveLocal(OUTBOX_KEY, this.outbox);
-      } catch (e) {
-        console.error('Flush op failed, will retry later', e);
-        // stop flush to avoid repeated errors
-        return;
-      }
-    }
-  }
-}
-const syncEngine = new SyncEngine();
+    </script>
 
-/** Data Layer that prefers live Firebase when online, else localStorage. */
-const DataLayer = {
-  async initSync(onChangeCallback) {
-    // subscribe to firebase collection if online
-    if (navigator.onLine) {
-      try {
-        this.unsubscribe = db.collection('surveys').onSnapshot(snapshot => {
-          const arr = [];
-          snapshot.forEach(doc => {
-            const d = doc.data();
-            d.id = doc.id;
-            arr.push(d);
-          });
-          // save local copy
-          saveLocal(LOCAL_KEY, arr);
-          onChangeCallback(arr);
-        });
-        syncEngine.flush();
-        return;
-      } catch (e) {
-        console.warn('Firebase subscribe failed, falling back to local', e);
-      }
-    }
-    // fallback: load local
-    const local = loadLocal(LOCAL_KEY, []);
-    onChangeCallback(local);
-  },
-  async createSurvey(payload) {
-    // create locally first
-    const id = payload.id || uid();
-    payload.id = id;
-    payload.createdAt = payload.createdAt || nowISO();
-    // update local storage
-    const local = loadLocal(LOCAL_KEY, []);
-    local.unshift(payload);
-    saveLocal(LOCAL_KEY, local);
-    // enqueue to outbox + attempt to flush
-    syncEngine.enqueue({...payload, type:'create', id, _opId: uid(), payload});
-    if (navigator.onLine) syncEngine.flush();
-    return id;
-  },
-  async updateSurvey(id, payload) {
-    payload.updatedAt = nowISO();
-    const local = loadLocal(LOCAL_KEY, []).map(s => s.id===id ? {...s,...payload} : s);
-    saveLocal(LOCAL_KEY, local);
-    syncEngine.enqueue({_opId: uid(), type:'update', id, payload});
-    if (navigator.onLine) syncEngine.flush();
-  },
-  async softDelete(id) {
-    const local = loadLocal(LOCAL_KEY, []).map(s => s.id===id ? {...s, isDeleted:true, deletedAt: nowISO()} : s);
-    saveLocal(LOCAL_KEY, local);
-    syncEngine.enqueue({_opId: uid(), type:'delete', id, payload:{isDeleted:true}});
-    if (navigator.onLine) syncEngine.flush();
-  },
-  async restore(id) {
-    const local = loadLocal(LOCAL_KEY, []).map(s => s.id===id ? {...s, isDeleted:false, deletedAt: null} : s);
-    saveLocal(LOCAL_KEY, local);
-    syncEngine.enqueue({_opId: uid(), type:'restore', id, payload:{isDeleted:false}});
-    if (navigator.onLine) syncEngine.flush();
-  },
-  async permanentDelete(id) {
-    const local = loadLocal(LOCAL_KEY, []).filter(s => s.id!==id);
-    saveLocal(LOCAL_KEY, local);
-    syncEngine.enqueue({_opId: uid(), type:'permanent_delete', id});
-    if (navigator.onLine) syncEngine.flush();
-  },
-  getLocalAll() { return loadLocal(LOCAL_KEY, []); }
-};
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        
+        /* Map Styles */
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        /* Transition utility */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-/** Basic PDF Export using jsPDF */
-async function exportSurveyToPDF(survey, logoBase64=null) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
-  // Always white background
-  doc.setFillColor(255,255,255);
-  doc.rect(0,0,595.28,841.89,'F');
+        /* Obsidian Theme Specifics */
+        .theme-obsidian {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .theme-obsidian .card {
+            background-color: #0a0a0a;
+            border: 1px solid #222;
+        }
+        .theme-obsidian input, .theme-obsidian select, .theme-obsidian textarea {
+            background-color: #000000;
+            border-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-300">
+    <div id="root"></div>
 
-  // Header
-  if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', 40, 30, 80, 40);
-  }
-  doc.setFontSize(18);
-  doc.text('VELLORA REPORT', 500, 50, {align:'right'});
+    <script type="text/babel">
+        // ==========================================
+        // 1. CONFIGURATION & UTILS
+        // ==========================================
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
+            authDomain: "vellora-3828d.firebaseapp.com",
+            projectId: "vellora-3828d",
+            storageBucket: "vellora-3828d.firebasestorage.app",
+            messagingSenderId: "1045366360458",
+            appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
+            measurementId: "G-WLKMJNBJTP"
+        };
 
-  doc.setFontSize(12);
-  doc.text(`Business: ${survey.businessName || ''}`, 40, 100);
-  doc.text(`Type: ${survey.businessType || ''}`, 40, 118);
-  doc.text(`Area: ${survey.location?.areaName || ''}`, 40, 136);
-  doc.text(`Date: ${new Date(survey.createdAt||'').toLocaleString()}`, 40, 154);
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        const db = firebase.firestore();
+        db.enablePersistence().catch(err => console.log("Persistence Error:", err));
 
-  // Pricing Matrix table
-  const tableRows = [];
-  if (survey.pricingMatrix) {
-    survey.pricingMatrix.forEach(r=>{
-      tableRows.push([r.brand || '', r.size || '', r.buyingPrice||'', r.sellingPrice||'', ( (r.sellingPrice||0)-(r.buyingPrice||0) ) ]);
-    });
-  }
-  doc.autoTable({
-    head: [['Brand','Size','Buy','Sell','Profit']],
-    body: tableRows,
-    startY: 180
-  });
+        // Constants
+        const THEMES = [
+            { id: 'light', name: 'Clean White', bg: 'bg-gray-50', text: 'text-gray-900', nav: 'bg-white', card: 'bg-white' },
+            { id: 'dark', name: 'Midnight', bg: 'bg-gray-900', text: 'text-white', nav: 'bg-gray-800', card: 'bg-gray-800' },
+            { id: 'obsidian', name: 'Obsidian', bg: 'theme-obsidian', text: 'text-white', nav: 'bg-black border-t border-gray-800', card: 'bg-gray-900' },
+            { id: 'forest', name: 'Forest', bg: 'bg-green-50', text: 'text-green-900', nav: 'bg-white', card: 'bg-white' },
+            { id: 'ocean', name: 'Ocean', bg: 'bg-blue-50', text: 'text-blue-900', nav: 'bg-white', card: 'bg-white' },
+        ];
 
-  doc.text('Supply Chain:', 40, doc.lastAutoTable.finalY + 24 || 260);
-  let y = doc.lastAutoTable.finalY + 40 || 290;
-  if (survey.supplyChain) {
-    survey.supplyChain.forEach(s => {
-      doc.text(`${s.brand} — ${s.sourceType} — ${s.sourceName} — ${s.sourcePhone} — Sat: ${s.satisfaction}`, 40, y);
-      y += 14;
-    });
-  }
+        // ==========================================
+        // 2. DATA LAYER (SYNC ENGINE)
+        // ==========================================
+        const useSyncEngine = () => {
+            const [surveys, setSurveys] = React.useState([]);
+            const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+            const [outbox, setOutbox] = React.useState([]);
 
-  doc.text('Sales Pitch:', 40, y+10);
-  y += 28;
-  doc.text(`Interested in Switching Supplier: ${survey.pitch?.switchSupplier || ''}`, 40, y); y+=14;
-  doc.text(`Target Price: ${survey.pitch?.targetPrice || ''}`, 40, y); y+=14;
-  doc.text(`Key Factors: ${(survey.pitch?.keyFactors || []).join(', ')}`, 40, y); y+=14;
-  doc.text(`Interested in Buying Vellora: ${survey.pitch?.interestedBuyVellora || ''}`, 40, y); y+=14;
+            // Load Initial State
+            React.useEffect(() => {
+                const localData = JSON.parse(localStorage.getItem('vellora_surveys') || '[]');
+                const localOutbox = JSON.parse(localStorage.getItem('vellora_outbox') || '[]');
+                setSurveys(localData);
+                setOutbox(localOutbox);
 
-  // Footer contact
-  doc.text('Contact', 40, y+20);
-  doc.text(`${survey.contact?.name || ''} — ${survey.contact?.mobile || ''}`, 40, y+40);
+                // Firebase Listener
+                const unsubscribe = db.collection('surveys').onSnapshot(snapshot => {
+                    const fbData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Merge strategy: Firebase wins if newer, but for simplicity here we trust FB stream when online
+                    if (navigator.onLine) {
+                        setSurveys(fbData);
+                        localStorage.setItem('vellora_surveys', JSON.stringify(fbData));
+                    }
+                }, err => console.log("Offline mode active"));
 
-  doc.save(`Vellora_Survey_${survey.businessName||survey.id||'report'}.pdf`);
-}
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', () => setIsOnline(false));
 
-/** Small helper: generate empty survey structure */
-function emptySurvey() {
-  return {
-    id: uid(),
-    businessName: '',
-    businessType: '',
-    footfall: '',
-    location: { areaName:'', coords:'' },
-    brands: [],
-    sizes: [],
-    qtyToggle: 'Monthly',
-    quantity: 0,
-    qtyMonthly: 0,
-    pricingMatrix: [],
-    supplyChain: [],
-    credit: {received:false, amount:null, periodDays:null, interestRate:null},
-    pitch: {},
-    whiteLabel: {interested:false, purpose:'', willingToPay:0},
-    contact: {name:'', mobile:''},
-    createdAt: nowISO(),
-    isDeleted: false
-  };
-}
+                return () => {
+                    unsubscribe();
+                    window.removeEventListener('online', handleOnline);
+                };
+            }, []);
 
-/** Main App (React) */
-const { useState, useEffect, useRef } = React;
+            const handleOnline = async () => {
+                setIsOnline(true);
+                const currentOutbox = JSON.parse(localStorage.getItem('vellora_outbox') || '[]');
+                if (currentOutbox.length > 0) {
+                    console.log("Syncing Outbox...", currentOutbox.length);
+                    for (const item of currentOutbox) {
+                        try {
+                            if (item.type === 'ADD') {
+                                delete item.data.id; // Let FB generate ID or use preserved one if needed
+                                await db.collection('surveys').add(item.data);
+                            } else if (item.type === 'UPDATE') {
+                                await db.collection('surveys').doc(item.id).update(item.data);
+                            } else if (item.type === 'DELETE') { // Soft Delete
+                                await db.collection('surveys').doc(item.id).update({ isDeleted: true });
+                            }
+                        } catch (e) { console.error("Sync failed for item", e); }
+                    }
+                    localStorage.setItem('vellora_outbox', '[]');
+                    setOutbox([]);
+                }
+            };
 
-function App(){
-  const [theme, setTheme] = useState(loadLocal(SETTINGS_KEY, {theme:'dark', logo:null}).theme || 'dark');
-  const [settings, setSettings] = useState(loadLocal(SETTINGS_KEY, {theme:'dark', logo:null}));
-  const [surveys, setSurveys] = useState([]);
-  const [page, setPage] = useState('list'); // list, analytics, settings, bin
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [editingSurvey, setEditingSurvey] = useState(null);
-  const [detailView, setDetailView] = useState(null);
-  const [recyclePin, setRecyclePin] = useState('');
-  const [showRecycle, setShowRecycle] = useState(false);
-  const [masterData, setMasterData] = useState(loadLocal(MASTERDATA_KEY, defaultMasterData));
-  const [filter, setFilter] = useState({}); // simple chart filtering
+            const addSurvey = async (data) => {
+                const newSurvey = { ...data, createdAt: new Date().toISOString(), isDeleted: false };
+                
+                // Optimistic UI Update
+                const tempId = 'temp_' + Date.now();
+                const optimisticList = [...surveys, { ...newSurvey, id: tempId }];
+                setSurveys(optimisticList);
+                localStorage.setItem('vellora_surveys', JSON.stringify(optimisticList));
 
-  useEffect(()=>{
-    document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
-    setSettings(prev => { const s={...prev, theme}; saveLocal(SETTINGS_KEY, s); return s;});
-  }, [theme]);
+                if (navigator.onLine) {
+                    try {
+                        await db.collection('surveys').add(newSurvey);
+                    } catch (e) { queueAction('ADD', newSurvey); }
+                } else {
+                    queueAction('ADD', newSurvey);
+                }
+            };
 
-  useEffect(()=>{
-    // initialize DataLayer subscription
-    DataLayer.initSync(arr => {
-      setSurveys(arr);
-    });
-    // ensure outbox flush if online
-    if (navigator.onLine) syncEngine.flush();
-    // load masterdata
-    const md = loadLocal(MASTERDATA_KEY, defaultMasterData);
-    setMasterData(md);
-  }, []);
+            const updateSurvey = async (id, data) => {
+                const updatedList = surveys.map(s => s.id === id ? { ...s, ...data } : s);
+                setSurveys(updatedList);
+                localStorage.setItem('vellora_surveys', JSON.stringify(updatedList));
 
-  // Derived lists
-  const visibleSurveys = surveys.filter(s => !s.isDeleted);
+                if (navigator.onLine) {
+                    try { await db.collection('surveys').doc(id).update(data); }
+                    catch (e) { queueAction('UPDATE', data, id); }
+                } else {
+                    queueAction('UPDATE', data, id);
+                }
+            };
 
-  // Start new survey
-  function startSurvey() {
-    const s = emptySurvey();
-    setEditingSurvey(s);
-    setWizardOpen(true);
-  }
+            const deleteSurvey = async (id, permanent = false) => {
+                if (permanent) {
+                     const filtered = surveys.filter(s => s.id !== id);
+                     setSurveys(filtered);
+                     localStorage.setItem('vellora_surveys', JSON.stringify(filtered));
+                     if(navigator.onLine) await db.collection('surveys').doc(id).delete();
+                } else {
+                    // Soft Delete
+                    updateSurvey(id, { isDeleted: true });
+                }
+            };
 
-  function openDetail(s) { setDetailView(s); }
+            const restoreSurvey = async (id) => {
+                updateSurvey(id, { isDeleted: false });
+            }
 
-  async function saveSurvey(s) {
-    // compute qtyMonthly
-    const toSave = {...s};
-    toSave.qtyMonthly = (s.qtyToggle === 'Daily') ? (Number(s.quantity || 0) * 30) : Number(s.quantity || 0);
-    // compress pricingMatrix and supplyChain (basic validation)
-    if (!toSave.id) toSave.id = uid();
-    if (surveys.find(x=>x.id === toSave.id)) {
-      await DataLayer.updateSurvey(toSave.id, toSave);
-    } else {
-      await DataLayer.createSurvey(toSave);
-    }
-    setWizardOpen(false);
-    setEditingSurvey(null);
-  }
+            const queueAction = (type, data, id = null) => {
+                const newOutbox = [...outbox, { type, data, id, timestamp: Date.now() }];
+                setOutbox(newOutbox);
+                localStorage.setItem('vellora_outbox', JSON.stringify(newOutbox));
+            };
 
-  // Soft delete
-  async function deleteSurvey(id) {
-    if (!confirm('Soft delete this survey? It will be moved to Recycle Bin.')) return;
-    await DataLayer.softDelete(id);
-    setDetailView(null);
-  }
+            return { surveys, isOnline, addSurvey, updateSurvey, deleteSurvey, restoreSurvey };
+        };
 
-  // Export visible surveys CSV/JSON/PDF bulk
-  function exportJSON() {
-    const data = visibleSurveys;
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='vellora_surveys.json'; a.click(); URL.revokeObjectURL(url);
-  }
-  function exportCSV() {
-    const keys = ['id','businessName','businessType','location','qtyMonthly','createdAt'];
-    const rows = visibleSurveys.map(s => keys.map(k => {
-      if (k==='location') return `"${(s.location?.areaName||'')}"`;
-      return `"${(s[k]||'').toString().replace(/"/g,'""')}"`;
-    }).join(','));
-    const csv = keys.join(',') + '\n' + rows.join('\n');
-    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='vellora_surveys.csv'; a.click(); URL.revokeObjectURL(url);
-  }
-  async function exportBulkPDF() {
-    // merge via single PDF with multiple pages. We'll export one-by-one to keep simple.
-    for (const s of visibleSurveys) {
-      await exportSurveyToPDF(s, settings.logo);
-    }
-  }
+        // ==========================================
+        // 3. UI COMPONENTS
+        // ==========================================
+        
+        // --- Icons ---
+        const Icons = {
+            Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+            Chart: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+            Settings: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+            Plus: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+            Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+            Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+        };
 
-  // Settings: logo upload
-  function onLogoUpload(file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result;
-      const newSettings = {...settings, logo: base64};
-      setSettings(newSettings); saveLocal(SETTINGS_KEY, newSettings);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // Recycle Bin PIN protect default "1234"
-  function openBin() {
-    const pin = prompt('Enter Recycle PIN (default 1234):');
-    if (pin === null) return;
-    if (pin === '' ) { alert('PIN required'); return; }
-    if (pin === '1234') {
-      setPage('bin');
-    } else {
-      alert('Incorrect PIN');
-    }
-  }
-
-  // basic analytics (brands counts, business types)
-  const brandCounts = {};
-  visibleSurveys.forEach(s=>{
-    (s.brands||[]).forEach(b=>{ brandCounts[b] = (brandCounts[b]||0)+1; });
-  });
-  const typeCounts = {};
-  visibleSurveys.forEach(s=>{ typeCounts[s.businessType] = (typeCounts[s.businessType]||0)+1; });
-
-  return (
-    <div className="min-h-screen p-4" style={{background: 'var(--bg)'}}>
-      {/* Header */}
-      <header className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div style={{width:48,height:48,overflow:'hidden',borderRadius:8,background:'#fff'}} className="flex items-center justify-center">
-            {settings.logo ? <img src={settings.logo} style={{width:48,height:48,objectFit:'cover'}} /> : <div className="text-sm font-bold" style={{color: theme==='dark' ? '#fff' : '#000'}}>VL</div>}
-          </div>
-          <div>
-            <div style={{fontSize:18,fontWeight:800}} className={theme==='dark' ? 'brand-text-dark' : 'brand-text-light'}>VELLORA</div>
-            <div className="muted text-xs">Market Survey — v4.0</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="muted text-sm">Theme</div>
-          <select value={theme} onChange={e=>setTheme(e.target.value)} className="input">
-            <option value="dark">Obsidian</option>
-            <option value="light">Light</option>
-          </select>
-          <button className="btn" onClick={()=>{ setPage('settings'); }}>Settings</button>
-        </div>
-      </header>
-
-      {/* Main layout */}
-      <main className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Left: Navigation */}
-        <nav className="col-span-1 card">
-          <div className="flex flex-col gap-3">
-            <button onClick={()=>setPage('analytics')} className={`btn ${page==='analytics'?'ring-2 ring-offset-2':''}`}>📊 Analytics</button>
-            <button onClick={()=>setPage('list')} className={`btn ${page==='list'?'ring-2 ring-offset-2':''}`}>🏠 Survey List</button>
-            <button onClick={openBin} className="btn">⚙️ Recycle Bin</button>
-            <div className="mt-4">
-              <div className="muted text-xs">Quick Actions</div>
-              <div className="flex gap-2 mt-2">
-                <button className="btn" onClick={startSurvey}>Start Survey</button>
-                <button className="btn" onClick={exportCSV}>Export CSV</button>
-                <button className="btn" onClick={exportJSON}>Export JSON</button>
-              </div>
+        // --- Wizard Step Components ---
+        const InputGroup = ({ label, children, theme }) => (
+            <div className="mb-4">
+                <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">{label}</label>
+                {children}
             </div>
-            <div className="mt-4 muted text-xs">Status: {navigator.onLine ? 'Online' : 'Offline'}</div>
-            <div className="mt-2 muted text-xs">Outbox: { (loadLocal(OUTBOX_KEY, [])||[]).length }</div>
-          </div>
-        </nav>
+        );
 
-        {/* Middle: content */}
-        <section className="col-span-2">
-          {page==='list' && (
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold">Survey List</h2>
-                <div className="muted text-sm">{visibleSurveys.length} surveys</div>
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                {visibleSurveys.map(s => (
-                  <div key={s.id} className="card flex items-start justify-between">
-                    <div>
-                      <div className="font-bold">{s.businessName || 'Untitled'}</div>
-                      <div className="muted text-sm">{s.location?.areaName || 'Area unknown'} — {new Date(s.createdAt).toLocaleString()}</div>
-                      <div className="mt-2 flex gap-2">
-                        {s.pitch?.interestedBuyVellora === 'Yes' && <span className="px-2 py-1 text-xs bg-red-600 rounded">Hot Lead</span>}
-                        {s.whiteLabel?.interested && <span className="px-2 py-1 text-xs bg-gray-600 rounded">White Label</span>}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <button className="btn" onClick={()=>openDetail(s)}>Open</button>
-                      <button className="btn" onClick={()=>{ setEditingSurvey(s); setWizardOpen(true); }}>Edit</button>
-                    </div>
-                  </div>
+        const TextInput = ({ value, onChange, placeholder, type="text", theme }) => (
+            <input 
+                type={type} 
+                value={value} 
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none bg-transparent smooth-transition"
+            />
+        );
+
+        const ButtonGrid = ({ options, selected, onSelect, allowOther, otherValue, onOtherChange }) => (
+            <div className="flex flex-wrap gap-2">
+                {options.map(opt => (
+                    <button 
+                        key={opt}
+                        onClick={() => onSelect(opt)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                            selected.includes(opt) 
+                            ? 'bg-blue-600 text-white border-blue-600' 
+                            : 'bg-opacity-10 border-gray-300 hover:border-gray-400 opacity-80'
+                        }`}
+                    >
+                        {opt}
+                    </button>
                 ))}
-                {visibleSurveys.length===0 && <div className="muted">No surveys yet. Click Start Survey.</div>}
-              </div>
-            </div>
-          )}
-
-          {page==='analytics' && (
-            <div className="card">
-              <h2 className="text-lg font-bold mb-4">Analytics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="card">
-                  <h3 className="font-semibold">Brands (Bar)</h3>
-                  <svg width="100%" height="180">
-                    {Object.keys(brandCounts).length===0 && <text x="10" y="30" fill="var(--muted)">No data</text>}
-                    {Object.entries(brandCounts).map(([k,v],i)=>{
-                      const max = Math.max(...Object.values(brandCounts),1);
-                      const height = (v/max)*120;
-                      const x = 40 + i*70;
-                      const y = 160 - height;
-                      return <g key={k}>
-                        <rect x={x} y={y} width={40} height={height} fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.06)"></rect>
-                        <text x={x+20} y={170} fontSize="10" textAnchor="middle">{k}</text>
-                      </g>;
-                    })}
-                  </svg>
-                </div>
-                <div className="card">
-                  <h3 className="font-semibold">Business Types (Pie)</h3>
-                  <svg width="100%" height="200" viewBox="0 0 200 200">
-                    {(() => {
-                      const entries = Object.entries(typeCounts);
-                      const total = entries.reduce((s,[k,v])=> s+v, 0) || 1;
-                      let angle=0;
-                      return entries.map(([k,v],i)=>{
-                        const portion = v/total;
-                        const next = angle + portion*360;
-                        const large = portion>0.5?1:0;
-                        // simple pie using arcs would be heavy—approx with circles
-                        const start = angle*Math.PI/180; const end = next*Math.PI/180;
-                        const x1 = 100 + 80*Math.cos(start);
-                        const y1 = 100 + 80*Math.sin(start);
-                        const x2 = 100 + 80*Math.cos(end);
-                        const y2 = 100 + 80*Math.sin(end);
-                        const path = `M100,100 L${x1},${y1} A80,80 0 ${large} 1 ${x2},${y2} z`;
-                        angle = next;
-                        return <g key={k}>
-                          <path d={path} fill={`rgba(${(i*70)%255},${(i*130)%255},${(i*200)%255},0.12)`} stroke="rgba(255,255,255,0.06)"></path>
-                          <text x={140} y={40+i*16} fontSize="10">{k} ({v})</text>
-                        </g>;
-                      });
-                    })()}
-                  </svg>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {page==='settings' && (
-            <div className="card">
-              <h2 className="text-lg font-bold">Settings</h2>
-              <div className="mt-4 grid grid-cols-1 gap-3">
-                <div>
-                  <label className="muted text-xs">Upload Logo (saved to local storage, used in header & PDF)</label>
-                  <input type="file" accept="image/*" onChange={e=>onLogoUpload(e.target.files[0])} className="input mt-1" />
-                </div>
-                <div className="flex gap-2">
-                  <button className="btn" onClick={exportCSV}>Export CSV</button>
-                  <button className="btn" onClick={exportJSON}>Export JSON</button>
-                  <button className="btn" onClick={exportBulkPDF}>Export PDF</button>
-                </div>
-                <div>
-                  <button className="btn" onClick={() => { saveLocal(MASTERDATA_KEY, masterData); alert('Saved master data.'); }}>Save Master Data</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {page==='bin' && (
-            <div className="card">
-              <h2 className="text-lg font-bold">Recycle Bin</h2>
-              <div className="muted text-sm mb-2">Deleted surveys (protected)</div>
-              <div className="grid gap-3">
-                {surveys.filter(s=>s.isDeleted).map(s=>(
-                  <div className="card flex items-center justify-between" key={s.id}>
-                    <div>
-                      <div className="font-bold">{s.businessName}</div>
-                      <div className="muted text-sm">{s.location?.areaName || ''}</div>
+                {allowOther && (
+                    <div className="flex items-center gap-2 flex-grow min-w-[120px]">
+                        <button
+                             onClick={() => onSelect('Other')}
+                             className={`px-4 py-2 rounded-full text-sm font-medium border ${selected.includes('Other') ? 'bg-blue-600 text-white' : 'border-gray-300'}`}
+                        >Other</button>
+                        {selected.includes('Other') && (
+                            <input 
+                                type="text" 
+                                value={otherValue || ''} 
+                                onChange={e => onOtherChange(e.target.value)}
+                                className="flex-grow p-1 px-2 text-sm border-b bg-transparent outline-none" 
+                                placeholder="Specify..."
+                            />
+                        )}
                     </div>
-                    <div className="flex gap-2">
-                      <button className="btn" onClick={()=>{ if(confirm('Restore?')) DataLayer.restore(s.id); }}>Restore</button>
-                      <button className="btn" onClick={()=>{ if(confirm('Permanently delete?')) DataLayer.permanentDelete(s.id); }}>Delete Permanently</button>
-                    </div>
-                  </div>
-                ))}
-                {surveys.filter(s=>s.isDeleted).length===0 && <div className="muted">No deleted surveys.</div>}
-              </div>
+                )}
             </div>
-          )}
-        </section>
-      </main>
+        );
 
-      {/* FAB visible only on survey list page */}
-      {page==='list' && (
-        <button className="fab bg-blue-600 text-white" onClick={startSurvey} title="Start Survey">＋</button>
-      )}
+        // --- Main App Component ---
+        const App = () => {
+            // State
+            const [view, setView] = React.useState('home'); // home, analytics, settings, wizard, detail
+            const [currentTheme, setCurrentTheme] = React.useState('obsidian');
+            const [activeSurvey, setActiveSurvey] = React.useState(null);
+            const { surveys, isOnline, addSurvey, updateSurvey, deleteSurvey, restoreSurvey } = useSyncEngine();
+            const [logo, setLogo] = React.useState(localStorage.getItem('vellora_logo') || null);
 
-      {/* Detail Modal */}
-      {detailView && (
-        <div className="modal-bg" onClick={()=>setDetailView(null)}>
-          <div className="card w-full md:w-2/3" onClick={e=>e.stopPropagation()}>
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold">{detailView.businessName}</h3>
-                <div className="muted text-sm">{detailView.location?.areaName}</div>
-              </div>
-              <div className="flex gap-2">
-                <button className="btn" onClick={()=>{ setEditingSurvey(detailView); setWizardOpen(true); setDetailView(null); }}>Edit</button>
-                <button className="btn" onClick={() => exportSurveyToPDF(detailView, settings.logo)}>PDF</button>
-                <button className="btn" onClick={()=>{ window.location.href = `tel:${detailView.contact?.mobile || ''}` }}>Call</button>
-                <button className="btn" onClick={()=>{ window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detailView.location?.areaName||'')}`); }}>Map</button>
-                <button className="btn" onClick={()=>deleteSurvey(detailView.id)}>Delete</button>
-              </div>
-            </div>
+            // Derived State
+            const activeSurveys = surveys.filter(s => !s.isDeleted);
+            const deletedSurveys = surveys.filter(s => s.isDeleted);
 
-            {/* Read-only layout of all data */}
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="card">
-                <h4 className="font-semibold">Inventory & Pricing</h4>
-                <div className="muted text-sm">Brands: {(detailView.brands||[]).join(', ')}</div>
-                <div className="mt-2">
-                  {(detailView.pricingMatrix||[]).map((r,i)=>(
-                    <div key={i} className="flex justify-between">
-                      <div>{r.brand} — {r.size}</div>
-                      <div>{r.buyingPrice} / {r.sellingPrice} (Profit: {(r.sellingPrice||0)-(r.buyingPrice||0)})</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            // Helpers
+            const themeObj = THEMES.find(t => t.id === currentTheme) || THEMES[0];
+            const getClasses = () => currentTheme === 'obsidian' ? 'theme-obsidian text-white' : `${themeObj.bg} ${themeObj.text}`;
+            
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setLogo(reader.result);
+                    localStorage.setItem('vellora_logo', reader.result);
+                };
+                if (file) reader.readAsDataURL(file);
+            };
 
-              <div className="card">
-                <h4 className="font-semibold">Supply Chain</h4>
-                {(detailView.supplyChain||[]).map((sc,i)=>(
-                  <div key={i}>
-                    <div className="font-semibold">{sc.brand} — {sc.sourceType}</div>
-                    <div className="muted text-sm">{sc.sourceName} — {sc.sourcePhone}</div>
-                    <div className="muted text-sm">Satisfied: {sc.satisfaction}</div>
-                    {sc.satisfaction === 'NO' && <div className="muted text-xs">Problems: {(sc.problems||[]).join(', ')}</div>}
-                    <hr className="my-2" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            const exportPDF = (survey) => {
+                const doc = new jspdf.jsPDF();
+                
+                // Header
+                if (logo) {
+                    doc.addImage(logo, 'JPEG', 15, 10, 20, 20); // Logo
+                }
+                doc.setFontSize(22);
+                doc.setTextColor(0, 0, 0); // Always black text for PDF
+                doc.text("VELLORA REPORT", 195, 20, { align: "right" });
+                
+                doc.setFontSize(12);
+                doc.text(`Business: ${survey.businessName}`, 15, 40);
+                doc.text(`Location: ${survey.area || 'N/A'}`, 15, 46);
+                doc.text(`Date: ${new Date(survey.createdAt).toLocaleDateString()}`, 15, 52);
 
-            <div className="mt-4 flex justify-end">
-              <button className="btn" onClick={()=>setDetailView(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+                // Data Prep for AutoTable
+                const tableData = [
+                    ["Section", "Details"],
+                    ["Profile", `Type: ${survey.businessType}, Footfall: ${survey.footfall}`],
+                    ["Inventory", `Brands: ${survey.brands?.join(', ')}`],
+                    ["Financials", `Profit Margin: ${survey.pricing?.[0]?.profit || 0}`],
+                    ["Supplier", `Sources: ${survey.supplyChain?.length || 0} active`],
+                    ["Pitch", `Interest: ${survey.pitch?.switchInterest}`],
+                    ["Contact", `${survey.contact?.name} (${survey.contact?.mobile})`]
+                ];
 
-      {/* Wizard Modal */}
-      {wizardOpen && (
-        <Wizard
-          initial={editingSurvey || emptySurvey()}
-          onCancel={()=>{ setWizardOpen(false); setEditingSurvey(null); }}
-          onSave={async (s) => { await saveSurvey(s); }}
-          masterData={masterData}
-          onSaveMaster={(md)=>{ setMasterData(md); saveLocal(MASTERDATA_KEY, md); }}
-        />
-      )}
+                doc.autoTable({
+                    startY: 60,
+                    head: [['Metric', 'Value']],
+                    body: tableData,
+                    theme: 'grid',
+                    styles: { fillColor: [255, 255, 255], textColor: 0 },
+                    headStyles: { fillColor: [0, 0, 0], textColor: 255 }
+                });
 
-    </div>
-  );
-}
+                doc.save(`Vellora_${survey.businessName}.pdf`);
+            };
 
-/** Wizard Component implementing Steps A-H exactly */
-function Wizard({initial, onCancel, onSave, masterData, onSaveMaster}) {
-  const [step, setStep] = useState(0);
-  const [s, setS] = useState({...initial});
-  const [brandOptions, setBrandOptions] = useState(masterData.brands || []);
-  const [sizeOptions, setSizeOptions] = useState(masterData.sizes || []);
-  const [typeOptions, setTypeOptions] = useState(masterData.types || []);
-  const [errors, setErrors] = useState({});
+            // --- Sub-Components (Inline for single file) ---
 
-  useEffect(()=>{ setS({...initial}); }, [initial]);
+            const Wizard = () => {
+                const [step, setStep] = React.useState('A');
+                const [formData, setFormData] = React.useState(activeSurvey || {
+                    businessName: '', businessType: '', footfall: '',
+                    area: '', coordinates: '',
+                    brands: [], sizes: [], inventoryType: 'Monthly', inventoryQty: '',
+                    pricing: [], supplyChain: [],
+                    creditLine: 'NO', creditDetails: {},
+                    pitch: {}, whiteLabel: 'NO', whiteLabelDetails: {},
+                    contact: {}
+                });
 
-  function update(changes) { setS(prev => ({...prev,...changes})); }
+                const steps = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-  function next() {
-    // minimal validation per step
-    const e = {};
-    if (step === 0) {
-      if (!s.businessName) e.businessName='Required';
-      if (!s.location?.areaName) e.areaName='Required';
-      if (!s.contact?.mobile && step===7) {}
-    }
-    setErrors(e);
-    if (Object.keys(e).length>0) return;
-    setStep(step+1);
-  }
-  function prev() { setStep(Math.max(0, step-1)); }
+                const nextStep = () => {
+                    const idx = steps.indexOf(step);
+                    if (idx < steps.length - 1) setStep(steps[idx + 1]);
+                    else saveSurvey();
+                };
 
-  // helper: add other to master data
-  function addMaster(type, val) {
-    if (!val) return;
-    const md = loadLocal(MASTERDATA_KEY, defaultMasterData);
-    if (type === 'brand' && !md.brands.includes(val)) md.brands.push(val);
-    if (type === 'size' && !md.sizes.includes(val)) md.sizes.push(val);
-    if (type === 'type' && !md.types.includes(val)) md.types.push(val);
-    saveLocal(MASTERDATA_KEY, md);
-    onSaveMaster(md);
-    setBrandOptions(md.brands); setSizeOptions(md.sizes); setTypeOptions(md.types);
-  }
+                const saveSurvey = () => {
+                    if (activeSurvey?.id) updateSurvey(activeSurvey.id, formData);
+                    else addSurvey(formData);
+                    setView('home');
+                    setActiveSurvey(null);
+                };
 
-  // Pricing matrix generation when brands/sizes chosen
-  useEffect(()=>{
-    const brands = s.brands || [];
-    const sizes = s.sizes || [];
-    const matrix = [];
-    brands.forEach(b=>{
-      sizes.forEach(sz=>{
-        const existing = (s.pricingMatrix||[]).find(r=>r.brand===b && r.size===sz) || {brand:b,size:sz,buyingPrice:0,sellingPrice:0};
-        matrix.push(existing);
-      });
-    });
-    setS(prev => ({...prev, pricingMatrix: matrix}));
-  }, [s.brands?.join('|'), s.sizes?.join('|')]);
+                // Wizard Steps Logic
+                const renderStep = () => {
+                    switch(step) {
+                        case 'A': return (
+                            <div className="space-y-4 animate-fade-in">
+                                <h2 className="text-xl font-bold mb-4">Step A: Profile & Location</h2>
+                                <InputGroup label="Business Name">
+                                    <TextInput value={formData.businessName} onChange={v => setFormData({...formData, businessName: v})} placeholder="Enter name..." />
+                                </InputGroup>
+                                <InputGroup label="Business Type">
+                                    <ButtonGrid 
+                                        options={['Retail', 'Wholesale', 'Gym', 'Pharmacy']} 
+                                        selected={[formData.businessType]} 
+                                        onSelect={v => setFormData({...formData, businessType: v})}
+                                        allowOther={true}
+                                        otherValue={formData.businessTypeOther}
+                                        onOtherChange={v => setFormData({...formData, businessTypeOther: v, businessType: 'Other'})}
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Footfall (Daily)">
+                                    <ButtonGrid options={['<50', '50-100', '100-500', '500+']} selected={[formData.footfall]} onSelect={v => setFormData({...formData, footfall: v})} />
+                                </InputGroup>
+                                <InputGroup label="Location">
+                                    <div className="flex gap-2">
+                                        <TextInput value={formData.area} onChange={v => setFormData({...formData, area: v})} placeholder="Area Name" />
+                                        <button onClick={() => {
+                                            if(navigator.geolocation) {
+                                                navigator.geolocation.getCurrentPosition(p => {
+                                                    setFormData({...formData, coordinates: `${p.coords.latitude},${p.coords.longitude}`});
+                                                });
+                                            }
+                                        }} className="bg-blue-600 text-white p-3 rounded-lg"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+                                    </div>
+                                    <div className="mt-2 text-xs opacity-60 font-mono">{formData.coordinates}</div>
+                                </InputGroup>
+                            </div>
+                        );
+                        case 'B': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step B: Inventory</h2>
+                                <InputGroup label="Brands Stocked">
+                                    <ButtonGrid 
+                                        options={['Nike', 'Adidas', 'Puma', 'Local', 'Imported']} 
+                                        selected={formData.brands} 
+                                        onSelect={v => {
+                                            const newBrands = formData.brands.includes(v) ? formData.brands.filter(b=>b!==v) : [...formData.brands, v];
+                                            setFormData({...formData, brands: newBrands});
+                                        }}
+                                        allowOther={true}
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Quantity Estimation">
+                                    <div className="flex items-center gap-4 mb-2">
+                                        <button onClick={() => setFormData({...formData, inventoryType: 'Daily'})} className={`px-3 py-1 rounded ${formData.inventoryType === 'Daily' ? 'bg-blue-600 text-white' : 'border'}`}>Daily</button>
+                                        <button onClick={() => setFormData({...formData, inventoryType: 'Monthly'})} className={`px-3 py-1 rounded ${formData.inventoryType === 'Monthly' ? 'bg-blue-600 text-white' : 'border'}`}>Monthly</button>
+                                    </div>
+                                    <TextInput type="number" value={formData.inventoryQty} onChange={v => setFormData({...formData, inventoryQty: v})} placeholder="Enter Qty" />
+                                    <div className="text-sm mt-2 text-blue-500 font-bold">
+                                        Total Monthly: {formData.inventoryType === 'Daily' ? (parseInt(formData.inventoryQty || 0) * 30) : formData.inventoryQty} units
+                                    </div>
+                                </InputGroup>
+                            </div>
+                        );
+                        case 'C': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step C: Pricing Matrix</h2>
+                                <div className="space-y-4">
+                                    {formData.brands.map((brand, idx) => (
+                                        <div key={idx} className="p-3 border rounded-lg bg-white bg-opacity-5">
+                                            <div className="font-bold mb-2">{brand}</div>
+                                            <div className="flex gap-2">
+                                                <TextInput type="number" placeholder="Buy Price" value={formData.pricing[idx]?.buy || ''} 
+                                                    onChange={v => {
+                                                        const newP = [...(formData.pricing || [])];
+                                                        if(!newP[idx]) newP[idx] = {};
+                                                        newP[idx].buy = v;
+                                                        newP[idx].profit = (newP[idx].sell || 0) - v;
+                                                        setFormData({...formData, pricing: newP});
+                                                    }} 
+                                                />
+                                                <TextInput type="number" placeholder="Sell Price" value={formData.pricing[idx]?.sell || ''} 
+                                                    onChange={v => {
+                                                        const newP = [...(formData.pricing || [])];
+                                                        if(!newP[idx]) newP[idx] = {};
+                                                        newP[idx].sell = v;
+                                                        newP[idx].profit = v - (newP[idx].buy || 0);
+                                                        setFormData({...formData, pricing: newP});
+                                                    }} 
+                                                />
+                                            </div>
+                                            <div className="text-right text-xs mt-1 text-green-500 font-mono">
+                                                Profit: {formData.pricing[idx]?.profit || 0}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                        case 'D': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step D: Supply Chain</h2>
+                                {formData.brands.map((brand, idx) => (
+                                    <div key={idx} className="mb-6 border-b pb-4 border-gray-700">
+                                        <h3 className="font-bold text-blue-400 mb-2">{brand} Supplier</h3>
+                                        <InputGroup label="Source Type">
+                                            <select 
+                                                className="w-full p-2 rounded bg-transparent border outline-none"
+                                                value={formData.supplyChain[idx]?.type || ''}
+                                                onChange={e => {
+                                                    const newSC = [...(formData.supplyChain || [])];
+                                                    if(!newSC[idx]) newSC[idx] = {};
+                                                    newSC[idx].type = e.target.value;
+                                                    setFormData({...formData, supplyChain: newSC});
+                                                }}
+                                            >
+                                                <option value="">Select...</option>
+                                                <option value="Distributor">Distributor</option>
+                                                <option value="Wholesaler">Wholesaler</option>
+                                                <option value="Manufacturer">Manufacturer</option>
+                                            </select>
+                                        </InputGroup>
+                                        <TextInput placeholder="Supplier Name" value={formData.supplyChain[idx]?.name || ''} onChange={v => {
+                                            const newSC = [...(formData.supplyChain || [])];
+                                            if(!newSC[idx]) newSC[idx] = {};
+                                            newSC[idx].name = v;
+                                            setFormData({...formData, supplyChain: newSC});
+                                        }} />
+                                        <div className="h-2"></div>
+                                        <TextInput placeholder="Mobile (Required)" type="tel" value={formData.supplyChain[idx]?.mobile || ''} onChange={v => {
+                                            const newSC = [...(formData.supplyChain || [])];
+                                            if(!newSC[idx]) newSC[idx] = {};
+                                            newSC[idx].mobile = v;
+                                            setFormData({...formData, supplyChain: newSC});
+                                        }} />
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <span className="text-sm">Satisfied?</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => {
+                                                     const newSC = [...(formData.supplyChain || [])];
+                                                     if(!newSC[idx]) newSC[idx] = {};
+                                                     newSC[idx].satisfied = true;
+                                                     setFormData({...formData, supplyChain: newSC});
+                                                }} className={`px-3 py-1 rounded ${formData.supplyChain[idx]?.satisfied === true ? 'bg-green-600' : 'border'}`}>YES</button>
+                                                <button onClick={() => {
+                                                     const newSC = [...(formData.supplyChain || [])];
+                                                     if(!newSC[idx]) newSC[idx] = {};
+                                                     newSC[idx].satisfied = false;
+                                                     setFormData({...formData, supplyChain: newSC});
+                                                }} className={`px-3 py-1 rounded ${formData.supplyChain[idx]?.satisfied === false ? 'bg-red-600' : 'border'}`}>NO</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                        case 'E': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step E: Credit Line</h2>
+                                <div className="flex justify-center gap-4 mb-6">
+                                    <button onClick={() => setFormData({...formData, creditLine: 'YES'})} className={`px-6 py-3 rounded-lg font-bold ${formData.creditLine === 'YES' ? 'bg-blue-600 text-white' : 'border'}`}>YES</button>
+                                    <button onClick={() => setFormData({...formData, creditLine: 'NO'})} className={`px-6 py-3 rounded-lg font-bold ${formData.creditLine === 'NO' ? 'bg-gray-600 text-white' : 'border'}`}>NO</button>
+                                </div>
+                                {formData.creditLine === 'YES' && (
+                                    <div className="animate-fade-in space-y-3">
+                                        <InputGroup label="Amount">
+                                            <TextInput type="number" placeholder="Limit" value={formData.creditDetails?.amount || ''} onChange={v => setFormData({...formData, creditDetails: {...formData.creditDetails, amount: v}})} />
+                                        </InputGroup>
+                                        <InputGroup label="Period (Days)">
+                                            <TextInput type="number" placeholder="Days" value={formData.creditDetails?.days || ''} onChange={v => setFormData({...formData, creditDetails: {...formData.creditDetails, days: v}})} />
+                                        </InputGroup>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                        case 'F': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step F: Sales Pitch</h2>
+                                <InputGroup label="Interested in Switching?">
+                                    <ButtonGrid options={['Yes', 'No', 'Maybe']} selected={[formData.pitch.switchInterest]} onSelect={v => setFormData({...formData, pitch: {...formData.pitch, switchInterest: v}})} />
+                                </InputGroup>
+                                <InputGroup label="Target Price Offer?">
+                                    <TextInput placeholder="Enter amount..." value={formData.pitch.targetPrice || ''} onChange={v => setFormData({...formData, pitch: {...formData.pitch, targetPrice: v}})} />
+                                </InputGroup>
+                                <InputGroup label="Interested in VELLORA?">
+                                     <ButtonGrid options={['YES', 'NO']} selected={[formData.pitch.velloraInterest]} onSelect={v => setFormData({...formData, pitch: {...formData.pitch, velloraInterest: v}})} />
+                                </InputGroup>
+                            </div>
+                        );
+                        case 'G': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step G: White Label</h2>
+                                <InputGroup label="Custom Branding?">
+                                    <div className="flex gap-4">
+                                        <button onClick={() => setFormData({...formData, whiteLabel: 'YES'})} className={`flex-1 py-2 rounded ${formData.whiteLabel === 'YES' ? 'bg-purple-600' : 'border'}`}>YES</button>
+                                        <button onClick={() => setFormData({...formData, whiteLabel: 'NO'})} className={`flex-1 py-2 rounded ${formData.whiteLabel === 'NO' ? 'bg-gray-600' : 'border'}`}>NO</button>
+                                    </div>
+                                </InputGroup>
+                                {formData.whiteLabel === 'YES' && (
+                                    <div className="mt-4">
+                                        <TextInput placeholder="Purpose (Event, Resale...)" value={formData.whiteLabelDetails?.purpose || ''} onChange={v => setFormData({...formData, whiteLabelDetails: {...formData.whiteLabelDetails, purpose: v}})} />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                        case 'H': return (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold mb-4">Step H: Finalize</h2>
+                                <InputGroup label="Contact Person">
+                                    <TextInput placeholder="Name" value={formData.contact.name || ''} onChange={v => setFormData({...formData, contact: {...formData.contact, name: v}})} />
+                                </InputGroup>
+                                <InputGroup label="Mobile Number">
+                                    <TextInput type="tel" placeholder="Mobile" value={formData.contact.mobile || ''} onChange={v => setFormData({...formData, contact: {...formData.contact, mobile: v}})} />
+                                </InputGroup>
+                                
+                                <div className="mt-8 p-4 rounded-lg border border-dashed border-gray-500 opacity-80">
+                                    <h3 className="uppercase text-xs font-bold mb-2 text-center">Summary (Read Only)</h3>
+                                    <div className="text-sm grid grid-cols-2 gap-2">
+                                        <div><strong>Biz:</strong> {formData.businessName}</div>
+                                        <div><strong>Area:</strong> {formData.area}</div>
+                                        <div><strong>Brands:</strong> {formData.brands.length}</div>
+                                        <div><strong>Interest:</strong> {formData.pitch.switchInterest}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+                };
 
-  // Supply chain loop per brand
-  useEffect(()=>{
-    const supply = s.supplyChain || [];
-    const brands = s.brands || [];
-    // ensure an entry for each brand
-    const newSupply = brands.map(b=>{
-      return supply.find(x=>x.brand===b) || {brand:b, sourceType:'Distributor', sourceName:'', sourcePhone:'', notes:'', satisfaction:'YES', problems:[]};
-    });
-    setS(prev=>({...prev, supplyChain: newSupply}));
-  }, [s.brands?.join('|')]);
-
-  function toggleArrayField(field, val) {
-    const arr = new Set(s[field] || []);
-    if (arr.has(val)) arr.delete(val); else arr.add(val);
-    setS(prev => ({...prev, [field]: Array.from(arr)}));
-  }
-
-  function onQuantityChange(v) {
-    const q = Number(v||0);
-    const qtyMonthly = (s.qtyToggle === 'Daily') ? q*30 : q;
-    setS(prev=>({...prev, quantity: q, qtyMonthly}));
-  }
-
-  function finalSave() {
-    // minimal final validation: contact mobile
-    if (!s.contact?.mobile) { alert('Contact mobile is required'); return; }
-    onSave(s);
-  }
-
-  const stepTitles = ['Profile & Location','Inventory','Pricing Matrix','Supply Chain','Credit Line','Sales Pitch','White Label','Finalize Review'];
-  return (
-    <div className="modal-bg" style={{alignItems:'flex-start', paddingTop: '3rem'}}>
-      <div className="card w-full max-w-4xl" onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold">Survey Wizard — Step {step+1}: {stepTitles[step]}</h3>
-          <div className="flex gap-2">
-            <button className="btn" onClick={onCancel}>Cancel</button>
-            {step>0 && <button className="btn" onClick={prev}>Back</button>}
-            {step < 7 && <button className="btn" onClick={next}>Next</button>}
-            {step === 7 && <button className="btn" onClick={finalSave}>Save</button>}
-          </div>
-        </div>
-
-        <div>
-          {step===0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="muted text-xs">Business Name</label>
-                <input className="input w-full mt-1" value={s.businessName} onChange={e=>update({businessName: e.target.value})} />
-                {errors.businessName && <div className="text-xs text-red-400">{errors.businessName}</div>}
-
-                <label className="muted text-xs mt-2">Type</label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {typeOptions.map(t => <button key={t} className={`btn ${s.businessType===t ? 'ring-2' : ''}`} onClick={()=>update({businessType:t})}>{t}</button>)}
-                  <input placeholder="Other type" className="input" onKeyDown={e=>{ if(e.key==='Enter'){ addMaster('type', e.target.value); update({businessType: e.target.value}); e.target.value=''; }}} />
-                </div>
-
-                <label className="muted text-xs mt-2">Footfall</label>
-                <div className="flex gap-2 mt-1">
-                  {['Low','Medium','High'].map(f=> <button key={f} className={`btn ${s.footfall===f ? 'ring-2' : ''}`} onClick={()=>update({footfall:f})}>{f}</button>)}
-                </div>
-              </div>
-
-              <div>
-                <label className="muted text-xs">Location — Area</label>
-                <div className="flex gap-2 mt-1">
-                  <input className="input flex-1" value={s.location?.areaName||''} onChange={e=>update({location:{...s.location, areaName: e.target.value}})} />
-                  <button className="btn" onClick={()=>{
-                    // Try geolocation auto-fill
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(pos=>{
-                        update({location:{areaName:`Lat:${pos.coords.latitude.toFixed(4)}, Lon:${pos.coords.longitude.toFixed(4)}`, coords:`${pos.coords.latitude},${pos.coords.longitude}`}})
-                      }, ()=>alert('Geolocation failed'));
-                    } else alert('Geolocation not supported');
-                  }}>Detect</button>
-                </div>
-                <label className="muted text-xs mt-2">Coordinates</label>
-                <input className="input w-full mt-1" value={s.location?.coords||''} onChange={e=>update({location:{...s.location, coords: e.target.value}})} />
-              </div>
-            </div>
-          )}
-
-          {step===1 && (
-            <div>
-              <label className="muted text-xs">Brands</label>
-              <div className="flex gap-2 flex-wrap mt-1">
-                {brandOptions.map(b=> <button key={b} className={`btn ${ (s.brands||[]).includes(b) ? 'ring-2' : '' }`} onClick={()=>toggleArrayField('brands', b)}>{b}</button>)}
-                <input placeholder="Add brand" className="input" onKeyDown={e=>{ if(e.key==='Enter'){ addMaster('brand', e.target.value); toggleArrayField('brands', e.target.value); e.target.value=''; }}} />
-              </div>
-
-              <label className="muted text-xs mt-2">Sizes</label>
-              <div className="flex gap-2 flex-wrap mt-1">
-                {sizeOptions.map(z=> <button key={z} className={`btn ${ (s.sizes||[]).includes(z) ? 'ring-2' : '' }`} onClick={()=>toggleArrayField('sizes', z)}>{z}</button>)}
-                <input placeholder="Add size" className="input" onKeyDown={e=>{ if(e.key==='Enter'){ addMaster('size', e.target.value); toggleArrayField('sizes', e.target.value); e.target.value=''; }}} />
-              </div>
-
-              <div className="mt-4">
-                <label className="muted text-xs">Quantity</label>
-                <div className="flex gap-2 mt-1 items-center">
-                  <div className="muted text-sm">Toggle</div>
-                  <select value={s.qtyToggle} onChange={e=>setS(prev=>({...prev, qtyToggle: e.target.value}))} className="input">
-                    <option>Daily</option>
-                    <option>Monthly</option>
-                  </select>
-                  <input type="number" value={s.quantity||0} onChange={e=>onQuantityChange(e.target.value)} className="input" />
-                  <div className="muted">Monthly qty: {s.qtyToggle==='Daily' ? (Number(s.quantity||0)*30) : (Number(s.quantity||0))}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step===2 && (
-            <div>
-              <h4 className="font-semibold">Pricing Matrix</h4>
-              <div className="grid gap-2 mt-2">
-                {(s.pricingMatrix||[]).map((r, i) => (
-                  <div key={i} className="grid grid-cols-4 gap-2">
-                    <div className="muted text-sm">{r.brand} — {r.size}</div>
-                    <input className="input" placeholder="Buying Price" value={r.buyingPrice||''} onChange={e=>{
-                      const nm = [...(s.pricingMatrix||[])]; nm[i] = {...nm[i], buyingPrice: Number(e.target.value)}; setS(prev=>({...prev, pricingMatrix: nm}));
-                    }} />
-                    <input className="input" placeholder="Selling Price" value={r.sellingPrice||''} onChange={e=>{
-                      const nm = [...(s.pricingMatrix||[])]; nm[i] = {...nm[i], sellingPrice: Number(e.target.value)}; setS(prev=>({...prev, pricingMatrix: nm}));
-                    }} />
-                    <div className="muted">Profit: {( (r.sellingPrice||0) - (r.buyingPrice||0) )}</div>
-                  </div>
-                ))}
-                {(s.pricingMatrix||[]).length===0 && <div className="muted">No brands/sizes selected.</div>}
-              </div>
-            </div>
-          )}
-
-          {step===3 && (
-            <div>
-              <h4 className="font-semibold">Supply Chain — Loop per Brand</h4>
-              <div className="grid gap-3 mt-2">
-                {(s.supplyChain||[]).map((sc,i)=>(
-                  <div key={i} className="card">
-                    <div className="font-semibold">{sc.brand}</div>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <select value={sc.sourceType} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], sourceType: e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} className="input">
-                        {['Distributor','Wholesaler','Manufacturer','Direct Company','Other'].map(o=> <option key={o}>{o}</option>)}
-                      </select>
-                      <input className="input" placeholder="Source Name" value={sc.sourceName||''} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], sourceName:e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} />
-                      <input className="input" placeholder="Mobile (required)" value={sc.sourcePhone||''} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], sourcePhone:e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} />
-                      <input className="input" placeholder="Notes" value={sc.notes||''} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], notes:e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} />
-                    </div>
-                    <div className="mt-2">
-                      <div className="muted text-xs">Satisfied?</div>
-                      <div className="flex gap-2 mt-1">
-                        <button className={`btn ${sc.satisfaction==='YES' ? 'ring-2' : ''}`} onClick={()=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], satisfaction:'YES', problems:[]}; setS(prev=>({...prev, supplyChain:nm})); }}>YES</button>
-                        <button className={`btn ${sc.satisfaction==='NO' ? 'ring-2' : ''}`} onClick={()=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], satisfaction:'NO'}; setS(prev=>({...prev, supplyChain:nm})); }}>NO</button>
-                      </div>
-                      {sc.satisfaction==='NO' && (
-                        <div className="mt-2">
-                          <div className="muted text-xs">Problems (multi-select)</div>
-                          <div className="flex gap-2 mt-1">
-                            {['Late','Rude','Price','Stock','Other'].map(p=> <button key={p} className={`btn ${ (sc.problems||[]).includes(p) ? 'ring-2' : '' }`} onClick={()=>{
-                              const nm=[...s.supplyChain];
-                              const row = {...nm[i]};
-                              const set = new Set(row.problems || []);
-                              if (set.has(p)) set.delete(p); else set.add(p);
-                              row.problems = Array.from(set);
-                              nm[i] = row;
-                              setS(prev=>({...prev, supplyChain:nm}));
-                            }}>{p}</button>)}
-                          </div>
+                return (
+                    <div className="fixed inset-0 z-50 flex flex-col bg-inherit text-inherit">
+                        <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                            <button onClick={() => setView('home')} className="text-sm opacity-70">Cancel</button>
+                            <h1 className="font-bold">Survey Wizard</h1>
+                            <div className="text-sm opacity-70">{step}/H</div>
                         </div>
-                      )}
+                        <div className="flex-grow overflow-y-auto p-6">
+                            {renderStep()}
+                        </div>
+                        <div className="p-4 border-t border-gray-800">
+                            <button onClick={nextStep} className="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg">
+                                {step === 'H' ? 'SAVE SURVEY' : 'NEXT STEP'}
+                            </button>
+                        </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                );
+            };
 
-          {step===4 && (
-            <div>
-              <h4 className="font-semibold">Credit Line</h4>
-              <div className="flex gap-2 mt-2 items-center">
-                <button className={`btn ${s.credit?.received ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, credit:{...prev.credit, received:true}}))}>YES</button>
-                <button className={`btn ${!s.credit?.received ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, credit:{...prev.credit, received:false}}))}>NO</button>
-              </div>
-              {s.credit?.received && (
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <input className="input" placeholder="Amount" value={s.credit?.amount||''} onChange={e=>setS(prev=>({...prev, credit:{...prev.credit, amount: Number(e.target.value)}}))} />
-                  <input className="input" placeholder="Period (Days)" value={s.credit?.periodDays||''} onChange={e=>setS(prev=>({...prev, credit:{...prev.credit, periodDays: Number(e.target.value)}}))} />
-                  <input className="input" placeholder="Interest Rate (%)" value={s.credit?.interestRate||''} onChange={e=>setS(prev=>({...prev, credit:{...prev.credit, interestRate: Number(e.target.value)}}))} />
-                </div>
-              )}
-            </div>
-          )}
+            const Analytics = () => (
+                <div className="p-4 pb-24">
+                    <h2 className="text-2xl font-bold mb-6">Market Intel</h2>
+                    
+                    <div className="mb-8 card p-4 rounded-xl shadow-sm border border-opacity-10 border-white">
+                        <h3 className="text-sm font-bold uppercase mb-4 opacity-70">Brand Penetration</h3>
+                        <div className="h-40 flex items-end gap-2">
+                            {['Nike', 'Adidas', 'Puma', 'Local'].map(brand => {
+                                const count = activeSurveys.filter(s => s.brands?.includes(brand)).length;
+                                const height = count * 20 + 10;
+                                return (
+                                    <div key={brand} className="flex-1 flex flex-col items-center group">
+                                        <div style={{height: `${height}px`}} className="w-full bg-blue-500 bg-opacity-80 rounded-t transition-all duration-500 relative">
+                                            <span className="absolute -top-6 w-full text-center text-xs">{count}</span>
+                                        </div>
+                                        <span className="text-xs mt-2 opacity-60 truncate w-full text-center">{brand}</span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
 
-          {step===5 && (
-            <div>
-              <h4 className="font-semibold">Sales Pitch</h4>
-              <div className="grid gap-2 mt-2">
-                <div>
-                  <div className="muted text-xs">Interested in Switching Supplier?</div>
-                  <div className="flex gap-2 mt-1">
-                    {['Yes','No','Maybe'].map(o=> <button key={o} className={`btn ${s.pitch?.switchSupplier===o ? 'ring-2' : ''}`} onClick={()=>setS(prev=>({...prev, pitch:{...prev.pitch, switchSupplier:o}}))}>{o}</button>)}
-                  </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="card p-4 rounded-xl shadow-sm border border-opacity-10 border-white">
+                            <h3 className="text-xs font-bold uppercase mb-2">Interest High</h3>
+                            <div className="text-3xl font-bold text-green-500">
+                                {activeSurveys.filter(s => s.pitch?.switchInterest === 'Yes').length}
+                            </div>
+                            <div className="text-xs opacity-50">Leads</div>
+                         </div>
+                         <div className="card p-4 rounded-xl shadow-sm border border-opacity-10 border-white">
+                            <h3 className="text-xs font-bold uppercase mb-2">WL Potential</h3>
+                            <div className="text-3xl font-bold text-purple-500">
+                                {activeSurveys.filter(s => s.whiteLabel === 'YES').length}
+                            </div>
+                            <div className="text-xs opacity-50">Requests</div>
+                         </div>
+                    </div>
                 </div>
-                <div>
-                  <div className="muted text-xs">Target Price / Offer needed?</div>
-                  <input className="input mt-1" value={s.pitch?.targetPrice||''} onChange={e=>setS(prev=>({...prev, pitch:{...prev.pitch, targetPrice:e.target.value}}))} />
-                </div>
-                <div>
-                  <div className="muted text-xs">Key Factors</div>
-                  <div className="flex gap-2 mt-1">
-                    {['Price','Service','Credit','Stock'].map(k=><button key={k} className={`btn ${ (s.pitch?.keyFactors||[]).includes(k) ? 'ring-2':''}`} onClick={()=>{
-                      const prev = new Set(s.pitch?.keyFactors || []);
-                      if (prev.has(k)) prev.delete(k); else prev.add(k);
-                      setS(x=>({...x, pitch:{...x.pitch, keyFactors:Array.from(prev)}}));
-                    }}>{k}</button>)}
-                  </div>
-                </div>
-                <div>
-                  <div className="muted text-xs">Interested in Buying Vellora?</div>
-                  <div className="flex gap-2 mt-1">
-                    <button className={`btn ${s.pitch?.interestedBuyVellora==='Yes' ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, pitch:{...prev.pitch, interestedBuyVellora:'Yes'}}))}>Yes</button>
-                    <button className={`btn ${s.pitch?.interestedBuyVellora==='No' ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, pitch:{...prev.pitch, interestedBuyVellora:'No'}}))}>No</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            );
 
-          {step===6 && (
-            <div>
-              <h4 className="font-semibold">White Label</h4>
-              <div className="flex gap-2 mt-1">
-                <button className={`btn ${s.whiteLabel?.interested ? 'ring-2' : ''}`} onClick={()=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, interested:true}}))}>YES</button>
-                <button className={`btn ${!s.whiteLabel?.interested ? 'ring-2' : ''}`} onClick={()=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, interested:false}}))}>NO</button>
-              </div>
-              {s.whiteLabel?.interested && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                  <select className="input" value={s.whiteLabel?.purpose||''} onChange={e=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, purpose: e.target.value}}))}>
-                    <option value="">Purpose</option><option>Brand</option><option>Event</option><option>Resale</option>
-                  </select>
-                  <input className="input" placeholder="Willing to pay extra (₹)" value={s.whiteLabel?.willingToPay||0} onChange={e=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, willingToPay: Number(e.target.value)}}))} />
+            const Settings = () => {
+                const [pin, setPin] = React.useState('');
+                const [showBin, setShowBin] = React.useState(false);
+
+                const unlockBin = () => {
+                    if (pin === '1234') setShowBin(true);
+                    else alert('Incorrect PIN');
+                };
+
+                return (
+                    <div className="p-4 pb-24 space-y-8">
+                        <div>
+                            <h2 className="text-xl font-bold mb-4">Appearance</h2>
+                            <div className="grid grid-cols-3 gap-2">
+                                {THEMES.map(t => (
+                                    <button 
+                                        key={t.id}
+                                        onClick={() => setCurrentTheme(t.id)} 
+                                        className={`p-2 text-xs rounded border ${currentTheme===t.id ? 'border-blue-500' : 'border-transparent'}`}
+                                        style={{backgroundColor: t.id === 'obsidian' ? '#000' : '#fff', color: t.id ==='obsidian' ? '#fff' : '#000'}}
+                                    >
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 className="text-xl font-bold mb-4">Branding</h2>
+                            <div className="flex items-center gap-4">
+                                {logo && <img src={logo} className="w-16 h-16 object-contain bg-white rounded" />}
+                                <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 className="text-xl font-bold mb-4">Data Management</h2>
+                            <button onClick={() => {
+                                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeSurveys));
+                                const downloadAnchorNode = document.createElement('a');
+                                downloadAnchorNode.setAttribute("href",     dataStr);
+                                downloadAnchorNode.setAttribute("download", "vellora_backup.json");
+                                document.body.appendChild(downloadAnchorNode);
+                                downloadAnchorNode.click();
+                                downloadAnchorNode.remove();
+                            }} className="w-full mb-2 p-3 border rounded border-gray-600">Export JSON Backup</button>
+                        </div>
+
+                        <div className="pt-8 border-t border-gray-800">
+                            <h2 className="text-xl font-bold mb-4 text-red-500">Recycle Bin</h2>
+                            {!showBin ? (
+                                <div className="flex gap-2">
+                                    <TextInput type="password" value={pin} onChange={setPin} placeholder="Enter PIN (1234)" />
+                                    <button onClick={unlockBin} className="bg-red-900 px-4 rounded">Unlock</button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {deletedSurveys.length === 0 && <div className="text-sm opacity-50">Bin is empty.</div>}
+                                    {deletedSurveys.map(s => (
+                                        <div key={s.id} className="flex justify-between items-center p-2 border border-gray-800 rounded">
+                                            <span className="text-sm truncate w-1/2">{s.businessName}</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => restoreSurvey(s.id)} className="text-green-500 text-xs uppercase">Restore</button>
+                                                <button onClick={() => deleteSurvey(s.id, true)} className="text-red-500 text-xs uppercase">Destroy</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            const SurveyDetail = ({ survey, onClose }) => (
+                <div className={`fixed inset-0 z-40 flex flex-col ${getClasses()}`}>
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-inherit">
+                        <button onClick={onClose} className="p-2">Back</button>
+                        <h2 className="font-bold truncate max-w-[200px]">{survey.businessName}</h2>
+                        <button onClick={() => {
+                            if(confirm("Move to Recycle Bin?")) {
+                                deleteSurvey(survey.id);
+                                onClose();
+                            }
+                        }} className="text-red-500"><Icons.Trash /></button>
+                    </div>
+                    
+                    <div className="flex-grow overflow-y-auto p-4 space-y-6">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="opacity-70">Type</div><div>{survey.businessType}</div>
+                            <div className="opacity-70">Area</div><div>{survey.area}</div>
+                            <div className="opacity-70">Contact</div><div>{survey.contact?.name}</div>
+                            <div className="opacity-70">Mobile</div><div className="text-blue-400 underline" onClick={() => window.open(`tel:${survey.contact?.mobile}`)}>{survey.contact?.mobile}</div>
+                        </div>
+
+                        <div className="border-t border-gray-800 pt-4">
+                            <h3 className="font-bold mb-2">Inventory</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {survey.brands?.map(b => <span key={b} className="px-2 py-1 bg-gray-800 rounded text-xs">{b}</span>)}
+                            </div>
+                        </div>
+
+                        <div className="border-t border-gray-800 pt-4">
+                            <h3 className="font-bold mb-2">Pitch Result</h3>
+                            <div className="p-3 bg-gray-800 bg-opacity-30 rounded">
+                                <div className="text-xs opacity-50">Switch Interest</div>
+                                <div className="text-lg">{survey.pitch?.switchInterest || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 border-t border-gray-800 grid grid-cols-4 gap-2 bg-inherit">
+                        <button onClick={() => { setActiveSurvey(survey); setView('wizard'); }} className="flex flex-col items-center text-xs gap-1"><Icons.Edit /> Edit</button>
+                        <button onClick={() => exportPDF(survey)} className="flex flex-col items-center text-xs gap-1"><span className="text-xl">📄</span> PDF</button>
+                        <button onClick={() => window.open(`https://maps.google.com/?q=${survey.coordinates}`)} className="flex flex-col items-center text-xs gap-1"><span className="text-xl">📍</span> Map</button>
+                        <button onClick={() => window.open(`tel:${survey.contact?.mobile}`)} className="flex flex-col items-center text-xs gap-1"><span className="text-xl">📞</span> Call</button>
+                    </div>
                 </div>
-              )}
-            </div>
-          )}
+            );
 
-          {step===7 && (
-            <div>
-              <h4 className="font-semibold">Finalize — Review</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                <div>
-                  <label className="muted text-xs">Contact Name</label>
-                  <input className="input mt-1" value={s.contact?.name||''} onChange={e=>setS(prev=>({...prev, contact:{...prev.contact, name: e.target.value}}))} />
-                  <label className="muted text-xs mt-2">Contact Mobile</label>
-                  <input className="input mt-1" value={s.contact?.mobile||''} onChange={e=>setS(prev=>({...prev, contact:{...prev.contact, mobile: e.target.value}}))} />
+            // --- Main Render ---
+            return (
+                <div className={`min-h-screen flex flex-col ${getClasses()}`}>
+                    {/* HEADER */}
+                    <header className={`p-4 flex justify-between items-center sticky top-0 z-30 backdrop-blur-md bg-opacity-90 border-b border-gray-800`}>
+                        <div className="font-black text-2xl tracking-tighter">VELLORA</div>
+                        <div className="flex gap-2 items-center">
+                            {!isOnline && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>}
+                        </div>
+                    </header>
+
+                    {/* CONTENT */}
+                    <main className="flex-grow relative overflow-hidden">
+                        {view === 'wizard' && <Wizard />}
+                        {activeSurvey && view !== 'wizard' && <SurveyDetail survey={activeSurvey} onClose={() => setActiveSurvey(null)} />}
+                        
+                        {view === 'home' && !activeSurvey && (
+                            <div className="p-4 pb-24 space-y-3">
+                                {activeSurveys.length === 0 ? (
+                                    <div className="text-center mt-20 opacity-50">
+                                        <p>No surveys found.</p>
+                                        <p className="text-sm">Start your first market visit.</p>
+                                    </div>
+                                ) : (
+                                    activeSurveys.map(s => (
+                                        <div onClick={() => setActiveSurvey(s)} key={s.id} className="card p-4 rounded-xl cursor-pointer relative overflow-hidden group hover:scale-[1.01] transition-transform">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className="font-bold text-lg">{s.businessName}</h3>
+                                                    <p className="text-sm opacity-60">{s.area} • {new Date(s.createdAt).toLocaleDateString()}</p>
+                                                </div>
+                                                {s.pitch?.switchInterest === 'Yes' && <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] uppercase font-bold rounded">Hot</span>}
+                                            </div>
+                                            {s.whiteLabel === 'YES' && <div className="mt-2 text-[10px] text-purple-400 font-mono tracking-widest uppercase">White Label Prospect</div>}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                        
+                        {view === 'analytics' && <Analytics />}
+                        {view === 'settings' && <Settings />}
+                    </main>
+
+                    {/* FAB (Only on Home) */}
+                    {view === 'home' && !activeSurvey && (
+                        <button 
+                            onClick={() => setView('wizard')}
+                            className="fixed bottom-24 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transform hover:scale-110 transition-all z-20"
+                        >
+                            <Icons.Plus />
+                        </button>
+                    )}
+
+                    {/* NAVIGATION */}
+                    {!activeSurvey && view !== 'wizard' && (
+                        <nav className={`fixed bottom-0 w-full p-2 pb-6 flex justify-around items-center border-t border-gray-800 z-30 ${themeObj.nav}`}>
+                            <button onClick={() => setView('analytics')} className={`p-3 rounded-xl transition-all ${view==='analytics' ? 'bg-blue-600 text-white' : 'opacity-50'}`}>
+                                <Icons.Chart />
+                            </button>
+                            <button onClick={() => setView('home')} className={`p-3 rounded-xl transition-all ${view==='home' ? 'bg-blue-600 text-white scale-110 shadow-lg' : 'opacity-50'}`}>
+                                <Icons.Home />
+                            </button>
+                            <button onClick={() => setView('settings')} className={`p-3 rounded-xl transition-all ${view==='settings' ? 'bg-blue-600 text-white' : 'opacity-50'}`}>
+                                <Icons.Settings />
+                            </button>
+                        </nav>
+                    )}
                 </div>
-                <div>
-                  <div className="card">
-                    <h5 className="font-semibold">Summary</h5>
-                    <div className="muted text-xs">Business: {s.businessName}</div>
-                    <div className="muted text-xs">Type: {s.businessType}</div>
-                    <div className="muted text-xs">Area: {s.location?.areaName}</div>
-                    <div className="muted text-xs">Brands: {(s.brands||[]).join(', ')}</div>
-                    <div className="muted text-xs">Qty Monthly: {s.qtyToggle === 'Daily' ? (Number(s.quantity||0)*30) : s.quantity}</div>
-                    <div className="muted text-xs">White Label: {s.whiteLabel?.interested ? 'Yes' : 'No'}</div>
-                    <div className="muted text-xs">Pitch Interested: {s.pitch?.interestedBuyVellora}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+            );
+        };
 
-      </div>
-    </div>
-  );
-}
-
-/** Render */
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-
-  </script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
