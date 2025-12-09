@@ -3,22 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VELLORA | Market Survey Architect</title>
+    <title>VELLORA | Market Survey</title>
     
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        
+        /* Obsidian Theme Utilities */
+        .bg-obsidian { background-color: #000000; }
+        .bg-card-obsidian { background-color: #0a0a0a; border: 1px solid #222; }
+        
+        /* Hide Number Input Arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
 
     <script>
         tailwind.config = {
@@ -26,61 +47,19 @@
             theme: {
                 extend: {
                     colors: {
-                        obsidian: '#000000',
-                        charcoal: '#0a0a0a',
-                        vellora: {
-                            500: '#3b82f6', // Primary Blue
-                            600: '#2563eb',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        brand: { 500: '#2563eb', 600: '#1d4ed8' },
+                        obsidian: { bg: '#000000', card: '#0a0a0a', border: '#333333', text: '#ffffff' }
                     }
                 }
             }
         }
     </script>
-
-    <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
-        
-        /* Map Styles */
-        .glass-panel {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        
-        /* Transition utility */
-        .smooth-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Obsidian Theme Specifics */
-        .theme-obsidian {
-            background-color: #000000;
-            color: #ffffff;
-        }
-        .theme-obsidian .card {
-            background-color: #0a0a0a;
-            border: 1px solid #222;
-        }
-        .theme-obsidian input, .theme-obsidian select, .theme-obsidian textarea {
-            background-color: #000000;
-            border-color: #333;
-            color: white;
-        }
-    </style>
 </head>
-<body class="bg-gray-50 text-gray-900 transition-colors duration-300">
+<body class="bg-gray-100 dark:bg-obsidian-bg text-gray-900 dark:text-gray-100 transition-colors duration-300 select-none">
     <div id="root"></div>
 
     <script type="text/babel">
-        // ==========================================
-        // 1. CONFIGURATION & UTILS
-        // ==========================================
+        // --- 1. FIREBASE & UTILS ---
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
             authDomain: "vellora-3828d.firebaseapp.com",
@@ -91,772 +70,878 @@
             measurementId: "G-WLKMJNBJTP"
         };
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(FIREBASE_CONFIG);
-        }
-        const db = firebase.firestore();
-        db.enablePersistence().catch(err => console.log("Persistence Error:", err));
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        const db = firebase.database();
+        const auth = firebase.auth();
 
-        // Constants
+        // Sign in anonymously to ensure DB write access
+        auth.onAuthStateChanged(user => {
+            if (!user) auth.signInAnonymously().catch(console.error);
+        });
+
+        // --- 2. REACT COMPONENTS ---
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- ICONS ---
+        const Icons = {
+            Chart: () => <i className="fa-solid fa-chart-pie text-xl"></i>,
+            Home: () => <i className="fa-solid fa-house text-xl"></i>,
+            Settings: () => <i className="fa-solid fa-gear text-xl"></i>,
+            Plus: () => <i className="fa-solid fa-plus"></i>,
+            Edit: () => <i className="fa-solid fa-pen"></i>,
+            Trash: () => <i className="fa-solid fa-trash"></i>,
+            Map: () => <i className="fa-solid fa-map-location-dot"></i>,
+            Phone: () => <i className="fa-solid fa-phone"></i>,
+            PDF: () => <i className="fa-solid fa-file-pdf"></i>,
+            Back: () => <i className="fa-solid fa-arrow-left"></i>,
+            Check: () => <i className="fa-solid fa-check"></i>,
+            Sync: () => <i className="fa-solid fa-rotate"></i>
+        };
+
+        // --- THEME MANAGER ---
         const THEMES = [
-            { id: 'light', name: 'Clean White', bg: 'bg-gray-50', text: 'text-gray-900', nav: 'bg-white', card: 'bg-white' },
-            { id: 'dark', name: 'Midnight', bg: 'bg-gray-900', text: 'text-white', nav: 'bg-gray-800', card: 'bg-gray-800' },
-            { id: 'obsidian', name: 'Obsidian', bg: 'theme-obsidian', text: 'text-white', nav: 'bg-black border-t border-gray-800', card: 'bg-gray-900' },
-            { id: 'forest', name: 'Forest', bg: 'bg-green-50', text: 'text-green-900', nav: 'bg-white', card: 'bg-white' },
-            { id: 'ocean', name: 'Ocean', bg: 'bg-blue-50', text: 'text-blue-900', nav: 'bg-white', card: 'bg-white' },
+            { id: 'light', name: 'Clean White', bg: 'bg-gray-100', card: 'bg-white', text: 'text-gray-900' },
+            { id: 'dark', name: 'Modern Dark', bg: 'bg-gray-900', card: 'bg-gray-800', text: 'text-white' },
+            { id: 'obsidian', name: 'Obsidian', bg: 'bg-black', card: 'bg-[#0a0a0a] border border-[#222]', text: 'text-white' },
+            { id: 'navy', name: 'Deep Navy', bg: 'bg-slate-900', card: 'bg-slate-800', text: 'text-slate-100' },
+            { id: 'forest', name: 'Forest', bg: 'bg-green-950', card: 'bg-green-900', text: 'text-green-100' },
         ];
 
-        // ==========================================
-        // 2. DATA LAYER (SYNC ENGINE)
-        // ==========================================
-        const useSyncEngine = () => {
-            const [surveys, setSurveys] = React.useState([]);
-            const [isOnline, setIsOnline] = React.useState(navigator.onLine);
-            const [outbox, setOutbox] = React.useState([]);
-
-            // Load Initial State
-            React.useEffect(() => {
-                const localData = JSON.parse(localStorage.getItem('vellora_surveys') || '[]');
-                const localOutbox = JSON.parse(localStorage.getItem('vellora_outbox') || '[]');
-                setSurveys(localData);
-                setOutbox(localOutbox);
-
-                // Firebase Listener
-                const unsubscribe = db.collection('surveys').onSnapshot(snapshot => {
-                    const fbData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // Merge strategy: Firebase wins if newer, but for simplicity here we trust FB stream when online
-                    if (navigator.onLine) {
-                        setSurveys(fbData);
-                        localStorage.setItem('vellora_surveys', JSON.stringify(fbData));
-                    }
-                }, err => console.log("Offline mode active"));
-
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            // State
+            const [view, setView] = useState('list'); // list, wizard, detail, analytics, settings
+            const [surveys, setSurveys] = useState([]);
+            const [activeSurvey, setActiveSurvey] = useState(null);
+            const [theme, setTheme] = useState('obsidian');
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [outbox, setOutbox] = useState(() => JSON.parse(localStorage.getItem('vellora_outbox') || '[]'));
+            const [logo, setLogo] = useState(() => localStorage.getItem('vellora_logo') || null);
+            
+            // Sync Engine
+            useEffect(() => {
+                const handleOnline = () => {
+                    setIsOnline(true);
+                    processOutbox();
+                };
+                const handleOffline = () => setIsOnline(false);
+                
                 window.addEventListener('online', handleOnline);
-                window.addEventListener('offline', () => setIsOnline(false));
+                window.addEventListener('offline', handleOffline);
+                
+                // Initial Load from Firebase
+                const surveysRef = db.ref('surveys');
+                surveysRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const loaded = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                        setSurveys(loaded);
+                        localStorage.setItem('vellora_cache', JSON.stringify(loaded));
+                    }
+                });
+
+                // Load cached if offline on start
+                if (!navigator.onLine) {
+                    const cached = localStorage.getItem('vellora_cache');
+                    if (cached) setSurveys(JSON.parse(cached));
+                }
+
+                // Apply Theme
+                document.documentElement.className = theme === 'obsidian' || theme === 'dark' || theme === 'navy' || theme === 'forest' ? 'dark' : '';
+                document.body.className = THEMES.find(t => t.id === theme).bg + " transition-colors duration-300 min-h-screen pb-20";
 
                 return () => {
-                    unsubscribe();
                     window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                    surveysRef.off();
                 };
-            }, []);
+            }, [theme]);
 
-            const handleOnline = async () => {
-                setIsOnline(true);
-                const currentOutbox = JSON.parse(localStorage.getItem('vellora_outbox') || '[]');
-                if (currentOutbox.length > 0) {
-                    console.log("Syncing Outbox...", currentOutbox.length);
-                    for (const item of currentOutbox) {
-                        try {
-                            if (item.type === 'ADD') {
-                                delete item.data.id; // Let FB generate ID or use preserved one if needed
-                                await db.collection('surveys').add(item.data);
-                            } else if (item.type === 'UPDATE') {
-                                await db.collection('surveys').doc(item.id).update(item.data);
-                            } else if (item.type === 'DELETE') { // Soft Delete
-                                await db.collection('surveys').doc(item.id).update({ isDeleted: true });
-                            }
-                        } catch (e) { console.error("Sync failed for item", e); }
-                    }
-                    localStorage.setItem('vellora_outbox', '[]');
-                    setOutbox([]);
-                }
-            };
-
-            const addSurvey = async (data) => {
-                const newSurvey = { ...data, createdAt: new Date().toISOString(), isDeleted: false };
+            const processOutbox = async () => {
+                if (outbox.length === 0) return;
+                const newOutbox = [...outbox];
                 
-                // Optimistic UI Update
-                const tempId = 'temp_' + Date.now();
-                const optimisticList = [...surveys, { ...newSurvey, id: tempId }];
-                setSurveys(optimisticList);
-                localStorage.setItem('vellora_surveys', JSON.stringify(optimisticList));
-
-                if (navigator.onLine) {
+                for (let i = 0; i < newOutbox.length; i++) {
+                    const item = newOutbox[i];
                     try {
-                        await db.collection('surveys').add(newSurvey);
-                    } catch (e) { queueAction('ADD', newSurvey); }
-                } else {
-                    queueAction('ADD', newSurvey);
+                        await db.ref(`surveys/${item.id}`).set(item);
+                        newOutbox.splice(i, 1);
+                        i--; // Adjust index
+                    } catch (e) {
+                        console.error("Sync failed", e);
+                    }
                 }
-            };
-
-            const updateSurvey = async (id, data) => {
-                const updatedList = surveys.map(s => s.id === id ? { ...s, ...data } : s);
-                setSurveys(updatedList);
-                localStorage.setItem('vellora_surveys', JSON.stringify(updatedList));
-
-                if (navigator.onLine) {
-                    try { await db.collection('surveys').doc(id).update(data); }
-                    catch (e) { queueAction('UPDATE', data, id); }
-                } else {
-                    queueAction('UPDATE', data, id);
-                }
-            };
-
-            const deleteSurvey = async (id, permanent = false) => {
-                if (permanent) {
-                     const filtered = surveys.filter(s => s.id !== id);
-                     setSurveys(filtered);
-                     localStorage.setItem('vellora_surveys', JSON.stringify(filtered));
-                     if(navigator.onLine) await db.collection('surveys').doc(id).delete();
-                } else {
-                    // Soft Delete
-                    updateSurvey(id, { isDeleted: true });
-                }
-            };
-
-            const restoreSurvey = async (id) => {
-                updateSurvey(id, { isDeleted: false });
-            }
-
-            const queueAction = (type, data, id = null) => {
-                const newOutbox = [...outbox, { type, data, id, timestamp: Date.now() }];
                 setOutbox(newOutbox);
                 localStorage.setItem('vellora_outbox', JSON.stringify(newOutbox));
             };
 
-            return { surveys, isOnline, addSurvey, updateSurvey, deleteSurvey, restoreSurvey };
-        };
+            const saveSurvey = (surveyData) => {
+                const id = surveyData.id || Date.now().toString();
+                const timestamp = new Date().toISOString();
+                const payload = { ...surveyData, id, updatedAt: timestamp, isDeleted: false };
 
-        // ==========================================
-        // 3. UI COMPONENTS
-        // ==========================================
-        
-        // --- Icons ---
-        const Icons = {
-            Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-            Chart: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-            Settings: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-            Plus: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
-            Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-            Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-        };
+                // Optimistic Update
+                setSurveys(prev => {
+                    const existing = prev.findIndex(s => s.id === id);
+                    if (existing > -1) {
+                        const updated = [...prev];
+                        updated[existing] = payload;
+                        return updated;
+                    }
+                    return [payload, ...prev];
+                });
 
-        // --- Wizard Step Components ---
-        const InputGroup = ({ label, children, theme }) => (
-            <div className="mb-4">
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">{label}</label>
-                {children}
-            </div>
-        );
+                if (navigator.onLine) {
+                    db.ref(`surveys/${id}`).set(payload);
+                } else {
+                    const newOutbox = [...outbox.filter(i => i.id !== id), payload];
+                    setOutbox(newOutbox);
+                    localStorage.setItem('vellora_outbox', JSON.stringify(newOutbox));
+                }
+                setView('list');
+            };
 
-        const TextInput = ({ value, onChange, placeholder, type="text", theme }) => (
-            <input 
-                type={type} 
-                value={value} 
-                onChange={e => onChange(e.target.value)}
-                placeholder={placeholder}
-                className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none bg-transparent smooth-transition"
-            />
-        );
+            const softDeleteSurvey = (id) => {
+                const survey = surveys.find(s => s.id === id);
+                if (survey) {
+                    saveSurvey({ ...survey, isDeleted: true });
+                }
+            };
+            
+            const hardDeleteSurvey = (id) => {
+                if(confirm("Permanently delete? This cannot be undone.")){
+                    if(navigator.onLine) {
+                        db.ref(`surveys/${id}`).remove();
+                    }
+                    // Remove from local state immediately
+                     setSurveys(prev => prev.filter(s => s.id !== id));
+                }
+            };
 
-        const ButtonGrid = ({ options, selected, onSelect, allowOther, otherValue, onOtherChange }) => (
-            <div className="flex flex-wrap gap-2">
-                {options.map(opt => (
-                    <button 
-                        key={opt}
-                        onClick={() => onSelect(opt)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                            selected.includes(opt) 
-                            ? 'bg-blue-600 text-white border-blue-600' 
-                            : 'bg-opacity-10 border-gray-300 hover:border-gray-400 opacity-80'
-                        }`}
-                    >
-                        {opt}
-                    </button>
-                ))}
-                {allowOther && (
-                    <div className="flex items-center gap-2 flex-grow min-w-[120px]">
-                        <button
-                             onClick={() => onSelect('Other')}
-                             className={`px-4 py-2 rounded-full text-sm font-medium border ${selected.includes('Other') ? 'bg-blue-600 text-white' : 'border-gray-300'}`}
-                        >Other</button>
-                        {selected.includes('Other') && (
-                            <input 
-                                type="text" 
-                                value={otherValue || ''} 
-                                onChange={e => onOtherChange(e.target.value)}
-                                className="flex-grow p-1 px-2 text-sm border-b bg-transparent outline-none" 
-                                placeholder="Specify..."
-                            />
-                        )}
-                    </div>
-                )}
-            </div>
-        );
+            const restoreSurvey = (id) => {
+                const survey = surveys.find(s => s.id === id);
+                if (survey) {
+                    saveSurvey({ ...survey, isDeleted: false });
+                }
+            };
 
-        // --- Main App Component ---
-        const App = () => {
-            // State
-            const [view, setView] = React.useState('home'); // home, analytics, settings, wizard, detail
-            const [currentTheme, setCurrentTheme] = React.useState('obsidian');
-            const [activeSurvey, setActiveSurvey] = React.useState(null);
-            const { surveys, isOnline, addSurvey, updateSurvey, deleteSurvey, restoreSurvey } = useSyncEngine();
-            const [logo, setLogo] = React.useState(localStorage.getItem('vellora_logo') || null);
-
-            // Derived State
+            // Current Theme Config
+            const currentTheme = THEMES.find(t => t.id === theme);
             const activeSurveys = surveys.filter(s => !s.isDeleted);
             const deletedSurveys = surveys.filter(s => s.isDeleted);
 
-            // Helpers
-            const themeObj = THEMES.find(t => t.id === currentTheme) || THEMES[0];
-            const getClasses = () => currentTheme === 'obsidian' ? 'theme-obsidian text-white' : `${themeObj.bg} ${themeObj.text}`;
-            
-            const handleLogoUpload = (e) => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setLogo(reader.result);
-                    localStorage.setItem('vellora_logo', reader.result);
-                };
-                if (file) reader.readAsDataURL(file);
-            };
-
-            const exportPDF = (survey) => {
-                const doc = new jspdf.jsPDF();
-                
-                // Header
-                if (logo) {
-                    doc.addImage(logo, 'JPEG', 15, 10, 20, 20); // Logo
-                }
-                doc.setFontSize(22);
-                doc.setTextColor(0, 0, 0); // Always black text for PDF
-                doc.text("VELLORA REPORT", 195, 20, { align: "right" });
-                
-                doc.setFontSize(12);
-                doc.text(`Business: ${survey.businessName}`, 15, 40);
-                doc.text(`Location: ${survey.area || 'N/A'}`, 15, 46);
-                doc.text(`Date: ${new Date(survey.createdAt).toLocaleDateString()}`, 15, 52);
-
-                // Data Prep for AutoTable
-                const tableData = [
-                    ["Section", "Details"],
-                    ["Profile", `Type: ${survey.businessType}, Footfall: ${survey.footfall}`],
-                    ["Inventory", `Brands: ${survey.brands?.join(', ')}`],
-                    ["Financials", `Profit Margin: ${survey.pricing?.[0]?.profit || 0}`],
-                    ["Supplier", `Sources: ${survey.supplyChain?.length || 0} active`],
-                    ["Pitch", `Interest: ${survey.pitch?.switchInterest}`],
-                    ["Contact", `${survey.contact?.name} (${survey.contact?.mobile})`]
-                ];
-
-                doc.autoTable({
-                    startY: 60,
-                    head: [['Metric', 'Value']],
-                    body: tableData,
-                    theme: 'grid',
-                    styles: { fillColor: [255, 255, 255], textColor: 0 },
-                    headStyles: { fillColor: [0, 0, 0], textColor: 255 }
-                });
-
-                doc.save(`Vellora_${survey.businessName}.pdf`);
-            };
-
-            // --- Sub-Components (Inline for single file) ---
-
-            const Wizard = () => {
-                const [step, setStep] = React.useState('A');
-                const [formData, setFormData] = React.useState(activeSurvey || {
-                    businessName: '', businessType: '', footfall: '',
-                    area: '', coordinates: '',
-                    brands: [], sizes: [], inventoryType: 'Monthly', inventoryQty: '',
-                    pricing: [], supplyChain: [],
-                    creditLine: 'NO', creditDetails: {},
-                    pitch: {}, whiteLabel: 'NO', whiteLabelDetails: {},
-                    contact: {}
-                });
-
-                const steps = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-                const nextStep = () => {
-                    const idx = steps.indexOf(step);
-                    if (idx < steps.length - 1) setStep(steps[idx + 1]);
-                    else saveSurvey();
-                };
-
-                const saveSurvey = () => {
-                    if (activeSurvey?.id) updateSurvey(activeSurvey.id, formData);
-                    else addSurvey(formData);
-                    setView('home');
-                    setActiveSurvey(null);
-                };
-
-                // Wizard Steps Logic
-                const renderStep = () => {
-                    switch(step) {
-                        case 'A': return (
-                            <div className="space-y-4 animate-fade-in">
-                                <h2 className="text-xl font-bold mb-4">Step A: Profile & Location</h2>
-                                <InputGroup label="Business Name">
-                                    <TextInput value={formData.businessName} onChange={v => setFormData({...formData, businessName: v})} placeholder="Enter name..." />
-                                </InputGroup>
-                                <InputGroup label="Business Type">
-                                    <ButtonGrid 
-                                        options={['Retail', 'Wholesale', 'Gym', 'Pharmacy']} 
-                                        selected={[formData.businessType]} 
-                                        onSelect={v => setFormData({...formData, businessType: v})}
-                                        allowOther={true}
-                                        otherValue={formData.businessTypeOther}
-                                        onOtherChange={v => setFormData({...formData, businessTypeOther: v, businessType: 'Other'})}
-                                    />
-                                </InputGroup>
-                                <InputGroup label="Footfall (Daily)">
-                                    <ButtonGrid options={['<50', '50-100', '100-500', '500+']} selected={[formData.footfall]} onSelect={v => setFormData({...formData, footfall: v})} />
-                                </InputGroup>
-                                <InputGroup label="Location">
-                                    <div className="flex gap-2">
-                                        <TextInput value={formData.area} onChange={v => setFormData({...formData, area: v})} placeholder="Area Name" />
-                                        <button onClick={() => {
-                                            if(navigator.geolocation) {
-                                                navigator.geolocation.getCurrentPosition(p => {
-                                                    setFormData({...formData, coordinates: `${p.coords.latitude},${p.coords.longitude}`});
-                                                });
-                                            }
-                                        }} className="bg-blue-600 text-white p-3 rounded-lg"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
-                                    </div>
-                                    <div className="mt-2 text-xs opacity-60 font-mono">{formData.coordinates}</div>
-                                </InputGroup>
-                            </div>
-                        );
-                        case 'B': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step B: Inventory</h2>
-                                <InputGroup label="Brands Stocked">
-                                    <ButtonGrid 
-                                        options={['Nike', 'Adidas', 'Puma', 'Local', 'Imported']} 
-                                        selected={formData.brands} 
-                                        onSelect={v => {
-                                            const newBrands = formData.brands.includes(v) ? formData.brands.filter(b=>b!==v) : [...formData.brands, v];
-                                            setFormData({...formData, brands: newBrands});
-                                        }}
-                                        allowOther={true}
-                                    />
-                                </InputGroup>
-                                <InputGroup label="Quantity Estimation">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <button onClick={() => setFormData({...formData, inventoryType: 'Daily'})} className={`px-3 py-1 rounded ${formData.inventoryType === 'Daily' ? 'bg-blue-600 text-white' : 'border'}`}>Daily</button>
-                                        <button onClick={() => setFormData({...formData, inventoryType: 'Monthly'})} className={`px-3 py-1 rounded ${formData.inventoryType === 'Monthly' ? 'bg-blue-600 text-white' : 'border'}`}>Monthly</button>
-                                    </div>
-                                    <TextInput type="number" value={formData.inventoryQty} onChange={v => setFormData({...formData, inventoryQty: v})} placeholder="Enter Qty" />
-                                    <div className="text-sm mt-2 text-blue-500 font-bold">
-                                        Total Monthly: {formData.inventoryType === 'Daily' ? (parseInt(formData.inventoryQty || 0) * 30) : formData.inventoryQty} units
-                                    </div>
-                                </InputGroup>
-                            </div>
-                        );
-                        case 'C': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step C: Pricing Matrix</h2>
-                                <div className="space-y-4">
-                                    {formData.brands.map((brand, idx) => (
-                                        <div key={idx} className="p-3 border rounded-lg bg-white bg-opacity-5">
-                                            <div className="font-bold mb-2">{brand}</div>
-                                            <div className="flex gap-2">
-                                                <TextInput type="number" placeholder="Buy Price" value={formData.pricing[idx]?.buy || ''} 
-                                                    onChange={v => {
-                                                        const newP = [...(formData.pricing || [])];
-                                                        if(!newP[idx]) newP[idx] = {};
-                                                        newP[idx].buy = v;
-                                                        newP[idx].profit = (newP[idx].sell || 0) - v;
-                                                        setFormData({...formData, pricing: newP});
-                                                    }} 
-                                                />
-                                                <TextInput type="number" placeholder="Sell Price" value={formData.pricing[idx]?.sell || ''} 
-                                                    onChange={v => {
-                                                        const newP = [...(formData.pricing || [])];
-                                                        if(!newP[idx]) newP[idx] = {};
-                                                        newP[idx].sell = v;
-                                                        newP[idx].profit = v - (newP[idx].buy || 0);
-                                                        setFormData({...formData, pricing: newP});
-                                                    }} 
-                                                />
-                                            </div>
-                                            <div className="text-right text-xs mt-1 text-green-500 font-mono">
-                                                Profit: {formData.pricing[idx]?.profit || 0}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                        case 'D': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step D: Supply Chain</h2>
-                                {formData.brands.map((brand, idx) => (
-                                    <div key={idx} className="mb-6 border-b pb-4 border-gray-700">
-                                        <h3 className="font-bold text-blue-400 mb-2">{brand} Supplier</h3>
-                                        <InputGroup label="Source Type">
-                                            <select 
-                                                className="w-full p-2 rounded bg-transparent border outline-none"
-                                                value={formData.supplyChain[idx]?.type || ''}
-                                                onChange={e => {
-                                                    const newSC = [...(formData.supplyChain || [])];
-                                                    if(!newSC[idx]) newSC[idx] = {};
-                                                    newSC[idx].type = e.target.value;
-                                                    setFormData({...formData, supplyChain: newSC});
-                                                }}
-                                            >
-                                                <option value="">Select...</option>
-                                                <option value="Distributor">Distributor</option>
-                                                <option value="Wholesaler">Wholesaler</option>
-                                                <option value="Manufacturer">Manufacturer</option>
-                                            </select>
-                                        </InputGroup>
-                                        <TextInput placeholder="Supplier Name" value={formData.supplyChain[idx]?.name || ''} onChange={v => {
-                                            const newSC = [...(formData.supplyChain || [])];
-                                            if(!newSC[idx]) newSC[idx] = {};
-                                            newSC[idx].name = v;
-                                            setFormData({...formData, supplyChain: newSC});
-                                        }} />
-                                        <div className="h-2"></div>
-                                        <TextInput placeholder="Mobile (Required)" type="tel" value={formData.supplyChain[idx]?.mobile || ''} onChange={v => {
-                                            const newSC = [...(formData.supplyChain || [])];
-                                            if(!newSC[idx]) newSC[idx] = {};
-                                            newSC[idx].mobile = v;
-                                            setFormData({...formData, supplyChain: newSC});
-                                        }} />
-                                        <div className="mt-2 flex items-center justify-between">
-                                            <span className="text-sm">Satisfied?</span>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => {
-                                                     const newSC = [...(formData.supplyChain || [])];
-                                                     if(!newSC[idx]) newSC[idx] = {};
-                                                     newSC[idx].satisfied = true;
-                                                     setFormData({...formData, supplyChain: newSC});
-                                                }} className={`px-3 py-1 rounded ${formData.supplyChain[idx]?.satisfied === true ? 'bg-green-600' : 'border'}`}>YES</button>
-                                                <button onClick={() => {
-                                                     const newSC = [...(formData.supplyChain || [])];
-                                                     if(!newSC[idx]) newSC[idx] = {};
-                                                     newSC[idx].satisfied = false;
-                                                     setFormData({...formData, supplyChain: newSC});
-                                                }} className={`px-3 py-1 rounded ${formData.supplyChain[idx]?.satisfied === false ? 'bg-red-600' : 'border'}`}>NO</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        );
-                        case 'E': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step E: Credit Line</h2>
-                                <div className="flex justify-center gap-4 mb-6">
-                                    <button onClick={() => setFormData({...formData, creditLine: 'YES'})} className={`px-6 py-3 rounded-lg font-bold ${formData.creditLine === 'YES' ? 'bg-blue-600 text-white' : 'border'}`}>YES</button>
-                                    <button onClick={() => setFormData({...formData, creditLine: 'NO'})} className={`px-6 py-3 rounded-lg font-bold ${formData.creditLine === 'NO' ? 'bg-gray-600 text-white' : 'border'}`}>NO</button>
-                                </div>
-                                {formData.creditLine === 'YES' && (
-                                    <div className="animate-fade-in space-y-3">
-                                        <InputGroup label="Amount">
-                                            <TextInput type="number" placeholder="Limit" value={formData.creditDetails?.amount || ''} onChange={v => setFormData({...formData, creditDetails: {...formData.creditDetails, amount: v}})} />
-                                        </InputGroup>
-                                        <InputGroup label="Period (Days)">
-                                            <TextInput type="number" placeholder="Days" value={formData.creditDetails?.days || ''} onChange={v => setFormData({...formData, creditDetails: {...formData.creditDetails, days: v}})} />
-                                        </InputGroup>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                        case 'F': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step F: Sales Pitch</h2>
-                                <InputGroup label="Interested in Switching?">
-                                    <ButtonGrid options={['Yes', 'No', 'Maybe']} selected={[formData.pitch.switchInterest]} onSelect={v => setFormData({...formData, pitch: {...formData.pitch, switchInterest: v}})} />
-                                </InputGroup>
-                                <InputGroup label="Target Price Offer?">
-                                    <TextInput placeholder="Enter amount..." value={formData.pitch.targetPrice || ''} onChange={v => setFormData({...formData, pitch: {...formData.pitch, targetPrice: v}})} />
-                                </InputGroup>
-                                <InputGroup label="Interested in VELLORA?">
-                                     <ButtonGrid options={['YES', 'NO']} selected={[formData.pitch.velloraInterest]} onSelect={v => setFormData({...formData, pitch: {...formData.pitch, velloraInterest: v}})} />
-                                </InputGroup>
-                            </div>
-                        );
-                        case 'G': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step G: White Label</h2>
-                                <InputGroup label="Custom Branding?">
-                                    <div className="flex gap-4">
-                                        <button onClick={() => setFormData({...formData, whiteLabel: 'YES'})} className={`flex-1 py-2 rounded ${formData.whiteLabel === 'YES' ? 'bg-purple-600' : 'border'}`}>YES</button>
-                                        <button onClick={() => setFormData({...formData, whiteLabel: 'NO'})} className={`flex-1 py-2 rounded ${formData.whiteLabel === 'NO' ? 'bg-gray-600' : 'border'}`}>NO</button>
-                                    </div>
-                                </InputGroup>
-                                {formData.whiteLabel === 'YES' && (
-                                    <div className="mt-4">
-                                        <TextInput placeholder="Purpose (Event, Resale...)" value={formData.whiteLabelDetails?.purpose || ''} onChange={v => setFormData({...formData, whiteLabelDetails: {...formData.whiteLabelDetails, purpose: v}})} />
-                                    </div>
-                                )}
-                            </div>
-                        );
-                        case 'H': return (
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold mb-4">Step H: Finalize</h2>
-                                <InputGroup label="Contact Person">
-                                    <TextInput placeholder="Name" value={formData.contact.name || ''} onChange={v => setFormData({...formData, contact: {...formData.contact, name: v}})} />
-                                </InputGroup>
-                                <InputGroup label="Mobile Number">
-                                    <TextInput type="tel" placeholder="Mobile" value={formData.contact.mobile || ''} onChange={v => setFormData({...formData, contact: {...formData.contact, mobile: v}})} />
-                                </InputGroup>
-                                
-                                <div className="mt-8 p-4 rounded-lg border border-dashed border-gray-500 opacity-80">
-                                    <h3 className="uppercase text-xs font-bold mb-2 text-center">Summary (Read Only)</h3>
-                                    <div className="text-sm grid grid-cols-2 gap-2">
-                                        <div><strong>Biz:</strong> {formData.businessName}</div>
-                                        <div><strong>Area:</strong> {formData.area}</div>
-                                        <div><strong>Brands:</strong> {formData.brands.length}</div>
-                                        <div><strong>Interest:</strong> {formData.pitch.switchInterest}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }
-                };
-
-                return (
-                    <div className="fixed inset-0 z-50 flex flex-col bg-inherit text-inherit">
-                        <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                            <button onClick={() => setView('home')} className="text-sm opacity-70">Cancel</button>
-                            <h1 className="font-bold">Survey Wizard</h1>
-                            <div className="text-sm opacity-70">{step}/H</div>
-                        </div>
-                        <div className="flex-grow overflow-y-auto p-6">
-                            {renderStep()}
-                        </div>
-                        <div className="p-4 border-t border-gray-800">
-                            <button onClick={nextStep} className="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg">
-                                {step === 'H' ? 'SAVE SURVEY' : 'NEXT STEP'}
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
-            const Analytics = () => (
-                <div className="p-4 pb-24">
-                    <h2 className="text-2xl font-bold mb-6">Market Intel</h2>
-                    
-                    <div className="mb-8 card p-4 rounded-xl shadow-sm border border-opacity-10 border-white">
-                        <h3 className="text-sm font-bold uppercase mb-4 opacity-70">Brand Penetration</h3>
-                        <div className="h-40 flex items-end gap-2">
-                            {['Nike', 'Adidas', 'Puma', 'Local'].map(brand => {
-                                const count = activeSurveys.filter(s => s.brands?.includes(brand)).length;
-                                const height = count * 20 + 10;
-                                return (
-                                    <div key={brand} className="flex-1 flex flex-col items-center group">
-                                        <div style={{height: `${height}px`}} className="w-full bg-blue-500 bg-opacity-80 rounded-t transition-all duration-500 relative">
-                                            <span className="absolute -top-6 w-full text-center text-xs">{count}</span>
-                                        </div>
-                                        <span className="text-xs mt-2 opacity-60 truncate w-full text-center">{brand}</span>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                         <div className="card p-4 rounded-xl shadow-sm border border-opacity-10 border-white">
-                            <h3 className="text-xs font-bold uppercase mb-2">Interest High</h3>
-                            <div className="text-3xl font-bold text-green-500">
-                                {activeSurveys.filter(s => s.pitch?.switchInterest === 'Yes').length}
-                            </div>
-                            <div className="text-xs opacity-50">Leads</div>
-                         </div>
-                         <div className="card p-4 rounded-xl shadow-sm border border-opacity-10 border-white">
-                            <h3 className="text-xs font-bold uppercase mb-2">WL Potential</h3>
-                            <div className="text-3xl font-bold text-purple-500">
-                                {activeSurveys.filter(s => s.whiteLabel === 'YES').length}
-                            </div>
-                            <div className="text-xs opacity-50">Requests</div>
-                         </div>
-                    </div>
-                </div>
-            );
-
-            const Settings = () => {
-                const [pin, setPin] = React.useState('');
-                const [showBin, setShowBin] = React.useState(false);
-
-                const unlockBin = () => {
-                    if (pin === '1234') setShowBin(true);
-                    else alert('Incorrect PIN');
-                };
-
-                return (
-                    <div className="p-4 pb-24 space-y-8">
-                        <div>
-                            <h2 className="text-xl font-bold mb-4">Appearance</h2>
-                            <div className="grid grid-cols-3 gap-2">
-                                {THEMES.map(t => (
-                                    <button 
-                                        key={t.id}
-                                        onClick={() => setCurrentTheme(t.id)} 
-                                        className={`p-2 text-xs rounded border ${currentTheme===t.id ? 'border-blue-500' : 'border-transparent'}`}
-                                        style={{backgroundColor: t.id === 'obsidian' ? '#000' : '#fff', color: t.id ==='obsidian' ? '#fff' : '#000'}}
-                                    >
-                                        {t.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <h2 className="text-xl font-bold mb-4">Branding</h2>
-                            <div className="flex items-center gap-4">
-                                {logo && <img src={logo} className="w-16 h-16 object-contain bg-white rounded" />}
-                                <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <h2 className="text-xl font-bold mb-4">Data Management</h2>
-                            <button onClick={() => {
-                                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeSurveys));
-                                const downloadAnchorNode = document.createElement('a');
-                                downloadAnchorNode.setAttribute("href",     dataStr);
-                                downloadAnchorNode.setAttribute("download", "vellora_backup.json");
-                                document.body.appendChild(downloadAnchorNode);
-                                downloadAnchorNode.click();
-                                downloadAnchorNode.remove();
-                            }} className="w-full mb-2 p-3 border rounded border-gray-600">Export JSON Backup</button>
-                        </div>
-
-                        <div className="pt-8 border-t border-gray-800">
-                            <h2 className="text-xl font-bold mb-4 text-red-500">Recycle Bin</h2>
-                            {!showBin ? (
-                                <div className="flex gap-2">
-                                    <TextInput type="password" value={pin} onChange={setPin} placeholder="Enter PIN (1234)" />
-                                    <button onClick={unlockBin} className="bg-red-900 px-4 rounded">Unlock</button>
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {deletedSurveys.length === 0 && <div className="text-sm opacity-50">Bin is empty.</div>}
-                                    {deletedSurveys.map(s => (
-                                        <div key={s.id} className="flex justify-between items-center p-2 border border-gray-800 rounded">
-                                            <span className="text-sm truncate w-1/2">{s.businessName}</span>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => restoreSurvey(s.id)} className="text-green-500 text-xs uppercase">Restore</button>
-                                                <button onClick={() => deleteSurvey(s.id, true)} className="text-red-500 text-xs uppercase">Destroy</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            };
-
-            const SurveyDetail = ({ survey, onClose }) => (
-                <div className={`fixed inset-0 z-40 flex flex-col ${getClasses()}`}>
-                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-inherit">
-                        <button onClick={onClose} className="p-2">Back</button>
-                        <h2 className="font-bold truncate max-w-[200px]">{survey.businessName}</h2>
-                        <button onClick={() => {
-                            if(confirm("Move to Recycle Bin?")) {
-                                deleteSurvey(survey.id);
-                                onClose();
-                            }
-                        }} className="text-red-500"><Icons.Trash /></button>
-                    </div>
-                    
-                    <div className="flex-grow overflow-y-auto p-4 space-y-6">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="opacity-70">Type</div><div>{survey.businessType}</div>
-                            <div className="opacity-70">Area</div><div>{survey.area}</div>
-                            <div className="opacity-70">Contact</div><div>{survey.contact?.name}</div>
-                            <div className="opacity-70">Mobile</div><div className="text-blue-400 underline" onClick={() => window.open(`tel:${survey.contact?.mobile}`)}>{survey.contact?.mobile}</div>
-                        </div>
-
-                        <div className="border-t border-gray-800 pt-4">
-                            <h3 className="font-bold mb-2">Inventory</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {survey.brands?.map(b => <span key={b} className="px-2 py-1 bg-gray-800 rounded text-xs">{b}</span>)}
-                            </div>
-                        </div>
-
-                        <div className="border-t border-gray-800 pt-4">
-                            <h3 className="font-bold mb-2">Pitch Result</h3>
-                            <div className="p-3 bg-gray-800 bg-opacity-30 rounded">
-                                <div className="text-xs opacity-50">Switch Interest</div>
-                                <div className="text-lg">{survey.pitch?.switchInterest || '-'}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 border-t border-gray-800 grid grid-cols-4 gap-2 bg-inherit">
-                        <button onClick={() => { setActiveSurvey(survey); setView('wizard'); }} className="flex flex-col items-center text-xs gap-1"><Icons.Edit /> Edit</button>
-                        <button onClick={() => exportPDF(survey)} className="flex flex-col items-center text-xs gap-1"><span className="text-xl">📄</span> PDF</button>
-                        <button onClick={() => window.open(`https://maps.google.com/?q=${survey.coordinates}`)} className="flex flex-col items-center text-xs gap-1"><span className="text-xl">📍</span> Map</button>
-                        <button onClick={() => window.open(`tel:${survey.contact?.mobile}`)} className="flex flex-col items-center text-xs gap-1"><span className="text-xl">📞</span> Call</button>
-                    </div>
-                </div>
-            );
-
-            // --- Main Render ---
+            // --- RENDER ---
             return (
-                <div className={`min-h-screen flex flex-col ${getClasses()}`}>
-                    {/* HEADER */}
-                    <header className={`p-4 flex justify-between items-center sticky top-0 z-30 backdrop-blur-md bg-opacity-90 border-b border-gray-800`}>
-                        <div className="font-black text-2xl tracking-tighter">VELLORA</div>
-                        <div className="flex gap-2 items-center">
-                            {!isOnline && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>}
+                <div className={`min-h-screen ${currentTheme.text} font-sans`}>
+                    {/* Header */}
+                    <header className={`fixed top-0 w-full z-50 backdrop-blur-md border-b ${theme === 'obsidian' ? 'bg-black/80 border-gray-800' : 'bg-white/90 border-gray-200'} px-4 py-3 flex justify-between items-center transition-all`}>
+                        <div className="flex items-center gap-3">
+                            {logo && <img src={logo} className="h-8 w-8 rounded object-cover" />}
+                            <h1 className={`text-xl font-bold tracking-tight ${theme === 'light' ? 'text-black' : 'text-white'}`}>VELLORA</h1>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                             <span className={`px-2 py-1 rounded-full ${isOnline ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                                {isOnline ? 'ONLINE' : `OFFLINE (${outbox.length})`}
+                            </span>
                         </div>
                     </header>
 
-                    {/* CONTENT */}
-                    <main className="flex-grow relative overflow-hidden">
-                        {view === 'wizard' && <Wizard />}
-                        {activeSurvey && view !== 'wizard' && <SurveyDetail survey={activeSurvey} onClose={() => setActiveSurvey(null)} />}
-                        
-                        {view === 'home' && !activeSurvey && (
-                            <div className="p-4 pb-24 space-y-3">
-                                {activeSurveys.length === 0 ? (
-                                    <div className="text-center mt-20 opacity-50">
-                                        <p>No surveys found.</p>
-                                        <p className="text-sm">Start your first market visit.</p>
-                                    </div>
-                                ) : (
-                                    activeSurveys.map(s => (
-                                        <div onClick={() => setActiveSurvey(s)} key={s.id} className="card p-4 rounded-xl cursor-pointer relative overflow-hidden group hover:scale-[1.01] transition-transform">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h3 className="font-bold text-lg">{s.businessName}</h3>
-                                                    <p className="text-sm opacity-60">{s.area} • {new Date(s.createdAt).toLocaleDateString()}</p>
-                                                </div>
-                                                {s.pitch?.switchInterest === 'Yes' && <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] uppercase font-bold rounded">Hot</span>}
-                                            </div>
-                                            {s.whiteLabel === 'YES' && <div className="mt-2 text-[10px] text-purple-400 font-mono tracking-widest uppercase">White Label Prospect</div>}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                    {/* Main Content Area */}
+                    <main className="pt-20 px-4 pb-24 max-w-3xl mx-auto">
+                        {view === 'list' && (
+                            <SurveyList 
+                                surveys={activeSurveys} 
+                                theme={currentTheme} 
+                                onOpen={(s) => { setActiveSurvey(s); setView('detail'); }} 
+                                onFab={() => { setActiveSurvey(null); setView('wizard'); }}
+                            />
                         )}
-                        
-                        {view === 'analytics' && <Analytics />}
-                        {view === 'settings' && <Settings />}
+                        {view === 'wizard' && (
+                            <SurveyWizard 
+                                initialData={activeSurvey} 
+                                theme={currentTheme} 
+                                onSave={saveSurvey} 
+                                onCancel={() => setView('list')}
+                            />
+                        )}
+                        {view === 'detail' && activeSurvey && (
+                            <SurveyDetail 
+                                survey={activeSurvey} 
+                                theme={currentTheme}
+                                logo={logo}
+                                onEdit={() => setView('wizard')}
+                                onDelete={(id) => { softDeleteSurvey(id); setView('list'); }}
+                                onBack={() => setView('list')}
+                            />
+                        )}
+                        {view === 'analytics' && <Analytics surveys={activeSurveys} theme={currentTheme} />}
+                        {view === 'settings' && (
+                            <Settings 
+                                theme={theme} 
+                                setTheme={setTheme} 
+                                logo={logo} 
+                                setLogo={setLogo} 
+                                deletedSurveys={deletedSurveys}
+                                onRestore={restoreSurvey}
+                                onHardDelete={hardDeleteSurvey}
+                                currentThemeObj={currentTheme}
+                                surveys={activeSurveys}
+                            />
+                        )}
                     </main>
 
-                    {/* FAB (Only on Home) */}
-                    {view === 'home' && !activeSurvey && (
-                        <button 
-                            onClick={() => setView('wizard')}
-                            className="fixed bottom-24 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transform hover:scale-110 transition-all z-20"
-                        >
-                            <Icons.Plus />
-                        </button>
-                    )}
+                    {/* Bottom Nav */}
+                    <nav className={`fixed bottom-0 w-full border-t ${theme === 'obsidian' ? 'bg-black border-gray-800' : 'bg-white border-gray-200'} pb-safe pt-2`}>
+                        <div className="flex justify-around items-center h-14 max-w-3xl mx-auto">
+                            <NavBtn icon={Icons.Chart} active={view === 'analytics'} onClick={() => setView('analytics')} label="Analytics" />
+                            <div className="relative -top-5">
+                                <button onClick={() => setView('list')} className={`h-14 w-14 rounded-full flex items-center justify-center shadow-lg transform transition-transform active:scale-95 ${view === 'list' ? 'bg-brand-600 text-white scale-110' : (theme === 'light' ? 'bg-gray-100 text-gray-500' : 'bg-gray-800 text-gray-400')}`}>
+                                    <Icons.Home />
+                                </button>
+                            </div>
+                            <NavBtn icon={Icons.Settings} active={view === 'settings'} onClick={() => setView('settings')} label="Settings" />
+                        </div>
+                    </nav>
+                </div>
+            );
+        };
 
-                    {/* NAVIGATION */}
-                    {!activeSurvey && view !== 'wizard' && (
-                        <nav className={`fixed bottom-0 w-full p-2 pb-6 flex justify-around items-center border-t border-gray-800 z-30 ${themeObj.nav}`}>
-                            <button onClick={() => setView('analytics')} className={`p-3 rounded-xl transition-all ${view==='analytics' ? 'bg-blue-600 text-white' : 'opacity-50'}`}>
-                                <Icons.Chart />
-                            </button>
-                            <button onClick={() => setView('home')} className={`p-3 rounded-xl transition-all ${view==='home' ? 'bg-blue-600 text-white scale-110 shadow-lg' : 'opacity-50'}`}>
-                                <Icons.Home />
-                            </button>
-                            <button onClick={() => setView('settings')} className={`p-3 rounded-xl transition-all ${view==='settings' ? 'bg-blue-600 text-white' : 'opacity-50'}`}>
-                                <Icons.Settings />
-                            </button>
-                        </nav>
+        const NavBtn = ({ icon: Icon, active, onClick, label }) => (
+            <button onClick={onClick} className={`flex flex-col items-center gap-1 w-16 ${active ? 'text-brand-500' : 'text-gray-500'}`}>
+                <Icon />
+                <span className="text-[10px] font-medium">{label}</span>
+            </button>
+        );
+
+        // --- SUB-COMPONENTS ---
+
+        const SurveyList = ({ surveys, theme, onOpen, onFab }) => {
+            const sorted = [...surveys].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            return (
+                <div className="space-y-4 animate-fade-in">
+                    {sorted.length === 0 ? (
+                         <div className="text-center py-20 opacity-50">
+                            <p>No surveys yet.</p>
+                            <p className="text-sm">Tap + to start.</p>
+                        </div>
+                    ) : (
+                        sorted.map(s => (
+                            <div key={s.id} onClick={() => onOpen(s)} className={`p-4 rounded-xl cursor-pointer shadow-sm active:scale-[0.98] transition-all ${theme.card} relative overflow-hidden group`}>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-bold text-lg">{s.profile?.businessName || 'Unknown Business'}</h3>
+                                        <p className="text-sm opacity-70"><i className="fa-solid fa-location-dot mr-1"></i> {s.profile?.area || 'No Location'}</p>
+                                        <p className="text-xs opacity-50 mt-1">{new Date(s.updatedAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <div className="flex flex-col gap-1 items-end">
+                                        {s.pitch?.switchInterested === 'Yes' && <span className="bg-red-500/20 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded">HOT LEAD</span>}
+                                        {s.wl?.interested && <span className="bg-purple-500/20 text-purple-400 text-[10px] font-bold px-2 py-0.5 rounded">WHITE LABEL</span>}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
                     )}
+                    {/* Floating Action Button */}
+                    <button onClick={onFab} className="fixed bottom-24 right-6 bg-brand-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-90 transition-transform z-40">
+                        <Icons.Plus />
+                    </button>
+                </div>
+            );
+        };
+
+        const SurveyDetail = ({ survey, theme, onEdit, onDelete, onBack, logo }) => {
+            
+            const generateSinglePDF = () => {
+                const doc = new jspdf.jsPDF();
+                
+                // Header
+                if (logo) doc.addImage(logo, 'JPEG', 15, 10, 15, 15);
+                doc.setFontSize(18);
+                doc.text("VELLORA SURVEY REPORT", 195, 20, { align: 'right' });
+                doc.setFontSize(10);
+                doc.text(`Generated: ${new Date().toLocaleDateString()}`, 195, 26, { align: 'right' });
+                
+                // Data
+                const body = [
+                    ['Business', survey.profile?.businessName],
+                    ['Type', survey.profile?.type],
+                    ['Location', survey.profile?.area],
+                    ['Coordinates', survey.profile?.coords],
+                    ['Contact', `${survey.final?.name} (${survey.final?.phone})`],
+                    ['Switch Interest', survey.pitch?.switchInterested],
+                    ['Target Price', survey.pitch?.targetPrice],
+                    ['White Label', survey.wl?.interested ? 'YES' : 'NO'],
+                ];
+                
+                doc.autoTable({
+                    startY: 35,
+                    head: [['Field', 'Value']],
+                    body: body,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 0, 0] },
+                });
+                
+                doc.save(`Vellora_${survey.profile?.businessName || 'Survey'}.pdf`);
+            };
+
+            return (
+                <div className="animate-fade-in pb-10">
+                    <button onClick={onBack} className="mb-4 text-sm opacity-70 flex items-center gap-2"><Icons.Back/> Back to List</button>
+                    
+                    <div className={`p-6 rounded-2xl ${theme.card} mb-6 border border-gray-700/50`}>
+                        <h1 className="text-2xl font-bold mb-1">{survey.profile?.businessName}</h1>
+                        <p className="opacity-60 text-sm mb-4">{survey.profile?.area} • {survey.profile?.type}</p>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="bg-gray-500/10 p-3 rounded-lg">
+                                <span className="text-xs opacity-50 block uppercase">Owner</span>
+                                <span className="font-medium">{survey.final?.name || 'N/A'}</span>
+                            </div>
+                            <div className="bg-gray-500/10 p-3 rounded-lg">
+                                <span className="text-xs opacity-50 block uppercase">Mobile</span>
+                                <span className="font-medium">{survey.final?.phone || 'N/A'}</span>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="grid grid-cols-4 gap-2 mb-6">
+                            <button onClick={onEdit} className="bg-blue-600/20 text-blue-500 py-3 rounded-lg flex flex-col items-center text-xs gap-1"><Icons.Edit/> Edit</button>
+                            <button onClick={generateSinglePDF} className="bg-orange-600/20 text-orange-500 py-3 rounded-lg flex flex-col items-center text-xs gap-1"><Icons.PDF/> PDF</button>
+                            <a href={`tel:${survey.final?.phone}`} className="bg-green-600/20 text-green-500 py-3 rounded-lg flex flex-col items-center text-xs gap-1"><Icons.Phone/> Call</a>
+                            <a href={`https://maps.google.com/?q=${survey.profile?.coords}`} target="_blank" className="bg-purple-600/20 text-purple-500 py-3 rounded-lg flex flex-col items-center text-xs gap-1"><Icons.Map/> Map</a>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <SectionTitle title="Inventory" />
+                            <DataRow label="Brands" value={survey.inventory?.brands?.join(', ')} />
+                            <DataRow label="Sizes" value={survey.inventory?.sizes?.join(', ')} />
+                            
+                            <SectionTitle title="Business Logic" />
+                            <DataRow label="Credit Line" value={survey.credit?.hasCredit ? `Yes (${survey.credit.amount} / ${survey.credit.period} days)` : 'No'} />
+                            <DataRow label="Pitch Result" value={survey.pitch?.switchInterested} />
+                            
+                            <SectionTitle title="White Label" />
+                             <DataRow label="Interested" value={survey.wl?.interested ? 'YES' : 'NO'} />
+                             {survey.wl?.interested && <DataRow label="Purpose" value={survey.wl?.purpose} />}
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-gray-800">
+                             <button onClick={() => onDelete(survey.id)} className="w-full py-3 text-red-500 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition">Delete Survey</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const DataRow = ({ label, value }) => (
+            <div className="flex justify-between py-2 border-b border-gray-700/30 last:border-0">
+                <span className="opacity-60 text-sm">{label}</span>
+                <span className="font-medium text-sm text-right">{value || '-'}</span>
+            </div>
+        );
+        
+        const SectionTitle = ({ title }) => (
+            <h3 className="text-xs font-bold uppercase tracking-wider opacity-40 mt-6 mb-2">{title}</h3>
+        );
+
+        // --- WIZARD COMPONENT ---
+        const SurveyWizard = ({ initialData, theme, onSave, onCancel }) => {
+            const [step, setStep] = useState(0);
+            const [data, setData] = useState(initialData || {
+                profile: { businessName: '', type: '', footfall: '', area: '', coords: '' },
+                inventory: { brands: [], sizes: [], qtyMode: 'Daily', qty: '', qtyMonthly: 0 },
+                pricing: [], // Array of objects
+                supply: [], // Array of objects
+                credit: { hasCredit: false, amount: '', period: '', rate: '' },
+                pitch: { switchInterested: 'Maybe', targetPrice: '', factors: [], velloraInterest: false },
+                wl: { interested: false, purpose: '', payExtra: '' },
+                final: { name: '', phone: '' }
+            });
+
+            // Auto-detect location on mount if new
+            useEffect(() => {
+                if (!initialData && navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const coords = `${pos.coords.latitude},${pos.coords.longitude}`;
+                        setData(p => ({ ...p, profile: { ...p.profile, coords } }));
+                        // Mock geocode since no API key for Maps
+                        setData(p => ({ ...p, profile: { ...p.profile, area: 'Detected Location', coords } }));
+                    });
+                }
+            }, []);
+
+            // Helper to update state
+            const update = (section, field, value) => {
+                setData(prev => ({
+                    ...prev,
+                    [section]: { ...prev[section], [field]: value }
+                }));
+            };
+
+            // Steps Config
+            const STEPS = ['Profile', 'Inventory', 'Pricing', 'Supply Chain', 'Credit', 'Pitch', 'White Label', 'Finalize'];
+
+            const renderStep = () => {
+                switch(step) {
+                    case 0: return (
+                        <div className="space-y-4 animate-fade-in">
+                            <Input label="Business Name" value={data.profile.businessName} onChange={v => update('profile', 'businessName', v)} theme={theme} />
+                            <SelectionGrid label="Business Type" options={['Retail', 'Gym', 'Pharmacy', 'General Store']} selected={data.profile.type} onSelect={v => update('profile', 'type', v)} theme={theme} allowOther />
+                            <SelectionGrid label="Daily Footfall" options={['<50', '50-200', '200-500', '500+']} selected={data.profile.footfall} onSelect={v => update('profile', 'footfall', v)} theme={theme} />
+                            <Input label="Area Name" value={data.profile.area} onChange={v => update('profile', 'area', v)} theme={theme} />
+                            <Input label="GPS Coords" value={data.profile.coords} onChange={v => update('profile', 'coords', v)} theme={theme} />
+                        </div>
+                    );
+                    case 1: return (
+                        <div className="space-y-4 animate-fade-in">
+                             <SelectionGrid label="Brands Stocked" options={['Nike', 'Adidas', 'Puma', 'Local', 'Imported']} selected={data.inventory.brands} onSelect={v => {
+                                 const current = data.inventory.brands;
+                                 const updated = current.includes(v) ? current.filter(i => i !== v) : [...current, v];
+                                 update('inventory', 'brands', updated);
+                             }} theme={theme} multi allowOther />
+                             
+                             <SelectionGrid label="Sizes Stocked" options={['S', 'M', 'L', 'XL', 'XXL']} selected={data.inventory.sizes} onSelect={v => {
+                                 const current = data.inventory.sizes;
+                                 const updated = current.includes(v) ? current.filter(i => i !== v) : [...current, v];
+                                 update('inventory', 'sizes', updated);
+                             }} theme={theme} multi />
+                             
+                             <div className={`p-4 rounded-lg border ${theme.id === 'obsidian' ? 'border-gray-800' : 'border-gray-200'}`}>
+                                <label className="text-sm opacity-70 mb-2 block">Sales Volume</label>
+                                <div className="flex items-center gap-4 mb-3">
+                                    <button onClick={() => update('inventory', 'qtyMode', 'Daily')} className={`px-4 py-2 rounded text-sm ${data.inventory.qtyMode === 'Daily' ? 'bg-brand-600 text-white' : 'bg-gray-700/30'}`}>Daily</button>
+                                    <button onClick={() => update('inventory', 'qtyMode', 'Monthly')} className={`px-4 py-2 rounded text-sm ${data.inventory.qtyMode === 'Monthly' ? 'bg-brand-600 text-white' : 'bg-gray-700/30'}`}>Monthly</button>
+                                </div>
+                                <Input type="number" value={data.inventory.qty} onChange={v => {
+                                    const val = parseInt(v) || 0;
+                                    const monthly = data.inventory.qtyMode === 'Daily' ? val * 30 : val;
+                                    update('inventory', 'qty', val);
+                                    update('inventory', 'qtyMonthly', monthly);
+                                }} theme={theme} placeholder="Enter quantity" />
+                                <p className="text-right text-xs mt-2 opacity-60">Calc Monthly: {data.inventory.qtyMonthly}</p>
+                             </div>
+                        </div>
+                    );
+                    case 2: return (
+                        <div className="space-y-4 animate-fade-in">
+                            <p className="text-sm opacity-70 mb-2">Pricing Matrix (Per Unit)</p>
+                            {data.inventory.brands.length === 0 && <p className="text-red-500 text-sm">Please select brands in previous step.</p>}
+                            {data.inventory.brands.map(brand => (
+                                <div key={brand} className={`p-3 rounded-lg ${theme.id === 'obsidian' ? 'bg-gray-900' : 'bg-gray-50'} mb-2`}>
+                                    <h4 className="font-bold mb-2 text-brand-500">{brand}</h4>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <Input type="number" placeholder="Buy Price" value={data.pricing.find(p => p.brand === brand)?.buy || ''} 
+                                            onChange={v => {
+                                                const existing = data.pricing.filter(p => p.brand !== brand);
+                                                const current = data.pricing.find(p => p.brand === brand) || { brand };
+                                                setData(prev => ({ ...prev, pricing: [...existing, { ...current, buy: v }] }));
+                                            }} theme={theme} />
+                                        <Input type="number" placeholder="Sell Price" value={data.pricing.find(p => p.brand === brand)?.sell || ''} 
+                                            onChange={v => {
+                                                const existing = data.pricing.filter(p => p.brand !== brand);
+                                                const current = data.pricing.find(p => p.brand === brand) || { brand };
+                                                setData(prev => ({ ...prev, pricing: [...existing, { ...current, sell: v }] }));
+                                            }} theme={theme} />
+                                        <div className="flex items-center justify-center text-sm font-bold text-green-500 bg-green-500/10 rounded">
+                                            {((data.pricing.find(p => p.brand === brand)?.sell || 0) - (data.pricing.find(p => p.brand === brand)?.buy || 0)).toFixed(0)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                    case 3: return (
+                         <div className="space-y-6 animate-fade-in">
+                            {data.inventory.brands.map((brand, idx) => {
+                                const supplyData = data.supply.find(s => s.brand === brand) || { brand, type: '', name: '', mobile: '', satisfied: true, problems: [] };
+                                return (
+                                    <div key={brand} className={`p-4 rounded-xl border border-gray-700/50`}>
+                                        <h4 className="font-bold text-lg mb-3">{brand} Supply Chain</h4>
+                                        <SelectionGrid label="Source Type" options={['Distributor', 'Wholesaler', 'Direct Company', 'Other']} selected={supplyData.type} onSelect={v => {
+                                             const newData = data.supply.filter(s => s.brand !== brand);
+                                             setData(p => ({ ...p, supply: [...newData, { ...supplyData, type: v }] }));
+                                        }} theme={theme} />
+                                        <div className="grid grid-cols-2 gap-2 mt-3">
+                                            <Input placeholder="Source Name" value={supplyData.name} onChange={v => {
+                                                const newData = data.supply.filter(s => s.brand !== brand);
+                                                setData(p => ({ ...p, supply: [...newData, { ...supplyData, name: v }] }));
+                                            }} theme={theme} />
+                                            <Input type="tel" placeholder="Mobile (Req)" value={supplyData.mobile} onChange={v => {
+                                                const newData = data.supply.filter(s => s.brand !== brand);
+                                                setData(p => ({ ...p, supply: [...newData, { ...supplyData, mobile: v }] }));
+                                            }} theme={theme} />
+                                        </div>
+                                        <div className="mt-4">
+                                            <label className="text-sm opacity-70 mb-2 block">Satisfied?</label>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => {
+                                                    const newData = data.supply.filter(s => s.brand !== brand);
+                                                    setData(p => ({ ...p, supply: [...newData, { ...supplyData, satisfied: true }] }));
+                                                }} className={`flex-1 py-2 rounded ${supplyData.satisfied === true ? 'bg-green-600 text-white' : 'bg-gray-700/30'}`}>YES</button>
+                                                <button onClick={() => {
+                                                    const newData = data.supply.filter(s => s.brand !== brand);
+                                                    setData(p => ({ ...p, supply: [...newData, { ...supplyData, satisfied: false }] }));
+                                                }} className={`flex-1 py-2 rounded ${supplyData.satisfied === false ? 'bg-red-600 text-white' : 'bg-gray-700/30'}`}>NO</button>
+                                            </div>
+                                        </div>
+                                        {supplyData.satisfied === false && (
+                                            <div className="mt-3">
+                                                 <SelectionGrid label="Problems" options={['Late Delivery', 'Rude Behavior', 'High Price', 'Damaged Goods']} selected={supplyData.problems} theme={theme} multi onSelect={v => {
+                                                      const current = supplyData.problems || [];
+                                                      const updated = current.includes(v) ? current.filter(i => i !== v) : [...current, v];
+                                                      const newData = data.supply.filter(s => s.brand !== brand);
+                                                      setData(p => ({ ...p, supply: [...newData, { ...supplyData, problems: updated }] }));
+                                                 }} />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                         </div>
+                    );
+                    case 4: return (
+                        <div className="space-y-4 animate-fade-in">
+                             <div className="flex justify-between items-center mb-4">
+                                <label className="text-lg font-bold">Credit Line Received?</label>
+                                <div className="flex bg-gray-700/30 rounded p-1">
+                                    <button onClick={() => update('credit', 'hasCredit', true)} className={`px-4 py-1 rounded ${data.credit.hasCredit ? 'bg-brand-600 text-white' : ''}`}>YES</button>
+                                    <button onClick={() => update('credit', 'hasCredit', false)} className={`px-4 py-1 rounded ${!data.credit.hasCredit ? 'bg-brand-600 text-white' : ''}`}>NO</button>
+                                </div>
+                             </div>
+                             {data.credit.hasCredit && (
+                                 <div className="space-y-3 p-4 bg-gray-800/30 rounded-xl">
+                                     <Input type="number" label="Amount" value={data.credit.amount} onChange={v => update('credit', 'amount', v)} theme={theme} />
+                                     <Input type="number" label="Period (Days)" value={data.credit.period} onChange={v => update('credit', 'period', v)} theme={theme} />
+                                     <Input type="number" label="Interest Rate (%)" value={data.credit.rate} onChange={v => update('credit', 'rate', v)} theme={theme} />
+                                 </div>
+                             )}
+                        </div>
+                    );
+                    case 5: return (
+                        <div className="space-y-4 animate-fade-in">
+                            <SelectionGrid label="Interested in Switching Supplier?" options={['Yes', 'No', 'Maybe']} selected={data.pitch.switchInterested} onSelect={v => update('pitch', 'switchInterested', v)} theme={theme} />
+                            <Input label="Target Price Needed" value={data.pitch.targetPrice} onChange={v => update('pitch', 'targetPrice', v)} theme={theme} />
+                            <SelectionGrid label="Key Decision Factors" options={['Price', 'Speed', 'Credit', 'Stock Availability']} selected={data.pitch.factors} onSelect={v => {
+                                const current = data.pitch.factors;
+                                const updated = current.includes(v) ? current.filter(i => i !== v) : [...current, v];
+                                update('pitch', 'factors', updated);
+                            }} theme={theme} multi />
+                            <div className="mt-4 pt-4 border-t border-gray-700">
+                                <label className="block mb-2 font-bold">Interested in buying VELLORA?</label>
+                                <div className="flex gap-2">
+                                    <button onClick={() => update('pitch', 'velloraInterest', true)} className={`flex-1 py-3 rounded-lg ${data.pitch.velloraInterest ? 'bg-brand-600 text-white' : 'bg-gray-700/30'}`}>YES</button>
+                                    <button onClick={() => update('pitch', 'velloraInterest', false)} className={`flex-1 py-3 rounded-lg ${!data.pitch.velloraInterest ? 'bg-gray-600 text-white' : 'bg-gray-700/30'}`}>NO</button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                    case 6: return (
+                        <div className="space-y-4 animate-fade-in">
+                            <div className="flex justify-between items-center mb-4">
+                                <label className="text-lg font-bold">White Label / Custom Branding?</label>
+                                <div className="flex bg-gray-700/30 rounded p-1">
+                                    <button onClick={() => update('wl', 'interested', true)} className={`px-4 py-1 rounded ${data.wl.interested ? 'bg-brand-600 text-white' : ''}`}>YES</button>
+                                    <button onClick={() => update('wl', 'interested', false)} className={`px-4 py-1 rounded ${!data.wl.interested ? 'bg-brand-600 text-white' : ''}`}>NO</button>
+                                </div>
+                             </div>
+                             {data.wl.interested && (
+                                 <div className="space-y-3">
+                                     <SelectionGrid label="Purpose" options={['Own Brand', 'Event', 'Resale', 'Corporate Gift']} selected={data.wl.purpose} onSelect={v => update('wl', 'purpose', v)} theme={theme} />
+                                     <Input label="Willing to pay extra per unit?" type="number" value={data.wl.payExtra} onChange={v => update('wl', 'payExtra', v)} theme={theme} placeholder="Amount in ₹" />
+                                 </div>
+                             )}
+                        </div>
+                    );
+                    case 7: return (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="space-y-3">
+                                <h3 className="font-bold text-lg">Contact Details</h3>
+                                <Input label="Contact Person Name" value={data.final.name} onChange={v => update('final', 'name', v)} theme={theme} />
+                                <Input label="Mobile Number" type="tel" value={data.final.phone} onChange={v => update('final', 'phone', v)} theme={theme} />
+                            </div>
+                            
+                            {/* Read Only Summary */}
+                            <div className={`p-4 rounded-xl text-sm space-y-2 border border-gray-700 ${theme.card}`}>
+                                <h4 className="font-bold uppercase opacity-50 border-b border-gray-700 pb-2 mb-2">Review Summary</h4>
+                                <div className="flex justify-between"><span>Business:</span> <b>{data.profile.businessName}</b></div>
+                                <div className="flex justify-between"><span>Brands:</span> <b>{data.inventory.brands.join(', ')}</b></div>
+                                <div className="flex justify-between"><span>Monthly Vol:</span> <b>{data.inventory.qtyMonthly}</b></div>
+                                <div className="flex justify-between"><span>Switch?</span> <b>{data.pitch.switchInterested}</b></div>
+                                <div className="flex justify-between"><span>White Label?</span> <b>{data.wl.interested ? 'YES' : 'NO'}</b></div>
+                            </div>
+                        </div>
+                    );
+                    default: return null;
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-[calc(100vh-6rem)]">
+                    {/* Progress Bar */}
+                    <div className="h-1 bg-gray-800 mb-6 rounded-full overflow-hidden">
+                        <div className="h-full bg-brand-500 transition-all duration-300" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}></div>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-6">{STEPS[step]}</h2>
+                    
+                    <div className="flex-1 overflow-y-auto pb-4">
+                        {renderStep()}
+                    </div>
+
+                    <div className="flex gap-4 pt-4 border-t border-gray-800">
+                        {step === 0 ? (
+                            <button onClick={onCancel} className="flex-1 py-3 rounded-lg border border-gray-700 text-gray-400">Cancel</button>
+                        ) : (
+                            <button onClick={() => setStep(s => s - 1)} className="flex-1 py-3 rounded-lg border border-gray-700">Back</button>
+                        )}
+                        
+                        {step === STEPS.length - 1 ? (
+                            <button onClick={() => onSave(data)} className="flex-1 py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">SAVE SURVEY</button>
+                        ) : (
+                            <button onClick={() => setStep(s => s + 1)} className="flex-1 py-3 rounded-lg bg-brand-600 text-white font-bold shadow-lg shadow-brand-900/50">Next</button>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- FORM ELEMENTS ---
+        const Input = ({ label, value, onChange, theme, type = "text", placeholder }) => (
+            <div>
+                {label && <label className="block text-sm opacity-70 mb-1.5">{label}</label>}
+                <input 
+                    type={type} 
+                    value={value} 
+                    onChange={e => onChange(e.target.value)}
+                    placeholder={placeholder}
+                    className={`w-full p-3 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 transition-all ${theme.id === 'obsidian' ? 'bg-[#111] border border-[#333] text-white' : 'bg-white border border-gray-200 text-black'}`}
+                />
+            </div>
+        );
+
+        const SelectionGrid = ({ label, options, selected, onSelect, theme, multi = false, allowOther = false }) => {
+            const [otherVal, setOtherVal] = useState('');
+            const isSelected = (opt) => multi ? selected.includes(opt) : selected === opt;
+            
+            return (
+                <div>
+                    {label && <label className="block text-sm opacity-70 mb-2">{label}</label>}
+                    <div className="grid grid-cols-2 gap-2">
+                        {options.map(opt => (
+                            <button key={opt} onClick={() => onSelect(opt)} 
+                                className={`py-3 px-2 text-sm rounded-lg border transition-all ${isSelected(opt) 
+                                    ? 'bg-brand-600 border-brand-500 text-white shadow-lg shadow-brand-900/20' 
+                                    : (theme.id === 'obsidian' ? 'bg-[#111] border-[#333] text-gray-400 hover:border-gray-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50')
+                                }`}>
+                                {opt}
+                            </button>
+                        ))}
+                        {allowOther && (
+                             <input 
+                                placeholder="Other..."
+                                value={otherVal}
+                                onChange={e => { setOtherVal(e.target.value); if(e.target.value) onSelect(e.target.value); }}
+                                className={`py-3 px-2 text-sm rounded-lg border text-center outline-none focus:border-brand-500 ${theme.id === 'obsidian' ? 'bg-[#111] border-[#333] text-white' : 'bg-white border-gray-200'}`}
+                             />
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- ANALYTICS ---
+        const Analytics = ({ surveys, theme }) => {
+            // Simple logic for counts
+            const brandCounts = {};
+            let totalVol = 0;
+            surveys.forEach(s => {
+                s.inventory?.brands?.forEach(b => brandCounts[b] = (brandCounts[b] || 0) + 1);
+                totalVol += (s.inventory?.qtyMonthly || 0);
+            });
+            
+            const topBrands = Object.entries(brandCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const maxBrand = topBrands[0] ? topBrands[0][1] : 1;
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+                    
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className={`p-4 rounded-xl ${theme.card}`}>
+                            <div className="text-3xl font-bold text-brand-500">{surveys.length}</div>
+                            <div className="text-xs opacity-60 uppercase">Total Surveys</div>
+                        </div>
+                        <div className={`p-4 rounded-xl ${theme.card}`}>
+                            <div className="text-3xl font-bold text-green-500">{(totalVol / 1000).toFixed(1)}k</div>
+                            <div className="text-xs opacity-60 uppercase">Monthly Vol</div>
+                        </div>
+                    </div>
+
+                    {/* Custom SVG Bar Chart */}
+                    <div className={`p-5 rounded-xl ${theme.card}`}>
+                        <h3 className="text-sm font-bold mb-4 opacity-70">Top Brands Stocked</h3>
+                        <div className="space-y-3">
+                            {topBrands.map(([brand, count]) => (
+                                <div key={brand}>
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span>{brand}</span>
+                                        <span>{count}</span>
+                                    </div>
+                                    <div className="h-2 bg-gray-700/30 rounded-full overflow-hidden">
+                                        <div className="h-full bg-brand-500 rounded-full" style={{ width: `${(count / maxBrand) * 100}%` }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* Pitch Stats */}
+                    <div className={`p-5 rounded-xl ${theme.card}`}>
+                        <h3 className="text-sm font-bold mb-4 opacity-70">Conversion Potential</h3>
+                        <div className="flex items-center gap-4">
+                             <div className="relative w-24 h-24">
+                                <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                                    <path className="text-gray-800" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path className="text-brand-500" strokeDasharray={`${(surveys.filter(s => s.pitch?.switchInterested === 'Yes').length / (surveys.length || 1)) * 100}, 100`} strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+                                    {((surveys.filter(s => s.pitch?.switchInterested === 'Yes').length / (surveys.length || 1)) * 100).toFixed(0)}%
+                                </div>
+                             </div>
+                             <div className="text-sm opacity-80">
+                                 <p className="font-bold text-white">Hot Leads</p>
+                                 <p className="text-xs opacity-60">Percentage of businesses interested in switching immediately.</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- SETTINGS ---
+        const Settings = ({ theme, setTheme, logo, setLogo, deletedSurveys, onRestore, onHardDelete, currentThemeObj, surveys }) => {
+            const fileInput = useRef(null);
+            
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setLogo(reader.result);
+                        localStorage.setItem('vellora_logo', reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            const exportAllPDF = () => {
+                const doc = new jspdf.jsPDF();
+                if (logo) doc.addImage(logo, 'JPEG', 15, 10, 15, 15);
+                doc.setFontSize(16);
+                doc.text("VELLORA BULK EXPORT", 195, 20, { align: 'right' });
+                
+                const body = surveys.map(s => [
+                    s.profile.businessName, 
+                    s.profile.area, 
+                    s.final.name, 
+                    s.final.phone, 
+                    s.inventory.qtyMonthly
+                ]);
+                
+                doc.autoTable({
+                    startY: 35,
+                    head: [['Business', 'Area', 'Contact', 'Phone', 'Vol']],
+                    body: body,
+                    theme: 'grid'
+                });
+                
+                doc.save('Vellora_All_Surveys.pdf');
+            };
+
+             const exportCSV = () => {
+                const headers = ["Business,Area,Contact,Phone,Volume,Brands"];
+                const rows = surveys.map(s => 
+                    `"${s.profile.businessName}","${s.profile.area}","${s.final.name}","${s.final.phone}","${s.inventory.qtyMonthly}","${s.inventory.brands.join(';')}"`
+                );
+                const csvContent = "data:text/csv;charset=utf-8," + headers.concat(rows).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "vellora_data.csv");
+                document.body.appendChild(link);
+                link.click();
+            };
+
+            const [showBin, setShowBin] = useState(false);
+            const [pin, setPin] = useState('');
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <h2 className="text-2xl font-bold">Settings</h2>
+                    
+                    {/* Branding */}
+                    <div className={`p-4 rounded-xl ${currentThemeObj.card}`}>
+                        <h3 className="font-bold mb-4">App Branding</h3>
+                        <div className="flex items-center gap-4">
+                            <div onClick={() => fileInput.current.click()} className="h-16 w-16 bg-gray-700 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden border border-gray-600">
+                                {logo ? <img src={logo} className="h-full w-full object-cover" /> : <Icons.Plus />}
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold">Upload Logo</p>
+                                <p className="text-xs opacity-50">Used in Header & PDF</p>
+                            </div>
+                            <input ref={fileInput} type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                        </div>
+                    </div>
+                    
+                    {/* Theme */}
+                    <div className={`p-4 rounded-xl ${currentThemeObj.card}`}>
+                         <h3 className="font-bold mb-4">Appearance</h3>
+                         <div className="grid grid-cols-5 gap-2">
+                             {THEMES.map(t => (
+                                 <button key={t.id} onClick={() => setTheme(t.id)} className={`h-10 rounded-full border-2 ${theme === t.id ? 'border-brand-500' : 'border-transparent'}`} style={{background: t.id === 'light' ? '#fff' : (t.id === 'obsidian' ? '#000' : t.bg.replace('bg-', '')) }}></button>
+                             ))}
+                         </div>
+                         <p className="text-center text-xs mt-2 opacity-60">{THEMES.find(t => t.id === theme).name}</p>
+                    </div>
+                    
+                    {/* Exports */}
+                    <div className={`p-4 rounded-xl ${currentThemeObj.card}`}>
+                        <h3 className="font-bold mb-4">Data Management</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={exportAllPDF} className="py-3 bg-gray-700/30 rounded-lg text-sm font-bold">Export PDF</button>
+                            <button onClick={exportCSV} className="py-3 bg-gray-700/30 rounded-lg text-sm font-bold">Export CSV</button>
+                        </div>
+                    </div>
+                    
+                    {/* Recycle Bin */}
+                    <div className={`p-4 rounded-xl ${currentThemeObj.card}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold">Recycle Bin</h3>
+                            <span className="text-xs bg-gray-700 px-2 py-1 rounded-full">{deletedSurveys.length}</span>
+                        </div>
+                        
+                        {!showBin ? (
+                            <div className="flex gap-2">
+                                <input type="password" placeholder="PIN" className="bg-transparent border-b border-gray-500 w-20 text-center" value={pin} onChange={e => setPin(e.target.value)} />
+                                <button onClick={() => pin === '1234' ? setShowBin(true) : alert('Wrong PIN (Default: 1234)')} className="text-sm font-bold text-brand-500">Unlock</button>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {deletedSurveys.length === 0 && <p className="text-xs opacity-50">Bin is empty.</p>}
+                                {deletedSurveys.map(s => (
+                                    <div key={s.id} className="flex justify-between items-center bg-red-500/10 p-2 rounded">
+                                        <span className="text-sm truncate w-32">{s.profile.businessName}</span>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => onRestore(s.id)} className="text-green-500 text-xs"><Icons.Sync/> Restore</button>
+                                            <button onClick={() => onHardDelete(s.id)} className="text-red-500 text-xs"><Icons.Trash/></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
         };
