@@ -3,789 +3,1041 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VELLORA v3.3 — Single File</title>
+  <title>VELLORA v4.0 — Single File PWA</title>
 
-  <!-- Tailwind CDN -->
+  <!-- Tailwind via CDN (play CDN for standalone) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- React & ReactDOM (UMD) -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- React & ReactDOM UMD -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-  <!-- Babel for in-browser JSX -->
+  <!-- Babel standalone to transpile JSX in-browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Firebase compat (optional, safe-guarded) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase v9 compat (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <!-- jsPDF -->
+  <!-- jsPDF + autoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .range-slider { -webkit-appearance:none; width:100%; height:8px; border-radius:5px; background:rgba(0,0,0,0.08); }
-    .range-slider::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:currentColor; }
-    .fade-in { animation: fadeIn 0.18s ease-in-out; }
-    @keyframes fadeIn { from { opacity:0; transform:scale(.99);} to { opacity:1; transform:scale(1);} }
-    .spinner { border:2px solid rgba(0,0,0,0.08); border-top:2px solid currentColor; width:16px; height:16px; border-radius:50%; animation:spin 1s linear infinite; }
-    @keyframes spin { 0%{transform:rotate(0);}100%{transform:rotate(360deg);} }
+    /* Basic reset for Tailwind with Obsidian-ready variables */
+    :root {
+      --bg: #0a0a0a;
+      --card: #0a0a0a;
+      --text: #ffffff;
+      --accent: #ffffff;
+      --muted: #9ca3af;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --accent: #0f172a;
+      --muted: #6b7280;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    .card {
+      background: var(--card);
+      color: var(--text);
+      border-radius: .5rem;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+      padding: 1rem;
+    }
+    .muted { color: var(--muted); }
+    /* Header theme-sensitive text */
+    .brand-text-light { color: black; }
+    .brand-text-dark { color: white; }
+    /* small helpers */
+    .input {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: .5rem;
+      border-radius: .375rem;
+      color: var(--text);
+    }
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: .5rem .75rem;
+      border-radius: .375rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .fab {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 4.5rem;
+      z-index: 60;
+      width: 64px;
+      height: 64px;
+      border-radius: 9999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+    }
+    /* small modal */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:80;
+      padding: 1rem;
+    }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body>
   <div id="root"></div>
 
   <script type="text/babel">
-  // VELLORA v3.3 — Single file working version
-  // React 18 UMD + Babel
 
-  const { useState, useEffect, useContext, createContext } = React;
+/** FIREBASE_CONFIG (exactly as provided) **/
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
+  authDomain: "vellora-3828d.firebaseapp.com",
+  projectId: "vellora-3828d",
+  storageBucket: "vellora-3828d.firebasestorage.app",
+  messagingSenderId: "1045366360458",
+  appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
+  measurementId: "G-WLKMJNBJTP"
+};
 
-  // ---------- CONFIG ----------
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
-    authDomain: "vellora-3828d.firebaseapp.com",
-    projectId: "vellora-3828d",
-    storageBucket: "vellora-3828d.firebasestorage.app",
-    messagingSenderId: "1045366360458",
-    appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
-    measurementId: "G-WLKMJNBJTP"
-  };
+/** Initialize Firebase (compat) **/
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
 
-  const THEMES = {
-    corporate: { name:'Corporate', bg:'bg-slate-50', card:'bg-white', text:'text-slate-800', accent:'bg-blue-600', accentText:'text-white', border:'border-slate-200', accentHex:'#2563eb', cardHex:'#ffffff' },
-    midnight:  { name:'Midnight', bg:'bg-slate-900', card:'bg-slate-800', text:'text-slate-100', accent:'bg-blue-500', accentText:'text-white', border:'border-slate-700', accentHex:'#3b82f6', cardHex:'#0f172a' },
-    forest:    { name:'Forest', bg:'bg-emerald-50', card:'bg-white', text:'text-emerald-900', accent:'bg-emerald-600', accentText:'text-white', border:'border-emerald-200', accentHex:'#059669', cardHex:'#ffffff' },
-    obsidian:  { name:'Obsidian', bg:'bg-black', card:'bg-gray-900', text:'text-gray-100', accent:'bg-white', accentText:'text-black', border:'border-gray-800', accentHex:'#ffffff', cardHex:'#0b0b0b' },
-    sunset:    { name:'Sunset', bg:'bg-orange-50', card:'bg-white', text:'text-orange-900', accent:'bg-orange-500', accentText:'text-white', border:'border-orange-200', accentHex:'#f97316', cardHex:'#ffffff' },
-    royal:     { name:'Royal', bg:'bg-purple-50', card:'bg-white', text:'text-purple-900', accent:'bg-purple-600', accentText:'text-white', border:'border-purple-200', accentHex:'#7c3aed', cardHex:'#ffffff' },
-    oceanic:   { name:'Oceanic', bg:'bg-cyan-50', card:'bg-white', text:'text-cyan-900', accent:'bg-cyan-600', accentText:'text-white', border:'border-cyan-200', accentHex:'#0891b2', cardHex:'#ffffff' },
-    luxury:    { name:'Luxury', bg:'bg-gray-900', card:'bg-gray-800', text:'text-amber-100', accent:'bg-amber-500', accentText:'text-gray-900', border:'border-amber-500/30', accentHex:'#f59e0b', cardHex:'#111827' },
-    berry:     { name:'Berry', bg:'bg-pink-50', card:'bg-white', text:'text-pink-900', accent:'bg-pink-600', accentText:'text-white', border:'border-pink-200', accentHex:'#ec4899', cardHex:'#ffffff' },
-    slate:     { name:'Slate', bg:'bg-gray-100', card:'bg-white', text:'text-gray-800', accent:'bg-gray-600', accentText:'text-white', border:'border-gray-300', accentHex:'#6b7280', cardHex:'#ffffff' }
-  };
+/** Utilities **/
+const uid = () => 's_'+Math.random().toString(36).slice(2,9);
+const nowISO = ()=> new Date().toISOString();
+const saveLocal = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+const loadLocal = (k, fallback=null) => {
+  const raw=localStorage.getItem(k); if(!raw) return fallback; try { return JSON.parse(raw); } catch(e){return fallback;}
+};
+const removeLocal = k => localStorage.removeItem(k);
 
-  const INITIAL_MASTER_DATA = {
-    businessTypes: ["Kirana / General Store","Supermarket","Restaurant / Hotel","Corporate Office","Gym / Fitness","Hospital / Clinic","Educational Inst."],
-    brands: ["Bisleri","Kinley","Aquafina","Bailley","Local Brand"],
-    bottleSizes: ["250ml","500ml","1L","2L","5L","10L","20L"],
-    problems: ["Late Delivery","Leaking Bottles","Inconsistent Taste","High Price","Rude Behavior","No Bill provided"],
-    distributors: ["Direct Company","Local Vendor","Wholesaler"],
-    whiteLabelPurposes: ["Brand Building","Customer Loyalty","Event / Function","Resale Profit"],
-    footfallRanges: ["0-50","51-150","151-300","300+"],
-    willingToPayAmounts: ["1","2","3","5","10"]
-  };
+/** App constants **/
+const LOCAL_KEY = 'vellora_surveys_v4';
+const OUTBOX_KEY = 'vellora_outbox_v4';
+const SETTINGS_KEY = 'vellora_settings_v4';
+const MASTERDATA_KEY = 'vellora_masterdata_v4';
 
-  // ---------- UTIL ----------
-  const uid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
-  const safeParse = (s,d)=>{ try{return JSON.parse(s);}catch(e){return d;} };
-  const nowISO = () => new Date().toISOString();
-  const hexToRgb = hex => {
-    try {
-      const h = hex.replace('#','');
-      const bigint = parseInt(h,16);
-      if (h.length===6) return [(bigint>>16)&255,(bigint>>8)&255, bigint&255];
-      if (h.length===3) return [parseInt(h[0]+h[0],16),parseInt(h[1]+h[1],16),parseInt(h[2]+h[2],16)];
-    } catch(e){}
-    return [37,99,235];
-  };
+/** Basic MasterData management for "Other" options */
+const defaultMasterData = {
+  types: ['Grocery','Restaurant','Pharmacy'],
+  brands: ['Brand A','Brand B','Brand C'],
+  sizes: ['Small','Medium','Large']
+};
+if (!loadLocal(MASTERDATA_KEY)) saveLocal(MASTERDATA_KEY, defaultMasterData);
 
-  // ---------- Contexts ----------
-  const ThemeContext = createContext();
-  const AppContext = createContext();
+/** Sync Engine: Online-First with Outbox queue **/
+class SyncEngine {
+  constructor() {
+    this.online = navigator.onLine;
+    this.outbox = loadLocal(OUTBOX_KEY, []);
+    window.addEventListener('online', ()=>{ this.online = true; this.flush(); });
+    window.addEventListener('offline', ()=>{ this.online = false; });
+  }
 
-  // ---------- Icons ----------
-  const Icon = ({name, className}) => {
-    const props = { width:18, height:18, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round", className };
-    switch(name){
-      case 'plus': return (<svg {...props}><path d="M5 12h14"/><path d="M12 5v14"/></svg>);
-      case 'home': return (<svg {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
-      case 'bar': return (<svg {...props}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>);
-      case 'settings': return (<svg {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>);
-      case 'download': return (<svg {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>);
-      case 'trash': return (<svg {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>);
-      case 'map': return (<svg {...props}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>);
-      case 'x': return (<svg {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>);
-      case 'check': return (<svg {...props}><polyline points="20 6 9 17 4 12"/></svg>);
-      default: return null;
-    }
-  };
+  enqueue(op) {
+    this.outbox.push(op);
+    saveLocal(OUTBOX_KEY, this.outbox);
+  }
 
-  // ---------- Export helpers ----------
-  const convertToCSV = (data) => {
-    if (!data || !data.length) return '';
-    const items = data.map(s => {
-      const out = { id:s.id, businessName:s.businessName||'', businessType:s.businessType||'', area:s.locationArea||'', contactName:s.contactName||'', contactMobile:s.contactMobile||'', qtyMonthly:s.qtyMonthly||0, interestedInCustomLogo:s.interestedInCustomLogo||'', timestamp:s.timestamp||'' };
-      if (s.gps) out.coordinates = `${s.gps.lat},${s.gps.lng}`;
-      return out;
-    });
-    const headers = Object.keys(items[0]);
-    const rows = items.map(it => headers.map(h => JSON.stringify(it[h] ?? '') ).join(','));
-    return [headers.join(','), ...rows].join('\n');
-  };
-
-  const generatePDF = (surveys, themeKey = 'corporate') => {
-    if (!window.jspdf || !window.jspdf.jsPDF) { alert('PDF engine not loaded'); return; }
-    try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit:'pt', format:'a4' });
-      const theme = THEMES[themeKey] || THEMES.corporate;
-      const accentRgb = hexToRgb(theme.accentHex || '#2563eb');
-      const logo = localStorage.getItem('vellora_logo_base64');
-
-      const filtered = (surveys||[]).filter(s => !s.isDeleted);
-      if (filtered.length===0) { alert('No surveys to export'); return; }
-
-      filtered.forEach((s,idx) => {
-        if (idx>0) doc.addPage();
-        // header bar
-        doc.setFillColor(...accentRgb); doc.rect(0,0,doc.internal.pageSize.getWidth(),64,'F');
-        // logo if present
-        if (logo) {
-          try { doc.addImage(logo, 'PNG', 36, 10, 80, 44); } catch(e){ /* ignore */ }
-        } else {
-          doc.setFontSize(20); doc.setTextColor(255); doc.text('VELLORA', 36, 40);
+  async flush() {
+    if (!navigator.onLine) return;
+    if (!this.outbox.length) return;
+    // attempt to push each op to firebase
+    const queue = [...this.outbox];
+    for (const op of queue) {
+      try {
+        if (op.type === 'create' || op.type === 'update') {
+          await db.collection('surveys').doc(op.id).set(op.payload, {merge:true});
+        } else if (op.type === 'delete') {
+          // soft-delete mark persisted
+          await db.collection('surveys').doc(op.id).set({isDeleted: true, deletedAt: nowISO()}, {merge:true});
+        } else if (op.type === 'restore') {
+          await db.collection('surveys').doc(op.id).set({isDeleted:false, deletedAt: firebase.firestore.FieldValue.delete()}, {merge:true});
+        } else if (op.type === 'permanent_delete') {
+          await db.collection('surveys').doc(op.id).delete();
         }
-        doc.setFontSize(12); doc.setTextColor(255); doc.text('Survey Report', doc.internal.pageSize.getWidth()-40, 30, { align:'right' });
-        doc.setFontSize(9); doc.text(new Date().toLocaleString(), doc.internal.pageSize.getWidth()-40, 44, { align:'right' });
+        // remove op from local outbox on success
+        const idx = this.outbox.findIndex(o => o._opId === op._opId);
+        if (idx>=0) this.outbox.splice(idx,1);
+        saveLocal(OUTBOX_KEY, this.outbox);
+      } catch (e) {
+        console.error('Flush op failed, will retry later', e);
+        // stop flush to avoid repeated errors
+        return;
+      }
+    }
+  }
+}
+const syncEngine = new SyncEngine();
 
-        let y = 84;
-        doc.setFontSize(14); doc.setTextColor(20); doc.text(s.businessName || '-', 36, y); y += 16;
-        doc.setFontSize(9); doc.setTextColor(90); doc.text(`${s.businessType || '-'} • ${s.locationArea || '-'}`, 36, y); y += 18;
-        doc.setFontSize(10); doc.setTextColor(60); doc.text('Contact:', 36, y); doc.text(`${s.contactName || '-'}  ${s.contactMobile || '-'}`, 96, y); y += 16;
-        if (s.gps) { doc.setFontSize(9); doc.text(`Coords: ${s.gps.lat.toFixed(5)}, ${s.gps.lng.toFixed(5)}`, 36, y); y += 16; }
-
-        // Pricing (simple)
-        if (s.brands && s.brands.length && s.bottleSizes && s.bottleSizes.length) {
-          const rows = [];
-          s.brands.forEach(b => {
-            s.bottleSizes.forEach(sz => {
-              const k = `${b}|${sz}`;
-              const buy = s.buyingPrice?.[k] ?? '-';
-              const sell = s.sellingPrice?.[k] ?? '-';
-              const profit = s.profitPerBottle?.[k] ?? '-';
-              if (buy !== '-' || sell !== '-') rows.push([b, sz, String(buy), String(sell), String(profit)]);
-            });
+/** Data Layer that prefers live Firebase when online, else localStorage. */
+const DataLayer = {
+  async initSync(onChangeCallback) {
+    // subscribe to firebase collection if online
+    if (navigator.onLine) {
+      try {
+        this.unsubscribe = db.collection('surveys').onSnapshot(snapshot => {
+          const arr = [];
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            d.id = doc.id;
+            arr.push(d);
           });
-          if (rows.length) {
-            doc.autoTable({ startY: y, head: [['Brand','Size','Buy','Sell','Profit']], body: rows, theme:'grid', headStyles:{fillColor:accentRgb, textColor:255}, styles:{fontSize:8}, margin:{left:36, right:36} });
-            y = doc.lastAutoTable.finalY + 10;
-          }
-        }
-
-        // Footer stamp
-        const w = doc.internal.pageSize.getWidth();
-        doc.setFontSize(8); doc.setTextColor(160); doc.text(`Page ${idx+1} / ${filtered.length}`, w-40, doc.internal.pageSize.getHeight()-20, { align:'right' });
-      });
-
-      doc.save(`Vellora_Export_${(new Date()).toISOString().split('T')[0]}.pdf`);
-    } catch(e) {
-      console.error(e);
-      alert('PDF export error. See console.');
+          // save local copy
+          saveLocal(LOCAL_KEY, arr);
+          onChangeCallback(arr);
+        });
+        syncEngine.flush();
+        return;
+      } catch (e) {
+        console.warn('Firebase subscribe failed, falling back to local', e);
+      }
     }
-  };
+    // fallback: load local
+    const local = loadLocal(LOCAL_KEY, []);
+    onChangeCallback(local);
+  },
+  async createSurvey(payload) {
+    // create locally first
+    const id = payload.id || uid();
+    payload.id = id;
+    payload.createdAt = payload.createdAt || nowISO();
+    // update local storage
+    const local = loadLocal(LOCAL_KEY, []);
+    local.unshift(payload);
+    saveLocal(LOCAL_KEY, local);
+    // enqueue to outbox + attempt to flush
+    syncEngine.enqueue({...payload, type:'create', id, _opId: uid(), payload});
+    if (navigator.onLine) syncEngine.flush();
+    return id;
+  },
+  async updateSurvey(id, payload) {
+    payload.updatedAt = nowISO();
+    const local = loadLocal(LOCAL_KEY, []).map(s => s.id===id ? {...s,...payload} : s);
+    saveLocal(LOCAL_KEY, local);
+    syncEngine.enqueue({_opId: uid(), type:'update', id, payload});
+    if (navigator.onLine) syncEngine.flush();
+  },
+  async softDelete(id) {
+    const local = loadLocal(LOCAL_KEY, []).map(s => s.id===id ? {...s, isDeleted:true, deletedAt: nowISO()} : s);
+    saveLocal(LOCAL_KEY, local);
+    syncEngine.enqueue({_opId: uid(), type:'delete', id, payload:{isDeleted:true}});
+    if (navigator.onLine) syncEngine.flush();
+  },
+  async restore(id) {
+    const local = loadLocal(LOCAL_KEY, []).map(s => s.id===id ? {...s, isDeleted:false, deletedAt: null} : s);
+    saveLocal(LOCAL_KEY, local);
+    syncEngine.enqueue({_opId: uid(), type:'restore', id, payload:{isDeleted:false}});
+    if (navigator.onLine) syncEngine.flush();
+  },
+  async permanentDelete(id) {
+    const local = loadLocal(LOCAL_KEY, []).filter(s => s.id!==id);
+    saveLocal(LOCAL_KEY, local);
+    syncEngine.enqueue({_opId: uid(), type:'permanent_delete', id});
+    if (navigator.onLine) syncEngine.flush();
+  },
+  getLocalAll() { return loadLocal(LOCAL_KEY, []); }
+};
 
-  // ---------- App provider ----------
-  function AppProvider({ children }) {
-    const [themeKey, setThemeKey] = useState(localStorage.getItem('vellora_theme') || 'corporate');
-    const currentTheme = THEMES[themeKey] || THEMES.corporate;
+/** Basic PDF Export using jsPDF */
+async function exportSurveyToPDF(survey, logoBase64=null) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  // Always white background
+  doc.setFillColor(255,255,255);
+  doc.rect(0,0,595.28,841.89,'F');
 
-    const [surveys, setSurveys] = useState(safeParse(localStorage.getItem('vellora_MAIN_surveys'), []));
-    const [masterData, setMasterData] = useState(safeParse(localStorage.getItem('vellora_MAIN_master'), INITIAL_MASTER_DATA));
-    const [outbox, setOutbox] = useState(safeParse(localStorage.getItem('vellora_MAIN_outbox'), []));
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [toast, setToast] = useState(null);
+  // Header
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', 40, 30, 80, 40);
+  }
+  doc.setFontSize(18);
+  doc.text('VELLORA REPORT', 500, 50, {align:'right'});
 
-    useEffect(()=> { localStorage.setItem('vellora_theme', themeKey); }, [themeKey]);
-    useEffect(()=> { localStorage.setItem('vellora_MAIN_surveys', JSON.stringify(surveys)); }, [surveys]);
-    useEffect(()=> { localStorage.setItem('vellora_MAIN_master', JSON.stringify(masterData)); }, [masterData]);
-    useEffect(()=> { localStorage.setItem('vellora_MAIN_outbox', JSON.stringify(outbox)); }, [outbox]);
+  doc.setFontSize(12);
+  doc.text(`Business: ${survey.businessName || ''}`, 40, 100);
+  doc.text(`Type: ${survey.businessType || ''}`, 40, 118);
+  doc.text(`Area: ${survey.location?.areaName || ''}`, 40, 136);
+  doc.text(`Date: ${new Date(survey.createdAt||'').toLocaleString()}`, 40, 154);
 
-    // init firebase safely (if script unavailable, skip)
-    useEffect(()=> {
-      try { if (window.firebase && !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); if (window.firebase && firebase.auth) firebase.auth().onAuthStateChanged(u => { if (!u) firebase.auth().signInAnonymously().catch(()=>{}); }); } catch(e) { console.info('Firebase init skipped or failed (safe).'); }
-    }, []);
+  // Pricing Matrix table
+  const tableRows = [];
+  if (survey.pricingMatrix) {
+    survey.pricingMatrix.forEach(r=>{
+      tableRows.push([r.brand || '', r.size || '', r.buyingPrice||'', r.sellingPrice||'', ( (r.sellingPrice||0)-(r.buyingPrice||0) ) ]);
+    });
+  }
+  doc.autoTable({
+    head: [['Brand','Size','Buy','Sell','Profit']],
+    body: tableRows,
+    startY: 180
+  });
 
-    useEffect(()=> {
-      const onOnline = () => { setIsOnline(true); flushOutbox(); };
-      const onOffline = () => setIsOnline(false);
-      window.addEventListener('online', onOnline);
-      window.addEventListener('offline', onOffline);
-      return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
-    }, []);
-
-    const showToast = (msg, type='info') => { setToast({ msg, type }); setTimeout(()=>setToast(null), 3000); };
-
-    const addToOutbox = (action, payload) => {
-      const item = { id: uid(), action, payload, timestamp: nowISO() };
-      setOutbox(prev => [...prev, item]);
-      // local immediate changes for UX
-      if (action === 'ADD_SURVEY') setSurveys(prev => [payload, ...prev]);
-      if (action === 'UPDATE_SURVEY') setSurveys(prev => prev.map(s => s.id === payload.id ? payload : s));
-      if (action === 'SOFT_DELETE') setSurveys(prev => prev.map(s => s.id === payload.id ? { ...s, isDeleted:true, deletedAt: payload.deletedAt } : s));
-      if (action === 'RESTORE') setSurveys(prev => prev.map(s => s.id === payload.id ? { ...s, isDeleted:false, deletedAt:null } : s));
-      if (action === 'DELETE_PERM') setSurveys(prev => prev.filter(s => s.id !== payload.id));
-      showToast('Saved', 'success');
-      if (navigator.onLine) flushOutbox();
-    };
-
-    const flushOutbox = async () => {
-      if (isSyncing) return;
-      if (!window.firebase || !firebase.firestore) return; // skip if firebase not available
-      if (!outbox.length) return;
-      setIsSyncing(true);
-      const db = firebase.firestore();
-      const syncCode = 'MAIN';
-      const remaining = [];
-      for (const item of outbox) {
-        try {
-          const payload = JSON.parse(JSON.stringify(item.payload));
-          if (item.action === 'ADD_SURVEY') {
-            await db.collection('artifacts').doc(syncCode).collection('data').doc(payload.id).set(payload);
-          } else if (item.action === 'UPDATE_SURVEY') {
-            await db.collection('artifacts').doc(syncCode).collection('data').doc(payload.id).set(payload, { merge: true });
-          } else if (item.action === 'SOFT_DELETE') {
-            await db.collection('artifacts').doc(syncCode).collection('data').doc(payload.id).set({ isDeleted: true, deletedAt: payload.deletedAt }, { merge: true });
-          } else if (item.action === 'RESTORE') {
-            await db.collection('artifacts').doc(syncCode).collection('data').doc(payload.id).set({ isDeleted:false, deletedAt:null }, { merge: true });
-          } else if (item.action === 'DELETE_PERM') {
-            await db.collection('artifacts').doc(syncCode).collection('data').doc(payload.id).delete();
-          }
-        } catch (e) {
-          remaining.push(item);
-        }
-      }
-      setOutbox(remaining);
-      setIsSyncing(false);
-      if (remaining.length === 0) showToast('Cloud Sync Complete','success');
-    };
-
-    const updateMasterData = (k,v) => {
-      if (!masterData[k]) return;
-      if (!masterData[k].includes(v)) {
-        const next = { ...masterData, [k]: [...masterData[k], v] };
-        setMasterData(next);
-        addToOutbox('UPDATE_MASTER', next);
-      }
-    };
-
-    return (
-      <ThemeContext.Provider value={{ currentTheme, themeKey, setThemeKey }}>
-        <AppContext.Provider value={{ surveys, masterData, isOnline, outbox, isSyncing, addToOutbox, updateMasterData, flushOutbox, showToast }}>
-          {children}
-          {toast && <div className="fixed left-4 top-4 bg-green-600 text-white p-3 rounded shadow">{toast.msg}</div>}
-        </AppContext.Provider>
-      </ThemeContext.Provider>
-    );
+  doc.text('Supply Chain:', 40, doc.lastAutoTable.finalY + 24 || 260);
+  let y = doc.lastAutoTable.finalY + 40 || 290;
+  if (survey.supplyChain) {
+    survey.supplyChain.forEach(s => {
+      doc.text(`${s.brand} — ${s.sourceType} — ${s.sourceName} — ${s.sourcePhone} — Sat: ${s.satisfaction}`, 40, y);
+      y += 14;
+    });
   }
 
-  // ---------- Small UI controls ----------
-  const ButtonGrid = ({ options, selected, onChange, allowOther, onAddOther }) => {
-    const { currentTheme } = useContext(ThemeContext);
-    const [adding, setAdding] = useState(false);
-    const [val, setVal] = useState('');
-    const isSelected = (opt) => Array.isArray(selected) ? selected.includes(opt) : selected === opt;
-    return (
-      <div className="flex flex-wrap gap-2">
-        {options.map(opt => (
-          <button key={opt} onClick={() => {
-            if (Array.isArray(selected)) {
-              onChange(isSelected(opt) ? selected.filter(s => s !== opt) : [...selected, opt]);
-            } else onChange(opt);
-          }} className={`px-3 py-2 rounded ${isSelected(opt) ? `${currentTheme.accent} ${currentTheme.accentText}` : `border ${currentTheme.border}`}`}>{opt}</button>
-        ))}
-        {allowOther && (!adding ? <button onClick={() => setAdding(true)} className="px-3 py-2 border-dashed rounded border">+ Other</button> :
-          <div className="flex items-center gap-2">
-            <input value={val} onChange={e=>setVal(e.target.value)} className={`px-2 py-1 rounded border`} />
-            <button onClick={() => { if (!val) return; onAddOther && onAddOther(val); if (Array.isArray(selected)) onChange([...selected, val]); else onChange(val); setVal(''); setAdding(false); }} className="px-2 py-1 bg-blue-600 text-white rounded">Add</button>
-          </div>)}
-      </div>
-    );
-  };
+  doc.text('Sales Pitch:', 40, y+10);
+  y += 28;
+  doc.text(`Interested in Switching Supplier: ${survey.pitch?.switchSupplier || ''}`, 40, y); y+=14;
+  doc.text(`Target Price: ${survey.pitch?.targetPrice || ''}`, 40, y); y+=14;
+  doc.text(`Key Factors: ${(survey.pitch?.keyFactors || []).join(', ')}`, 40, y); y+=14;
+  doc.text(`Interested in Buying Vellora: ${survey.pitch?.interestedBuyVellora || ''}`, 40, y); y+=14;
 
-  const QtySlider = ({ value, onChange }) => {
-    const [v, setV] = useState(value || 0);
-    useEffect(()=> setV(value || 0), [value]);
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-2xl font-bold">{v} <span className="text-sm opacity-60">bottles/mo</span></div>
-          <input type="number" value={v} onChange={e => { const nv = parseInt(e.target.value || 0); setV(nv); onChange(nv); }} className="w-24 p-2 rounded border" />
-        </div>
-        <input type="range" min="0" max="1000" step="5" value={v} onChange={e => { const nv = parseInt(e.target.value); setV(nv); onChange(nv); }} className="range-slider" />
-      </div>
-    );
-  };
+  // Footer contact
+  doc.text('Contact', 40, y+20);
+  doc.text(`${survey.contact?.name || ''} — ${survey.contact?.mobile || ''}`, 40, y+40);
 
-  // ---------- Steps ----------
-  function StepA({ data, setData, masterData, addMaster, isEdit }) {
-    const [loading, setLoading] = useState(false);
-    const detect = () => {
-      if (!navigator.geolocation) { alert('Geolocation not available'); return; }
-      setLoading(true);
-      navigator.geolocation.getCurrentPosition(async pos => {
-        const { latitude, longitude } = pos.coords;
-        setData({ ...data, gps: { lat: latitude, lng: longitude } });
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-          const j = await res.json();
-          const area = j?.address?.suburb || j?.address?.neighbourhood || j?.address?.town || j?.display_name || '';
-          if (area) setData(prev => ({ ...prev, locationArea: area }));
-        } catch (e) {}
-        setLoading(false);
-      }, err => { setLoading(false); alert('Unable to detect location'); }, { enableHighAccuracy:true, timeout:10000 });
+  doc.save(`Vellora_Survey_${survey.businessName||survey.id||'report'}.pdf`);
+}
+
+/** Small helper: generate empty survey structure */
+function emptySurvey() {
+  return {
+    id: uid(),
+    businessName: '',
+    businessType: '',
+    footfall: '',
+    location: { areaName:'', coords:'' },
+    brands: [],
+    sizes: [],
+    qtyToggle: 'Monthly',
+    quantity: 0,
+    qtyMonthly: 0,
+    pricingMatrix: [],
+    supplyChain: [],
+    credit: {received:false, amount:null, periodDays:null, interestRate:null},
+    pitch: {},
+    whiteLabel: {interested:false, purpose:'', willingToPay:0},
+    contact: {name:'', mobile:''},
+    createdAt: nowISO(),
+    isDeleted: false
+  };
+}
+
+/** Main App (React) */
+const { useState, useEffect, useRef } = React;
+
+function App(){
+  const [theme, setTheme] = useState(loadLocal(SETTINGS_KEY, {theme:'dark', logo:null}).theme || 'dark');
+  const [settings, setSettings] = useState(loadLocal(SETTINGS_KEY, {theme:'dark', logo:null}));
+  const [surveys, setSurveys] = useState([]);
+  const [page, setPage] = useState('list'); // list, analytics, settings, bin
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editingSurvey, setEditingSurvey] = useState(null);
+  const [detailView, setDetailView] = useState(null);
+  const [recyclePin, setRecyclePin] = useState('');
+  const [showRecycle, setShowRecycle] = useState(false);
+  const [masterData, setMasterData] = useState(loadLocal(MASTERDATA_KEY, defaultMasterData));
+  const [filter, setFilter] = useState({}); // simple chart filtering
+
+  useEffect(()=>{
+    document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+    setSettings(prev => { const s={...prev, theme}; saveLocal(SETTINGS_KEY, s); return s;});
+  }, [theme]);
+
+  useEffect(()=>{
+    // initialize DataLayer subscription
+    DataLayer.initSync(arr => {
+      setSurveys(arr);
+    });
+    // ensure outbox flush if online
+    if (navigator.onLine) syncEngine.flush();
+    // load masterdata
+    const md = loadLocal(MASTERDATA_KEY, defaultMasterData);
+    setMasterData(md);
+  }, []);
+
+  // Derived lists
+  const visibleSurveys = surveys.filter(s => !s.isDeleted);
+
+  // Start new survey
+  function startSurvey() {
+    const s = emptySurvey();
+    setEditingSurvey(s);
+    setWizardOpen(true);
+  }
+
+  function openDetail(s) { setDetailView(s); }
+
+  async function saveSurvey(s) {
+    // compute qtyMonthly
+    const toSave = {...s};
+    toSave.qtyMonthly = (s.qtyToggle === 'Daily') ? (Number(s.quantity || 0) * 30) : Number(s.quantity || 0);
+    // compress pricingMatrix and supplyChain (basic validation)
+    if (!toSave.id) toSave.id = uid();
+    if (surveys.find(x=>x.id === toSave.id)) {
+      await DataLayer.updateSurvey(toSave.id, toSave);
+    } else {
+      await DataLayer.createSurvey(toSave);
+    }
+    setWizardOpen(false);
+    setEditingSurvey(null);
+  }
+
+  // Soft delete
+  async function deleteSurvey(id) {
+    if (!confirm('Soft delete this survey? It will be moved to Recycle Bin.')) return;
+    await DataLayer.softDelete(id);
+    setDetailView(null);
+  }
+
+  // Export visible surveys CSV/JSON/PDF bulk
+  function exportJSON() {
+    const data = visibleSurveys;
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='vellora_surveys.json'; a.click(); URL.revokeObjectURL(url);
+  }
+  function exportCSV() {
+    const keys = ['id','businessName','businessType','location','qtyMonthly','createdAt'];
+    const rows = visibleSurveys.map(s => keys.map(k => {
+      if (k==='location') return `"${(s.location?.areaName||'')}"`;
+      return `"${(s[k]||'').toString().replace(/"/g,'""')}"`;
+    }).join(','));
+    const csv = keys.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='vellora_surveys.csv'; a.click(); URL.revokeObjectURL(url);
+  }
+  async function exportBulkPDF() {
+    // merge via single PDF with multiple pages. We'll export one-by-one to keep simple.
+    for (const s of visibleSurveys) {
+      await exportSurveyToPDF(s, settings.logo);
+    }
+  }
+
+  // Settings: logo upload
+  function onLogoUpload(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result;
+      const newSettings = {...settings, logo: base64};
+      setSettings(newSettings); saveLocal(SETTINGS_KEY, newSettings);
     };
-    return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold">Business Profile</h2>
-        <div><label className="text-xs font-bold opacity-70">Business Name *</label><input value={data.businessName||''} onChange={e=>setData({...data, businessName:e.target.value})} className="w-full p-3 rounded border" /></div>
-        <div><label className="text-xs font-bold opacity-70">Type</label><ButtonGrid options={masterData.businessTypes} selected={data.businessType||''} onChange={v=>setData({...data, businessType:v})} allowOther onAddOther={v=>addMaster('businessTypes',v)} /></div>
-        <div><label className="text-xs font-bold opacity-70">Footfall</label><ButtonGrid options={masterData.footfallRanges} selected={data.dailyFootfall||''} onChange={v=>setData({...data, dailyFootfall:v})} allowOther onAddOther={v=>addMaster('footfallRanges',v)} /></div>
-        <div className="p-3 rounded border">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-xs font-bold opacity-70">Area</label>
-              <input value={data.locationArea||''} onChange={e=>setData({...data, locationArea:e.target.value})} className="w-full p-2 rounded border" />
-            </div>
-            <div className="w-64">
-              <label className="text-xs font-bold opacity-70">Coordinates</label>
-              <input readOnly={!isEdit} value={data.gps ? `${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)}` : ''} onChange={e=>{ const parts = e.target.value.split(',').map(s=>s.trim()); if (parts.length>=2) setData({...data, gps:{lat:parseFloat(parts[0])||0, lng:parseFloat(parts[1])||0}}); }} className="w-full p-2 rounded border" />
-              <div className="mt-2"><button onClick={detect} className="px-3 py-1 rounded bg-blue-600 text-white">{loading ? '...' : 'Detect GPS'}</button></div>
-              {!isEdit && <p className="text-xs opacity-60 mt-2">Coordinates required for new surveys. Use Detect GPS.</p>}
-            </div>
+    reader.readAsDataURL(file);
+  }
+
+  // Recycle Bin PIN protect default "1234"
+  function openBin() {
+    const pin = prompt('Enter Recycle PIN (default 1234):');
+    if (pin === null) return;
+    if (pin === '' ) { alert('PIN required'); return; }
+    if (pin === '1234') {
+      setPage('bin');
+    } else {
+      alert('Incorrect PIN');
+    }
+  }
+
+  // basic analytics (brands counts, business types)
+  const brandCounts = {};
+  visibleSurveys.forEach(s=>{
+    (s.brands||[]).forEach(b=>{ brandCounts[b] = (brandCounts[b]||0)+1; });
+  });
+  const typeCounts = {};
+  visibleSurveys.forEach(s=>{ typeCounts[s.businessType] = (typeCounts[s.businessType]||0)+1; });
+
+  return (
+    <div className="min-h-screen p-4" style={{background: 'var(--bg)'}}>
+      {/* Header */}
+      <header className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div style={{width:48,height:48,overflow:'hidden',borderRadius:8,background:'#fff'}} className="flex items-center justify-center">
+            {settings.logo ? <img src={settings.logo} style={{width:48,height:48,objectFit:'cover'}} /> : <div className="text-sm font-bold" style={{color: theme==='dark' ? '#fff' : '#000'}}>VL</div>}
+          </div>
+          <div>
+            <div style={{fontSize:18,fontWeight:800}} className={theme==='dark' ? 'brand-text-dark' : 'brand-text-light'}>VELLORA</div>
+            <div className="muted text-xs">Market Survey — v4.0</div>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  function StepB({ data, setData, masterData, addMaster }) {
-    return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold">Inventory</h2>
-        <div><label className="text-xs font-bold opacity-70">Brands</label><ButtonGrid options={masterData.brands} selected={data.brands||[]} onChange={v=>setData({...data, brands:v})} allowOther onAddOther={v=>addMaster('brands',v)} /></div>
-        <div><label className="text-xs font-bold opacity-70">Sizes</label><ButtonGrid options={masterData.bottleSizes} selected={data.bottleSizes||[]} onChange={v=>setData({...data, bottleSizes:v})} allowOther onAddOther={v=>addMaster('bottleSizes',v)} /></div>
-        <div className="p-3 rounded border"><label className="text-xs font-bold opacity-70">Monthly Quantity</label><QtySlider value={data.qtyMonthly} onChange={v=>setData({...data, qtyMonthly:v})} /></div>
-      </div>
-    );
-  }
+        <div className="flex items-center gap-4">
+          <div className="muted text-sm">Theme</div>
+          <select value={theme} onChange={e=>setTheme(e.target.value)} className="input">
+            <option value="dark">Obsidian</option>
+            <option value="light">Light</option>
+          </select>
+          <button className="btn" onClick={()=>{ setPage('settings'); }}>Settings</button>
+        </div>
+      </header>
 
-  function StepC({ data, setData }) {
-    if (!data.brands?.length || !data.bottleSizes?.length) return <div className="p-6 text-center opacity-60">Select brands & sizes first.</div>;
-    const handlePrice = (type, key, val) => {
-      const map = { ...(data[type] || {}) };
-      map[key] = val;
-      setData({...data, [type]: map});
-      if (type === 'buyingPrice' || type === 'sellingPrice') {
-        const buy = type === 'buyingPrice' ? val : (data.buyingPrice?.[key] || 0);
-        const sell = type === 'sellingPrice' ? val : (data.sellingPrice?.[key] || 0);
-        const profitMap = { ...(data.profitPerBottle || {}) };
-        profitMap[key] = (parseFloat(sell)||0) - (parseFloat(buy)||0);
-        setData(prev => ({ ...prev, profitPerBottle: profitMap }));
-      }
-    };
-    return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold">Pricing Matrix</h2>
-        {data.brands.map(b => (
-          <div key={b} className="p-3 rounded border bg-white">
-            <div className="font-bold mb-2">{b}</div>
-            <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 text-xs font-bold opacity-70 mb-2"><div>Size</div><div>Buy</div><div>Sell</div><div>Profit</div></div>
-            {data.bottleSizes.map(sz => {
-              const k = `${b}|${sz}`;
-              return (
-                <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center mb-2" key={k}>
-                  <div>{sz}</div>
-                  <input type="number" value={data.buyingPrice?.[k]||''} onChange={e=>handlePrice('buyingPrice', k, e.target.value)} className="p-2 rounded border text-center" />
-                  <input type="number" value={data.sellingPrice?.[k]||''} onChange={e=>handlePrice('sellingPrice', k, e.target.value)} className="p-2 rounded border text-center" />
-                  <div className={`text-center font-bold ${ (data.profitPerBottle?.[k] > 0) ? 'text-green-700' : 'text-gray-600' }`}>{data.profitPerBottle?.[k] ?? 0}</div>
+      {/* Main layout */}
+      <main className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Left: Navigation */}
+        <nav className="col-span-1 card">
+          <div className="flex flex-col gap-3">
+            <button onClick={()=>setPage('analytics')} className={`btn ${page==='analytics'?'ring-2 ring-offset-2':''}`}>📊 Analytics</button>
+            <button onClick={()=>setPage('list')} className={`btn ${page==='list'?'ring-2 ring-offset-2':''}`}>🏠 Survey List</button>
+            <button onClick={openBin} className="btn">⚙️ Recycle Bin</button>
+            <div className="mt-4">
+              <div className="muted text-xs">Quick Actions</div>
+              <div className="flex gap-2 mt-2">
+                <button className="btn" onClick={startSurvey}>Start Survey</button>
+                <button className="btn" onClick={exportCSV}>Export CSV</button>
+                <button className="btn" onClick={exportJSON}>Export JSON</button>
+              </div>
+            </div>
+            <div className="mt-4 muted text-xs">Status: {navigator.onLine ? 'Online' : 'Offline'}</div>
+            <div className="mt-2 muted text-xs">Outbox: { (loadLocal(OUTBOX_KEY, [])||[]).length }</div>
+          </div>
+        </nav>
+
+        {/* Middle: content */}
+        <section className="col-span-2">
+          {page==='list' && (
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold">Survey List</h2>
+                <div className="muted text-sm">{visibleSurveys.length} surveys</div>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {visibleSurveys.map(s => (
+                  <div key={s.id} className="card flex items-start justify-between">
+                    <div>
+                      <div className="font-bold">{s.businessName || 'Untitled'}</div>
+                      <div className="muted text-sm">{s.location?.areaName || 'Area unknown'} — {new Date(s.createdAt).toLocaleString()}</div>
+                      <div className="mt-2 flex gap-2">
+                        {s.pitch?.interestedBuyVellora === 'Yes' && <span className="px-2 py-1 text-xs bg-red-600 rounded">Hot Lead</span>}
+                        {s.whiteLabel?.interested && <span className="px-2 py-1 text-xs bg-gray-600 rounded">White Label</span>}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button className="btn" onClick={()=>openDetail(s)}>Open</button>
+                      <button className="btn" onClick={()=>{ setEditingSurvey(s); setWizardOpen(true); }}>Edit</button>
+                    </div>
+                  </div>
+                ))}
+                {visibleSurveys.length===0 && <div className="muted">No surveys yet. Click Start Survey.</div>}
+              </div>
+            </div>
+          )}
+
+          {page==='analytics' && (
+            <div className="card">
+              <h2 className="text-lg font-bold mb-4">Analytics</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="card">
+                  <h3 className="font-semibold">Brands (Bar)</h3>
+                  <svg width="100%" height="180">
+                    {Object.keys(brandCounts).length===0 && <text x="10" y="30" fill="var(--muted)">No data</text>}
+                    {Object.entries(brandCounts).map(([k,v],i)=>{
+                      const max = Math.max(...Object.values(brandCounts),1);
+                      const height = (v/max)*120;
+                      const x = 40 + i*70;
+                      const y = 160 - height;
+                      return <g key={k}>
+                        <rect x={x} y={y} width={40} height={height} fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.06)"></rect>
+                        <text x={x+20} y={170} fontSize="10" textAnchor="middle">{k}</text>
+                      </g>;
+                    })}
+                  </svg>
                 </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function StepE({ data, setData, masterData, addMaster }) {
-    const brands = data.brands || [];
-    const handleSupply = (brand, k, v) => {
-      const sc = { ...(data.supplyChain || {}) };
-      sc[brand] = { ...(sc[brand] || {}), [k]: v };
-      setData({ ...data, supplyChain: sc });
-    };
-    return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold">Granular Supply Chain</h2>
-        {brands.length === 0 && <div className="p-6 text-center opacity-60">Select brands first.</div>}
-        {brands.map(b => {
-          const sc = (data.supplyChain || {})[b] || {};
-          return (
-            <div key={b} className="p-3 rounded border bg-white">
-              <div className="flex justify-between items-center mb-2"><div className="font-bold">{b}</div></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><label className="text-xs opacity-70">Source</label>
-                  <select value={sc.source||''} onChange={e=>handleSupply(b,'source',e.target.value)} className="w-full p-2 rounded border">
-                    <option value="">Select</option><option>Direct Company</option><option>Distributor</option><option>Wholesaler</option><option>Local Vendor</option>
-                  </select>
+                <div className="card">
+                  <h3 className="font-semibold">Business Types (Pie)</h3>
+                  <svg width="100%" height="200" viewBox="0 0 200 200">
+                    {(() => {
+                      const entries = Object.entries(typeCounts);
+                      const total = entries.reduce((s,[k,v])=> s+v, 0) || 1;
+                      let angle=0;
+                      return entries.map(([k,v],i)=>{
+                        const portion = v/total;
+                        const next = angle + portion*360;
+                        const large = portion>0.5?1:0;
+                        // simple pie using arcs would be heavy—approx with circles
+                        const start = angle*Math.PI/180; const end = next*Math.PI/180;
+                        const x1 = 100 + 80*Math.cos(start);
+                        const y1 = 100 + 80*Math.sin(start);
+                        const x2 = 100 + 80*Math.cos(end);
+                        const y2 = 100 + 80*Math.sin(end);
+                        const path = `M100,100 L${x1},${y1} A80,80 0 ${large} 1 ${x2},${y2} z`;
+                        angle = next;
+                        return <g key={k}>
+                          <path d={path} fill={`rgba(${(i*70)%255},${(i*130)%255},${(i*200)%255},0.12)`} stroke="rgba(255,255,255,0.06)"></path>
+                          <text x={140} y={40+i*16} fontSize="10">{k} ({v})</text>
+                        </g>;
+                      });
+                    })()}
+                  </svg>
                 </div>
-                <div><label className="text-xs opacity-70">Agency/Shop Name *</label><input value={sc.name||''} onChange={e=>handleSupply(b,'name',e.target.value)} className="w-full p-2 rounded border" /></div>
-                <div><label className="text-xs opacity-70">Mobile *</label><input value={sc.mobile||''} onChange={e=>handleSupply(b,'mobile',e.target.value)} className="w-full p-2 rounded border" /></div>
-                <div><label className="text-xs opacity-70">Notes</label><input value={sc.notes||''} onChange={e=>handleSupply(b,'notes',e.target.value)} className="w-full p-2 rounded border" /></div>
               </div>
             </div>
-          );
-        })}
-        <div className="p-3 rounded border">
-          <label className="text-xs opacity-70">Happy with Supply?</label>
-          <div className="flex gap-2 mt-2">
-            {['Yes','No'].map(opt => <button key={opt} onClick={()=>setData({...data, happyWithService:opt})} className={`px-3 py-2 rounded ${data.happyWithService===opt ? 'bg-green-600 text-white' : 'border'}`}>{opt}</button>)}
-          </div>
-          {data.happyWithService === 'No' && <div className="mt-3"><label className="text-xs opacity-70">Problems</label><ButtonGrid options={masterData.problems} selected={data.mainProblems||[]} onChange={v=>setData({...data, mainProblems:v})} allowOther onAddOther={v=>addMaster('problems',v)} /></div>}
-        </div>
-      </div>
-    );
-  }
+          )}
 
-  function StepF({ data, setData }) {
-    const opts = ["Instant","1 Day","2 Days","3 Days","1 Week","Other"];
-    return (
-      <div>
-        <h2 className="text-xl font-bold">Credit Line</h2>
-        <div className="flex gap-2 flex-wrap mt-3">
-          {opts.map(o => <button key={o} onClick={()=>setData({...data, creditLine: o==='Other' ? (data.creditLineCustom || 'Other') : o })} className={`px-3 py-2 rounded ${data.creditLine===o ? 'bg-blue-600 text-white' : 'border'}`}>{o}</button>)}
-        </div>
-        {String(data.creditLine || '').startsWith('Other') && <div className="mt-3"><input placeholder="Specify" value={data.creditLineCustom||''} onChange={e=>{ setData({...data, creditLineCustom:e.target.value, creditLine:`Other:${e.target.value}`}); }} className="w-full p-2 rounded border" /></div>}
-      </div>
-    );
-  }
-
-  function StepH({ data, setData }) {
-    return (
-      <div>
-        <h2 className="text-xl font-bold">Sales Pitch</h2>
-        <div className="p-3 rounded border mt-3">
-          <p className="mb-2 font-medium">Pitch: We offer 24hr delivery & consistent stock. Interested in switching?</p>
-          <div className="flex gap-2">{['Yes','No','Maybe'].map(o => <button key={o} onClick={()=>setData({...data, salesPitch:{...data.salesPitch, changeSeller:o}})} className={`px-3 py-2 rounded ${data.salesPitch?.changeSeller===o ? 'bg-red-500 text-white' : 'border'}`}>{o}</button>)}</div>
-        </div>
-        <div className="p-3 rounded border mt-3">
-          <p className="mb-2 font-medium">Pitch: Interested in buying premium water directly from Vellora?</p>
-          <div className="flex gap-2">{['Yes','No'].map(o => <button key={o} onClick={()=>setData({...data, salesPitch:{...data.salesPitch, buyVellora:o}})} className={`px-3 py-2 rounded ${data.salesPitch?.buyVellora===o ? 'bg-green-600 text-white' : 'border'}`}>{o}</button>)}</div>
-        </div>
-      </div>
-    );
-  }
-
-  function StepG({ data, setData, masterData, addMaster }) {
-    return (
-      <div>
-        <h2 className="text-xl font-bold">White Label</h2>
-        <div className="flex gap-2 mt-3">
-          <button onClick={()=>setData({...data, interestedInCustomLogo:'Yes'})} className={`px-3 py-2 rounded ${data.interestedInCustomLogo==='Yes' ? 'bg-amber-500 text-white': 'border'}`}>Yes</button>
-          <button onClick={()=>setData({...data, interestedInCustomLogo:'No'})} className={`px-3 py-2 rounded ${data.interestedInCustomLogo==='No' ? 'bg-gray-200' : 'border'}`}>No</button>
-        </div>
-        {data.interestedInCustomLogo === 'Yes' && <div className="mt-3">
-          <label className="text-xs opacity-70">Purpose</label>
-          <ButtonGrid options={masterData.whiteLabelPurposes} selected={data.customPurpose||[]} onChange={v=>setData({...data, customPurpose:v})} allowOther onAddOther={v=>addMaster('whiteLabelPurposes',v)} />
-          <label className="text-xs opacity-70 mt-3 block">Extra Pay (₹)</label>
-          <ButtonGrid options={masterData.willingToPayAmounts} selected={data.extraWillingToPay||''} onChange={v=>setData({...data, extraWillingToPay:v})} allowOther onAddOther={v=>addMaster('willingToPayAmounts',v)} />
-        </div>}
-      </div>
-    );
-  }
-
-  function StepI({ data, setData, onSubmit }) {
-    return (
-      <div>
-        <h2 className="text-xl font-bold">Finalize</h2>
-        <div className="mt-3"><input placeholder="Contact Name" value={data.contactName||''} onChange={e=>setData({...data, contactName:e.target.value})} className="w-full p-2 rounded border" /></div>
-        <div className="mt-3"><input placeholder="Contact Mobile (E.g. +919876543210)" value={data.contactMobile||''} onChange={e=>setData({...data, contactMobile:e.target.value})} className="w-full p-2 rounded border" /></div>
-        <div className="mt-4"><button onClick={onSubmit} className="w-full py-3 rounded bg-blue-600 text-white">SAVE SURVEY</button></div>
-      </div>
-    );
-  }
-
-  // ---------- SurveyWizard ----------
-  function SurveyWizard({ initial, onClose }) {
-    const { masterData, updateMasterData, addToOutbox } = useContext(AppContext);
-    const [step, setStep] = useState(0);
-    const [data, setData] = useState(initial || { id: uid(), timestamp: nowISO(), syncCode:'MAIN', salesPitch:{}, supplyChain:{} });
-    const isEdit = !!initial;
-    useEffect(()=> setData(prev => ({ salesPitch: prev.salesPitch || {}, supplyChain: prev.supplyChain || {}, ...prev })), []);
-
-    const steps = [StepA, StepB, StepC, StepE, StepF, StepH, StepG, StepI];
-    const Current = steps[step];
-
-    const validate = (s) => {
-      if (s === 0) {
-        if (!data.businessName || !data.businessName.trim()) { alert('Business name required'); return false; }
-        if (!isEdit && (!data.gps || !data.gps.lat)) { alert('Coordinates required for new surveys'); return false; }
-      }
-      if (s === 3) {
-        // ensure each brand has name+mobile
-        const brands = data.brands || [];
-        for (const b of brands) {
-          const sc = (data.supplyChain || {})[b] || {};
-          if (!sc.name || !sc.mobile) { alert(`Supply details needed for ${b}`); return false; }
-        }
-      }
-      if (s === 7) {
-        if (!data.contactName || !data.contactMobile) { alert('Contact name & mobile required'); return false; }
-      }
-      return true;
-    };
-
-    const next = () => { if (!validate(step)) return; if (step < steps.length - 1) setStep(step + 1); };
-    const prev = () => setStep(Math.max(0, step - 1));
-    const submit = () => {
-      if (!validate(7)) return;
-      const final = { ...data, timestamp: data.timestamp || nowISO() };
-      addToOutbox(isEdit ? 'UPDATE_SURVEY' : 'ADD_SURVEY', final);
-      onClose && onClose();
-    };
-
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white">
-        <div className="p-3 flex items-center justify-between border-b">
-          <button onClick={onClose} className="p-2 text-sm opacity-70">Cancel</button>
-          <div className="font-bold">Step {step+1}/{steps.length}</div>
-          <div style={{width:36}}></div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4"><Current data={data} setData={setData} masterData={masterData} addMaster={updateMasterData} isEdit={isEdit} onSubmit={submit} /></div>
-        <div className="p-3 border-t flex items-center gap-3">
-          {step > 0 ? <button onClick={prev} className="px-3 py-2 rounded border">Back</button> : <div style={{width:72}}></div>}
-          {step < steps.length - 1 ? <button onClick={next} className="flex-1 py-3 rounded bg-blue-600 text-white">NEXT</button> : <button onClick={submit} className="flex-1 py-3 rounded bg-green-600 text-white">SAVE</button>}
-        </div>
-      </div>
-    );
-  }
-
-  // ---------- Detail Modal ----------
-  function DetailModal({ survey, onClose }) {
-    const { addToOutbox } = useContext(AppContext);
-    const [confirm, setConfirm] = useState(false);
-    if (!survey) return null;
-    const softDelete = () => {
-      addToOutbox('SOFT_DELETE', { id: survey.id, deletedAt: nowISO() });
-      onClose && onClose();
-    };
-    return (
-      <>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl overflow-auto">
-            <div className="p-4 border-b flex justify-between items-center"><div className="font-bold">{survey.businessName}</div><button onClick={onClose} className="p-1"><Icon name="x" /></button></div>
-            <div className="p-4 space-y-4">
-              <div><strong>Type:</strong> {survey.businessType}</div>
-              <div><strong>Area:</strong> {survey.locationArea}</div>
-              <div><strong>Contact:</strong> {survey.contactName} ({survey.contactMobile})</div>
-              <div><strong>Volume:</strong> {survey.qtyMonthly || 0} bottles/mo</div>
-              {survey.interestedInCustomLogo === 'Yes' && <div className="p-3 bg-amber-50 rounded">White Label: {Array.isArray(survey.customPurpose)?survey.customPurpose.join(', '):survey.customPurpose} • Extra: {survey.extraWillingToPay}</div>}
-              <div className="flex gap-2">
-                <a href={`tel:${survey.contactMobile}`} className="px-3 py-2 bg-green-600 text-white rounded">Call</a>
-                {survey.gps && <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} className="px-3 py-2 bg-blue-600 text-white rounded">Map</a>}
-                <button onClick={()=>generatePDF([survey], localStorage.getItem('vellora_theme') || 'corporate')} className="px-3 py-2 border rounded">Export PDF</button>
-                <button onClick={()=>setConfirm(true)} className="px-3 py-2 bg-red-50 text-red-600 border rounded">Delete</button>
+          {page==='settings' && (
+            <div className="card">
+              <h2 className="text-lg font-bold">Settings</h2>
+              <div className="mt-4 grid grid-cols-1 gap-3">
+                <div>
+                  <label className="muted text-xs">Upload Logo (saved to local storage, used in header & PDF)</label>
+                  <input type="file" accept="image/*" onChange={e=>onLogoUpload(e.target.files[0])} className="input mt-1" />
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn" onClick={exportCSV}>Export CSV</button>
+                  <button className="btn" onClick={exportJSON}>Export JSON</button>
+                  <button className="btn" onClick={exportBulkPDF}>Export PDF</button>
+                </div>
+                <div>
+                  <button className="btn" onClick={() => { saveLocal(MASTERDATA_KEY, masterData); alert('Saved master data.'); }}>Save Master Data</button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-        {confirm && <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-lg p-4 max-w-sm w-full">
-            <div className="font-bold mb-2">Move to Recycle Bin?</div>
-            <div className="flex gap-2"><button onClick={softDelete} className="flex-1 py-2 bg-red-600 text-white rounded">Yes, Move</button><button onClick={()=>setConfirm(false)} className="flex-1 py-2 border rounded">Cancel</button></div>
-          </div>
-        </div>}
-      </>
-    );
-  }
+          )}
 
-  // ---------- Recycle Bin screen ----------
-  function RecycleBin({ open, onClose }) {
-    const { surveys, addToOutbox } = useContext(AppContext);
-    const [entered, setEntered] = useState(false);
-    const [pin, setPin] = useState('');
-    const storedPin = localStorage.getItem('vellora_recycle_pin') || '1234';
-    const deleted = (surveys || []).filter(s => s.isDeleted).sort((a,b)=>new Date(b.deletedAt) - new Date(a.deletedAt));
-
-    if (!open) return null;
-    return (
-      <div className="fixed inset-0 z-60 bg-black/40 p-4">
-        <div className="max-w-3xl mx-auto bg-white rounded-xl overflow-auto">
-          <div className="p-4 border-b flex justify-between items-center"><div className="font-bold">Recycle Bin</div><button onClick={onClose} className="p-1"><Icon name="x" /></button></div>
-          <div className="p-4">
-            {!entered ? (
-              <div className="max-w-md mx-auto p-4 rounded border">
-                <div className="mb-2">Enter PIN</div>
-                <input value={pin} onChange={e=>setPin(e.target.value)} className="w-full p-2 rounded border" />
-                <div className="flex gap-2 mt-3"><button onClick={()=>{ if (pin === storedPin) setEntered(true); else alert('Incorrect PIN'); }} className="flex-1 py-2 bg-blue-600 text-white rounded">Unlock</button><button onClick={()=>{ const old = prompt('Current PIN'); if (old !== storedPin) return alert('Wrong'); const neu = prompt('New PIN'); if (!neu || neu.length < 4) return alert('Invalid'); localStorage.setItem('vellora_recycle_pin', neu); alert('PIN updated'); }} className="flex-1 py-2 border rounded">Change PIN</button></div>
+          {page==='bin' && (
+            <div className="card">
+              <h2 className="text-lg font-bold">Recycle Bin</h2>
+              <div className="muted text-sm mb-2">Deleted surveys (protected)</div>
+              <div className="grid gap-3">
+                {surveys.filter(s=>s.isDeleted).map(s=>(
+                  <div className="card flex items-center justify-between" key={s.id}>
+                    <div>
+                      <div className="font-bold">{s.businessName}</div>
+                      <div className="muted text-sm">{s.location?.areaName || ''}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="btn" onClick={()=>{ if(confirm('Restore?')) DataLayer.restore(s.id); }}>Restore</button>
+                      <button className="btn" onClick={()=>{ if(confirm('Permanently delete?')) DataLayer.permanentDelete(s.id); }}>Delete Permanently</button>
+                    </div>
+                  </div>
+                ))}
+                {surveys.filter(s=>s.isDeleted).length===0 && <div className="muted">No deleted surveys.</div>}
               </div>
-            ) : (
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* FAB visible only on survey list page */}
+      {page==='list' && (
+        <button className="fab bg-blue-600 text-white" onClick={startSurvey} title="Start Survey">＋</button>
+      )}
+
+      {/* Detail Modal */}
+      {detailView && (
+        <div className="modal-bg" onClick={()=>setDetailView(null)}>
+          <div className="card w-full md:w-2/3" onClick={e=>e.stopPropagation()}>
+            <div className="flex justify-between items-start">
               <div>
-                <div className="mb-3 flex justify-between items-center"><div className="font-bold">Deleted ({deleted.length})</div><div><button onClick={()=>{ if (!confirm('Delete all permanently?')) return; deleted.forEach(d => addToOutbox('DELETE_PERM', { id: d.id })); }} className="px-3 py-2 bg-red-600 text-white rounded">Delete All</button></div></div>
-                <div className="space-y-3">
-                  {deleted.length === 0 && <div className="p-6 text-center opacity-60">Empty</div>}
-                  {deleted.map(s => (
-                    <div key={s.id} className="p-3 rounded border flex justify-between items-center">
-                      <div>
-                        <div className="font-bold">{s.businessName}</div>
-                        <div className="text-xs opacity-60">{s.locationArea} • {new Date(s.deletedAt).toLocaleString()}</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={()=>addToOutbox('RESTORE', { id: s.id })} className="px-3 py-2 bg-green-600 text-white rounded">Restore</button>
-                        <button onClick={()=>{ if (!confirm('Permanent delete?')) return; addToOutbox('DELETE_PERM', { id: s.id }); }} className="px-3 py-2 border rounded text-red-600">Delete</button>
-                      </div>
+                <h3 className="font-bold">{detailView.businessName}</h3>
+                <div className="muted text-sm">{detailView.location?.areaName}</div>
+              </div>
+              <div className="flex gap-2">
+                <button className="btn" onClick={()=>{ setEditingSurvey(detailView); setWizardOpen(true); setDetailView(null); }}>Edit</button>
+                <button className="btn" onClick={() => exportSurveyToPDF(detailView, settings.logo)}>PDF</button>
+                <button className="btn" onClick={()=>{ window.location.href = `tel:${detailView.contact?.mobile || ''}` }}>Call</button>
+                <button className="btn" onClick={()=>{ window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detailView.location?.areaName||'')}`); }}>Map</button>
+                <button className="btn" onClick={()=>deleteSurvey(detailView.id)}>Delete</button>
+              </div>
+            </div>
+
+            {/* Read-only layout of all data */}
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="card">
+                <h4 className="font-semibold">Inventory & Pricing</h4>
+                <div className="muted text-sm">Brands: {(detailView.brands||[]).join(', ')}</div>
+                <div className="mt-2">
+                  {(detailView.pricingMatrix||[]).map((r,i)=>(
+                    <div key={i} className="flex justify-between">
+                      <div>{r.brand} — {r.size}</div>
+                      <div>{r.buyingPrice} / {r.sellingPrice} (Profit: {(r.sellingPrice||0)-(r.buyingPrice||0)})</div>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  // ---------- Settings ----------
-  function Settings() {
-    const { currentTheme, themeKey, setThemeKey } = useContext(ThemeContext);
-    const { surveys } = useContext(AppContext);
-    const [showExport, setShowExport] = useState(false);
-    const [showBin, setShowBin] = useState(false);
-    const [logoPreview, setLogoPreview] = useState(localStorage.getItem('vellora_logo_base64') || null);
+              <div className="card">
+                <h4 className="font-semibold">Supply Chain</h4>
+                {(detailView.supplyChain||[]).map((sc,i)=>(
+                  <div key={i}>
+                    <div className="font-semibold">{sc.brand} — {sc.sourceType}</div>
+                    <div className="muted text-sm">{sc.sourceName} — {sc.sourcePhone}</div>
+                    <div className="muted text-sm">Satisfied: {sc.satisfaction}</div>
+                    {sc.satisfaction === 'NO' && <div className="muted text-xs">Problems: {(sc.problems||[]).join(', ')}</div>}
+                    <hr className="my-2" />
+                  </div>
+                ))}
+              </div>
+            </div>
 
-    const onUpload = (e) => {
-      const f = e.target.files[0];
-      if (!f) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        localStorage.setItem('vellora_logo_base64', reader.result);
-        setLogoPreview(reader.result);
-      };
-      reader.readAsDataURL(f);
-    };
-
-    return (
-      <div className="pb-32 pt-4 px-4 space-y-6">
-        <div>
-          <label className="text-xs uppercase font-bold opacity-70">Theme</label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {Object.entries(THEMES).map(([k,t]) => <button key={k} onClick={()=>setThemeKey(k)} className={`p-3 rounded border flex items-center gap-2 ${themeKey===k ? 'ring-2 ring-offset-2 ring-indigo-500':''}`}><div className={`w-4 h-4 rounded-full ${t.accent}`} />{t.name}</button>)}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs uppercase font-bold opacity-70">Logo</label>
-          <div className="flex items-center gap-3 mt-2">
-            <input type="file" accept="image/*" onChange={onUpload} />
-            <div className="w-24 h-12 p-1 bg-white rounded border flex items-center justify-center">
-              {logoPreview ? <img src={logoPreview} alt="logo" className="h-full object-contain" /> : <div className="text-xs opacity-60">No logo</div>}
+            <div className="mt-4 flex justify-end">
+              <button className="btn" onClick={()=>setDetailView(null)}>Close</button>
             </div>
           </div>
-          <p className="text-xs opacity-60 mt-2">Logo is stored locally and used in header & PDF.</p>
+        </div>
+      )}
+
+      {/* Wizard Modal */}
+      {wizardOpen && (
+        <Wizard
+          initial={editingSurvey || emptySurvey()}
+          onCancel={()=>{ setWizardOpen(false); setEditingSurvey(null); }}
+          onSave={async (s) => { await saveSurvey(s); }}
+          masterData={masterData}
+          onSaveMaster={(md)=>{ setMasterData(md); saveLocal(MASTERDATA_KEY, md); }}
+        />
+      )}
+
+    </div>
+  );
+}
+
+/** Wizard Component implementing Steps A-H exactly */
+function Wizard({initial, onCancel, onSave, masterData, onSaveMaster}) {
+  const [step, setStep] = useState(0);
+  const [s, setS] = useState({...initial});
+  const [brandOptions, setBrandOptions] = useState(masterData.brands || []);
+  const [sizeOptions, setSizeOptions] = useState(masterData.sizes || []);
+  const [typeOptions, setTypeOptions] = useState(masterData.types || []);
+  const [errors, setErrors] = useState({});
+
+  useEffect(()=>{ setS({...initial}); }, [initial]);
+
+  function update(changes) { setS(prev => ({...prev,...changes})); }
+
+  function next() {
+    // minimal validation per step
+    const e = {};
+    if (step === 0) {
+      if (!s.businessName) e.businessName='Required';
+      if (!s.location?.areaName) e.areaName='Required';
+      if (!s.contact?.mobile && step===7) {}
+    }
+    setErrors(e);
+    if (Object.keys(e).length>0) return;
+    setStep(step+1);
+  }
+  function prev() { setStep(Math.max(0, step-1)); }
+
+  // helper: add other to master data
+  function addMaster(type, val) {
+    if (!val) return;
+    const md = loadLocal(MASTERDATA_KEY, defaultMasterData);
+    if (type === 'brand' && !md.brands.includes(val)) md.brands.push(val);
+    if (type === 'size' && !md.sizes.includes(val)) md.sizes.push(val);
+    if (type === 'type' && !md.types.includes(val)) md.types.push(val);
+    saveLocal(MASTERDATA_KEY, md);
+    onSaveMaster(md);
+    setBrandOptions(md.brands); setSizeOptions(md.sizes); setTypeOptions(md.types);
+  }
+
+  // Pricing matrix generation when brands/sizes chosen
+  useEffect(()=>{
+    const brands = s.brands || [];
+    const sizes = s.sizes || [];
+    const matrix = [];
+    brands.forEach(b=>{
+      sizes.forEach(sz=>{
+        const existing = (s.pricingMatrix||[]).find(r=>r.brand===b && r.size===sz) || {brand:b,size:sz,buyingPrice:0,sellingPrice:0};
+        matrix.push(existing);
+      });
+    });
+    setS(prev => ({...prev, pricingMatrix: matrix}));
+  }, [s.brands?.join('|'), s.sizes?.join('|')]);
+
+  // Supply chain loop per brand
+  useEffect(()=>{
+    const supply = s.supplyChain || [];
+    const brands = s.brands || [];
+    // ensure an entry for each brand
+    const newSupply = brands.map(b=>{
+      return supply.find(x=>x.brand===b) || {brand:b, sourceType:'Distributor', sourceName:'', sourcePhone:'', notes:'', satisfaction:'YES', problems:[]};
+    });
+    setS(prev=>({...prev, supplyChain: newSupply}));
+  }, [s.brands?.join('|')]);
+
+  function toggleArrayField(field, val) {
+    const arr = new Set(s[field] || []);
+    if (arr.has(val)) arr.delete(val); else arr.add(val);
+    setS(prev => ({...prev, [field]: Array.from(arr)}));
+  }
+
+  function onQuantityChange(v) {
+    const q = Number(v||0);
+    const qtyMonthly = (s.qtyToggle === 'Daily') ? q*30 : q;
+    setS(prev=>({...prev, quantity: q, qtyMonthly}));
+  }
+
+  function finalSave() {
+    // minimal final validation: contact mobile
+    if (!s.contact?.mobile) { alert('Contact mobile is required'); return; }
+    onSave(s);
+  }
+
+  const stepTitles = ['Profile & Location','Inventory','Pricing Matrix','Supply Chain','Credit Line','Sales Pitch','White Label','Finalize Review'];
+  return (
+    <div className="modal-bg" style={{alignItems:'flex-start', paddingTop: '3rem'}}>
+      <div className="card w-full max-w-4xl" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold">Survey Wizard — Step {step+1}: {stepTitles[step]}</h3>
+          <div className="flex gap-2">
+            <button className="btn" onClick={onCancel}>Cancel</button>
+            {step>0 && <button className="btn" onClick={prev}>Back</button>}
+            {step < 7 && <button className="btn" onClick={next}>Next</button>}
+            {step === 7 && <button className="btn" onClick={finalSave}>Save</button>}
+          </div>
         </div>
 
         <div>
-          <label className="text-xs uppercase font-bold opacity-70">Data</label>
-          <div className="flex gap-2 mt-2">
-            <button onClick={()=>{ const csv = convertToCSV(surveys.filter(s=>!s.isDeleted)); if (!csv) { alert('No data'); return; } const url=URL.createObjectURL(new Blob([csv], { type:'text/csv' })); const a=document.createElement('a'); a.href=url; a.download='vellora_data.csv'; a.click(); }} className="px-3 py-2 border rounded">Export CSV</button>
-            <button onClick={()=>{ generatePDF(surveys, themeKey); }} className="px-3 py-2 border rounded">Export PDF</button>
-            <button onClick={()=>setShowBin(true)} className="px-3 py-2 bg-amber-500 text-white rounded">Recycle Bin</button>
-          </div>
-        </div>
+          {step===0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="muted text-xs">Business Name</label>
+                <input className="input w-full mt-1" value={s.businessName} onChange={e=>update({businessName: e.target.value})} />
+                {errors.businessName && <div className="text-xs text-red-400">{errors.businessName}</div>}
 
-        {showExport && <div>Exporting...</div>}
-        <RecycleBin open={showBin} onClose={()=>setShowBin(false)} />
-      </div>
-    );
-  }
+                <label className="muted text-xs mt-2">Type</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {typeOptions.map(t => <button key={t} className={`btn ${s.businessType===t ? 'ring-2' : ''}`} onClick={()=>update({businessType:t})}>{t}</button>)}
+                  <input placeholder="Other type" className="input" onKeyDown={e=>{ if(e.key==='Enter'){ addMaster('type', e.target.value); update({businessType: e.target.value}); e.target.value=''; }}} />
+                </div>
 
-  // ---------- Analytics (simple SVG charts) ----------
-  function SimpleCharts() {
-    const { surveys } = useContext(AppContext);
-    // top brands
-    const counts = {};
-    (surveys||[]).forEach(s => (s.brands||[]).forEach(b => counts[b] = (counts[b]||0) + 1));
-    const data = Object.entries(counts).map(([label,value])=>({ label, value })).sort((a,b)=>b.value - a.value).slice(0,6);
-    if (!data.length) return <div className="p-6 text-center opacity-60">No data</div>;
+                <label className="muted text-xs mt-2">Footfall</label>
+                <div className="flex gap-2 mt-1">
+                  {['Low','Medium','High'].map(f=> <button key={f} className={`btn ${s.footfall===f ? 'ring-2' : ''}`} onClick={()=>update({footfall:f})}>{f}</button>)}
+                </div>
+              </div>
 
-    const max = Math.max(...data.map(d=>d.value));
-    return (
-      <div className="space-y-4 p-4">
-        <h3 className="font-bold">Top Brands</h3>
-        <div className="space-y-2">
-          {data.map((d,i) => <div key={d.label} className="flex items-center gap-3"><div className="w-24 text-xs opacity-70">{d.label}</div><div className="flex-1 bg-gray-100 rounded h-3 overflow-hidden"><div style={{ width: `${(d.value/max)*100}%`}} className="h-3 bg-blue-500" /></div><div className="w-8 text-xs text-right">{d.value}</div></div>)}
-        </div>
-      </div>
-    );
-  }
-
-  // ---------- Main App ----------
-  function App() {
-    const { currentTheme, themeKey } = useContext(ThemeContext);
-    const { surveys, addToOutbox, flushOutbox, isOnline, outbox } = useContext(AppContext);
-    const [view, setView] = useState('list');
-    const [wizardOpen, setWizardOpen] = useState(false);
-    const [selected, setSelected] = useState(null);
-    const [editing, setEditing] = useState(null);
-    const logo = localStorage.getItem('vellora_logo_base64');
-
-    const list = (surveys || []).filter(s => !s.isDeleted).sort((a,b)=>new Date(b.timestamp) - new Date(a.timestamp));
-
-    return (
-      <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text}`}>
-        <div className={`h-16 flex items-center justify-between px-4 border-b ${currentTheme.card} ${currentTheme.border} sticky top-0 z-40`}>
-          <div className="flex items-center gap-3">
-            {logo ? <img src={logo} alt="logo" className="h-10 object-contain" /> : <div className="font-bold text-lg">VELLORA</div>}
-            <div className="text-xs opacity-70">v3.3</div>
-          </div>
-          <div className="text-xs opacity-70 flex gap-3 items-center"><div className={isOnline ? 'text-green-600' : 'text-red-500'}>{isOnline? '● ONLINE' : '● OFFLINE'}</div><div>{list.length} Surveys</div></div>
-        </div>
-
-        <div className="max-w-2xl mx-auto min-h-[80vh] pb-[160px]">
-          {view === 'list' && <div className="p-4 space-y-4">
-            <div className="flex gap-2">
-              <input placeholder="Search by name/area..." className="flex-1 p-2 rounded border" />
-              <button onClick={() => flushOutbox()} className="px-3 py-2 rounded border">{outbox.length ? `${outbox.length} unsynced` : 'Sync'}</button>
+              <div>
+                <label className="muted text-xs">Location — Area</label>
+                <div className="flex gap-2 mt-1">
+                  <input className="input flex-1" value={s.location?.areaName||''} onChange={e=>update({location:{...s.location, areaName: e.target.value}})} />
+                  <button className="btn" onClick={()=>{
+                    // Try geolocation auto-fill
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(pos=>{
+                        update({location:{areaName:`Lat:${pos.coords.latitude.toFixed(4)}, Lon:${pos.coords.longitude.toFixed(4)}`, coords:`${pos.coords.latitude},${pos.coords.longitude}`}})
+                      }, ()=>alert('Geolocation failed'));
+                    } else alert('Geolocation not supported');
+                  }}>Detect</button>
+                </div>
+                <label className="muted text-xs mt-2">Coordinates</label>
+                <input className="input w-full mt-1" value={s.location?.coords||''} onChange={e=>update({location:{...s.location, coords: e.target.value}})} />
+              </div>
             </div>
-            <div className="space-y-3">
-              {list.length === 0 && <div className="p-6 text-center opacity-60">No surveys. Tap START NEW SURVEY.</div>}
-              {list.map(s => <div key={s.id} className="p-3 rounded border bg-white cursor-pointer" onClick={()=>setSelected(s)}><div className="flex justify-between"><div className="font-bold">{s.businessName}</div><div className="text-xs opacity-60">{new Date(s.timestamp).toLocaleDateString()}</div></div><div className="text-xs opacity-70">{s.businessType} • {s.locationArea}</div></div>)}
-            </div>
-          </div>}
+          )}
 
-          {view === 'analytics' && <div className="p-4"><SimpleCharts /></div>}
-          {view === 'settings' && <Settings />}
+          {step===1 && (
+            <div>
+              <label className="muted text-xs">Brands</label>
+              <div className="flex gap-2 flex-wrap mt-1">
+                {brandOptions.map(b=> <button key={b} className={`btn ${ (s.brands||[]).includes(b) ? 'ring-2' : '' }`} onClick={()=>toggleArrayField('brands', b)}>{b}</button>)}
+                <input placeholder="Add brand" className="input" onKeyDown={e=>{ if(e.key==='Enter'){ addMaster('brand', e.target.value); toggleArrayField('brands', e.target.value); e.target.value=''; }}} />
+              </div>
+
+              <label className="muted text-xs mt-2">Sizes</label>
+              <div className="flex gap-2 flex-wrap mt-1">
+                {sizeOptions.map(z=> <button key={z} className={`btn ${ (s.sizes||[]).includes(z) ? 'ring-2' : '' }`} onClick={()=>toggleArrayField('sizes', z)}>{z}</button>)}
+                <input placeholder="Add size" className="input" onKeyDown={e=>{ if(e.key==='Enter'){ addMaster('size', e.target.value); toggleArrayField('sizes', e.target.value); e.target.value=''; }}} />
+              </div>
+
+              <div className="mt-4">
+                <label className="muted text-xs">Quantity</label>
+                <div className="flex gap-2 mt-1 items-center">
+                  <div className="muted text-sm">Toggle</div>
+                  <select value={s.qtyToggle} onChange={e=>setS(prev=>({...prev, qtyToggle: e.target.value}))} className="input">
+                    <option>Daily</option>
+                    <option>Monthly</option>
+                  </select>
+                  <input type="number" value={s.quantity||0} onChange={e=>onQuantityChange(e.target.value)} className="input" />
+                  <div className="muted">Monthly qty: {s.qtyToggle==='Daily' ? (Number(s.quantity||0)*30) : (Number(s.quantity||0))}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step===2 && (
+            <div>
+              <h4 className="font-semibold">Pricing Matrix</h4>
+              <div className="grid gap-2 mt-2">
+                {(s.pricingMatrix||[]).map((r, i) => (
+                  <div key={i} className="grid grid-cols-4 gap-2">
+                    <div className="muted text-sm">{r.brand} — {r.size}</div>
+                    <input className="input" placeholder="Buying Price" value={r.buyingPrice||''} onChange={e=>{
+                      const nm = [...(s.pricingMatrix||[])]; nm[i] = {...nm[i], buyingPrice: Number(e.target.value)}; setS(prev=>({...prev, pricingMatrix: nm}));
+                    }} />
+                    <input className="input" placeholder="Selling Price" value={r.sellingPrice||''} onChange={e=>{
+                      const nm = [...(s.pricingMatrix||[])]; nm[i] = {...nm[i], sellingPrice: Number(e.target.value)}; setS(prev=>({...prev, pricingMatrix: nm}));
+                    }} />
+                    <div className="muted">Profit: {( (r.sellingPrice||0) - (r.buyingPrice||0) )}</div>
+                  </div>
+                ))}
+                {(s.pricingMatrix||[]).length===0 && <div className="muted">No brands/sizes selected.</div>}
+              </div>
+            </div>
+          )}
+
+          {step===3 && (
+            <div>
+              <h4 className="font-semibold">Supply Chain — Loop per Brand</h4>
+              <div className="grid gap-3 mt-2">
+                {(s.supplyChain||[]).map((sc,i)=>(
+                  <div key={i} className="card">
+                    <div className="font-semibold">{sc.brand}</div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <select value={sc.sourceType} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], sourceType: e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} className="input">
+                        {['Distributor','Wholesaler','Manufacturer','Direct Company','Other'].map(o=> <option key={o}>{o}</option>)}
+                      </select>
+                      <input className="input" placeholder="Source Name" value={sc.sourceName||''} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], sourceName:e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} />
+                      <input className="input" placeholder="Mobile (required)" value={sc.sourcePhone||''} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], sourcePhone:e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} />
+                      <input className="input" placeholder="Notes" value={sc.notes||''} onChange={e=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], notes:e.target.value}; setS(prev=>({...prev, supplyChain:nm})); }} />
+                    </div>
+                    <div className="mt-2">
+                      <div className="muted text-xs">Satisfied?</div>
+                      <div className="flex gap-2 mt-1">
+                        <button className={`btn ${sc.satisfaction==='YES' ? 'ring-2' : ''}`} onClick={()=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], satisfaction:'YES', problems:[]}; setS(prev=>({...prev, supplyChain:nm})); }}>YES</button>
+                        <button className={`btn ${sc.satisfaction==='NO' ? 'ring-2' : ''}`} onClick={()=>{ const nm=[...s.supplyChain]; nm[i] = {...nm[i], satisfaction:'NO'}; setS(prev=>({...prev, supplyChain:nm})); }}>NO</button>
+                      </div>
+                      {sc.satisfaction==='NO' && (
+                        <div className="mt-2">
+                          <div className="muted text-xs">Problems (multi-select)</div>
+                          <div className="flex gap-2 mt-1">
+                            {['Late','Rude','Price','Stock','Other'].map(p=> <button key={p} className={`btn ${ (sc.problems||[]).includes(p) ? 'ring-2' : '' }`} onClick={()=>{
+                              const nm=[...s.supplyChain];
+                              const row = {...nm[i]};
+                              const set = new Set(row.problems || []);
+                              if (set.has(p)) set.delete(p); else set.add(p);
+                              row.problems = Array.from(set);
+                              nm[i] = row;
+                              setS(prev=>({...prev, supplyChain:nm}));
+                            }}>{p}</button>)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step===4 && (
+            <div>
+              <h4 className="font-semibold">Credit Line</h4>
+              <div className="flex gap-2 mt-2 items-center">
+                <button className={`btn ${s.credit?.received ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, credit:{...prev.credit, received:true}}))}>YES</button>
+                <button className={`btn ${!s.credit?.received ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, credit:{...prev.credit, received:false}}))}>NO</button>
+              </div>
+              {s.credit?.received && (
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <input className="input" placeholder="Amount" value={s.credit?.amount||''} onChange={e=>setS(prev=>({...prev, credit:{...prev.credit, amount: Number(e.target.value)}}))} />
+                  <input className="input" placeholder="Period (Days)" value={s.credit?.periodDays||''} onChange={e=>setS(prev=>({...prev, credit:{...prev.credit, periodDays: Number(e.target.value)}}))} />
+                  <input className="input" placeholder="Interest Rate (%)" value={s.credit?.interestRate||''} onChange={e=>setS(prev=>({...prev, credit:{...prev.credit, interestRate: Number(e.target.value)}}))} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {step===5 && (
+            <div>
+              <h4 className="font-semibold">Sales Pitch</h4>
+              <div className="grid gap-2 mt-2">
+                <div>
+                  <div className="muted text-xs">Interested in Switching Supplier?</div>
+                  <div className="flex gap-2 mt-1">
+                    {['Yes','No','Maybe'].map(o=> <button key={o} className={`btn ${s.pitch?.switchSupplier===o ? 'ring-2' : ''}`} onClick={()=>setS(prev=>({...prev, pitch:{...prev.pitch, switchSupplier:o}}))}>{o}</button>)}
+                  </div>
+                </div>
+                <div>
+                  <div className="muted text-xs">Target Price / Offer needed?</div>
+                  <input className="input mt-1" value={s.pitch?.targetPrice||''} onChange={e=>setS(prev=>({...prev, pitch:{...prev.pitch, targetPrice:e.target.value}}))} />
+                </div>
+                <div>
+                  <div className="muted text-xs">Key Factors</div>
+                  <div className="flex gap-2 mt-1">
+                    {['Price','Service','Credit','Stock'].map(k=><button key={k} className={`btn ${ (s.pitch?.keyFactors||[]).includes(k) ? 'ring-2':''}`} onClick={()=>{
+                      const prev = new Set(s.pitch?.keyFactors || []);
+                      if (prev.has(k)) prev.delete(k); else prev.add(k);
+                      setS(x=>({...x, pitch:{...x.pitch, keyFactors:Array.from(prev)}}));
+                    }}>{k}</button>)}
+                  </div>
+                </div>
+                <div>
+                  <div className="muted text-xs">Interested in Buying Vellora?</div>
+                  <div className="flex gap-2 mt-1">
+                    <button className={`btn ${s.pitch?.interestedBuyVellora==='Yes' ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, pitch:{...prev.pitch, interestedBuyVellora:'Yes'}}))}>Yes</button>
+                    <button className={`btn ${s.pitch?.interestedBuyVellora==='No' ? 'ring-2':''}`} onClick={()=>setS(prev=>({...prev, pitch:{...prev.pitch, interestedBuyVellora:'No'}}))}>No</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step===6 && (
+            <div>
+              <h4 className="font-semibold">White Label</h4>
+              <div className="flex gap-2 mt-1">
+                <button className={`btn ${s.whiteLabel?.interested ? 'ring-2' : ''}`} onClick={()=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, interested:true}}))}>YES</button>
+                <button className={`btn ${!s.whiteLabel?.interested ? 'ring-2' : ''}`} onClick={()=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, interested:false}}))}>NO</button>
+              </div>
+              {s.whiteLabel?.interested && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                  <select className="input" value={s.whiteLabel?.purpose||''} onChange={e=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, purpose: e.target.value}}))}>
+                    <option value="">Purpose</option><option>Brand</option><option>Event</option><option>Resale</option>
+                  </select>
+                  <input className="input" placeholder="Willing to pay extra (₹)" value={s.whiteLabel?.willingToPay||0} onChange={e=>setS(prev=>({...prev, whiteLabel:{...prev.whiteLabel, willingToPay: Number(e.target.value)}}))} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {step===7 && (
+            <div>
+              <h4 className="font-semibold">Finalize — Review</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                <div>
+                  <label className="muted text-xs">Contact Name</label>
+                  <input className="input mt-1" value={s.contact?.name||''} onChange={e=>setS(prev=>({...prev, contact:{...prev.contact, name: e.target.value}}))} />
+                  <label className="muted text-xs mt-2">Contact Mobile</label>
+                  <input className="input mt-1" value={s.contact?.mobile||''} onChange={e=>setS(prev=>({...prev, contact:{...prev.contact, mobile: e.target.value}}))} />
+                </div>
+                <div>
+                  <div className="card">
+                    <h5 className="font-semibold">Summary</h5>
+                    <div className="muted text-xs">Business: {s.businessName}</div>
+                    <div className="muted text-xs">Type: {s.businessType}</div>
+                    <div className="muted text-xs">Area: {s.location?.areaName}</div>
+                    <div className="muted text-xs">Brands: {(s.brands||[]).join(', ')}</div>
+                    <div className="muted text-xs">Qty Monthly: {s.qtyToggle === 'Daily' ? (Number(s.quantity||0)*30) : s.quantity}</div>
+                    <div className="muted text-xs">White Label: {s.whiteLabel?.interested ? 'Yes' : 'No'}</div>
+                    <div className="muted text-xs">Pitch Interested: {s.pitch?.interestedBuyVellora}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {!wizardOpen && view === 'list' && <div className="fixed bottom-[80px] left-4 right-4 max-w-2xl mx-auto z-50">
-          <button onClick={()=>{ setWizardOpen(true); setEditing(null); }} className={`w-full py-4 rounded-xl shadow-xl flex items-center justify-center gap-3 ${currentTheme.accent} ${currentTheme.accentText} font-bold`}><Icon name="plus" /> START NEW SURVEY</button>
-        </div>}
-
-        {!wizardOpen && <div className={`fixed bottom-0 left-0 right-0 h-16 ${currentTheme.card} border-t ${currentTheme.border} flex justify-around items-center z-40 max-w-2xl mx-auto`}>
-          <button onClick={()=>setView('list')} className={`flex flex-col items-center text-xs ${view==='list' ? 'opacity-100 font-bold' : 'opacity-60'}`}><Icon name="home" /><div>Surveys</div></button>
-          <button onClick={()=>setView('analytics')} className={`flex flex-col items-center text-xs ${view==='analytics' ? 'opacity-100 font-bold' : 'opacity-60'}`}><Icon name="bar" /><div>Analytics</div></button>
-          <button onClick={()=>setView('settings')} className={`flex flex-col items-center text-xs ${view==='settings' ? 'opacity-100 font-bold' : 'opacity-60'}`}><Icon name="settings" /><div>Settings</div></button>
-        </div>}
-
-        {wizardOpen && <SurveyWizard initial={editing} onClose={()=>{ setWizardOpen(false); setEditing(null); }} />}
-        {selected && <DetailModal survey={selected} onClose={()=>setSelected(null)} />}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  // ---------- Render ----------
-  const rootEl = document.getElementById('root');
-  if (rootEl) {
-    const root = ReactDOM.createRoot(rootEl);
-    root.render(<AppProvider><App /></AppProvider>);
-  } else {
-    console.error('Root element missing');
-  }
+/** Render */
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
   </script>
 </body>
 </html>
