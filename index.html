@@ -1,978 +1,2363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VELLORA Enterprise Market Survey</title>
-    
-    <!-- PWA Manifest Meta -->
-    <meta name="theme-color" content="#ffffff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <!-- TAILWIND CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- REACT & REACT DOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    
-    <!-- BABEL -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="description" content="SurveyMaker - Build powerful survey apps with analytics">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SurveyMaker</title>
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU3VydmV5TWFrZXIiLCJzaG9ydF9uYW1lIjoiU3VydmV5cyIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGEwYTBhIiwidGhlbWVfY29sb3IiOiIjMGEwYTBhIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjxyZWN0IGZpbGw9JyUyMzBhMGEwYScgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnLz48dGV4dCB4PSc1MCUnIHk9JzUwJScgZG9taW5hbnQtYmFzZWxpbmU9J2NlbnRyYWwnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nNTAnIGZpbGw9J3doaXRlJz7wn5ORPC90ZXh0Pjwvc3ZnPiIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1f1f1f;
+      --bg-card: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border-color: #27272a;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      --nav-height: 70px;
+      --header-height: 60px;
+    }
 
-    <!-- FIREBASE COMPAT (v9) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    <!-- PDF GENERATION LIBS (jsPDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-    <!-- CUSTOM STYLES -->
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .range-slider {
-            -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px;
-            background: rgba(0,0,0,0.1); outline: none; opacity: 0.9; transition: opacity .2s;
-        }
-        .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
-            border-radius: 50%; background: currentColor; cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        
-        /* Animations */
-        .fade-in { animation: fadeIn 0.2s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        
-        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    /* Header */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+    }
 
-        /* Spinner */
-        .spinner { border: 2px solid rgba(0,0,0,0.1); border-radius: 50%; border-top: 2px solid currentColor; width: 16px; height: 16px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    .header-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Main Content */
+    .main-content {
+      padding-top: var(--header-height);
+      padding-bottom: var(--nav-height);
+      min-height: 100vh;
+    }
+
+    .page {
+      display: none;
+      padding: 16px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      font-size: 0.75rem;
+    }
+
+    .nav-item:hover {
+      color: var(--text-secondary);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .card-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .btn-icon.large {
+      width: 56px;
+      height: 56px;
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    /* FAB Button */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 16px);
+      right: 16px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 50;
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+      background: var(--accent-hover);
+    }
+
+    .fab svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Survey List */
+    .survey-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .survey-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .survey-item:hover {
+      border-color: var(--accent);
+    }
+
+    .survey-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .survey-item-title {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .survey-item-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .survey-item-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 20px;
+      font-size: 0.75rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 200;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: var(--radius) var(--radius) 0 0;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+
+    .modal.center {
+      border-radius: var(--radius);
+      margin: 20px;
+      max-height: calc(100vh - 40px);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+    }
+
+    .modal-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .modal-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Question Builder */
+    .question-item {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .question-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .question-type-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      background: var(--accent);
+      color: white;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .option-item input {
+      flex: 1;
+    }
+
+    /* Question Type Selector */
+    .question-types {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .question-type-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .question-type-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .question-type-btn svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .question-type-btn span {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .chart-title {
+      font-weight: 600;
+    }
+
+    .chart-canvas {
+      width: 100%;
+      height: 200px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      background: var(--accent);
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
+      position: relative;
+    }
+
+    .chart-bar-label {
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Settings List */
+    .settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .settings-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .settings-item:hover {
+      border-color: var(--accent);
+    }
+
+    .settings-item-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .settings-item-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-item-text h4 {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .settings-item-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Toggle Switch */
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 28px;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-tertiary);
+      border-radius: 28px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: var(--text-primary);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: var(--accent);
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    /* Theme Selector */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .theme-item {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .theme-item.active {
+      border-color: var(--accent);
+    }
+
+    .theme-item::after {
+      content: attr(data-name);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 4px;
+      background: rgba(0,0,0,0.7);
+      font-size: 0.6rem;
+      text-align: center;
+      color: white;
+    }
+
+    /* Response View */
+    .response-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .response-answer {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .response-answer:last-child {
+      border-bottom: none;
+    }
+
+    .response-question {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .response-value {
+      font-weight: 500;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 20px);
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      z-index: 300;
+      transition: transform 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Utility */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-4 { gap: 16px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-4 { margin-bottom: 16px; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 0.875rem; }
+    .text-muted { color: var(--text-muted); }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900 select-none">
-    <div id="root"></div>
-
-    <script type="text/babel">
-        /*******************************************************
-         * 0. CONFIG & CONSTANTS
-         *******************************************************/
-        const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyCX48WOgrvJkxf_mzENh0-GhOPkbwdaCjw",
-            authDomain: "vellora-3828d.firebaseapp.com",
-            projectId: "vellora-3828d",
-            storageBucket: "vellora-3828d.firebasestorage.app",
-            messagingSenderId: "1045366360458",
-            appId: "1:1045366360458:web:c9de51b7942bd743d9a073",
-            measurementId: "G-WLKMJNBJTP"
-        };
-
-        const THEMES = {
-            corporate: { name: 'Corporate Light', bg: 'bg-slate-50', card: 'bg-white', text: 'text-slate-800', accent: 'bg-blue-600', accentText: 'text-white', border: 'border-slate-200', input: 'bg-white text-slate-900 border-slate-200' },
-            midnight: { name: 'Midnight Dark', bg: 'bg-slate-900', card: 'bg-slate-800', text: 'text-slate-100', accent: 'bg-blue-500', accentText: 'text-white', border: 'border-slate-700', input: 'bg-slate-900 text-white border-slate-700' },
-            forest: { name: 'Forest Rain', bg: 'bg-emerald-50', card: 'bg-white', text: 'text-emerald-900', accent: 'bg-emerald-600', accentText: 'text-white', border: 'border-emerald-200', input: 'bg-white text-emerald-900 border-emerald-200' },
-            obsidian: { name: 'Obsidian (OLED)', bg: 'bg-black', card: 'bg-gray-900', text: 'text-gray-100', accent: 'bg-white', accentText: 'text-black', border: 'border-gray-800', input: 'bg-gray-900 text-white border-gray-700 placeholder-gray-500' },
-            sunset: { name: 'Sunset', bg: 'bg-orange-50', card: 'bg-white', text: 'text-orange-900', accent: 'bg-orange-500', accentText: 'text-white', border: 'border-orange-200', input: 'bg-white text-orange-900 border-orange-200' },
-            royal: { name: 'Royal', bg: 'bg-purple-50', card: 'bg-white', text: 'text-purple-900', accent: 'bg-purple-600', accentText: 'text-white', border: 'border-purple-200', input: 'bg-white text-purple-900 border-purple-200' },
-            oceanic: { name: 'Oceanic', bg: 'bg-cyan-50', card: 'bg-white', text: 'text-cyan-900', accent: 'bg-cyan-600', accentText: 'text-white', border: 'border-cyan-200', input: 'bg-white text-cyan-900 border-cyan-200' },
-            luxury: { name: 'Luxury', bg: 'bg-gray-900', card: 'bg-gray-800', text: 'text-amber-100', accent: 'bg-amber-500', accentText: 'text-gray-900', border: 'border-amber-500/30', input: 'bg-gray-900 text-amber-50 border-amber-900' },
-            berry: { name: 'Berry', bg: 'bg-pink-50', card: 'bg-white', text: 'text-pink-900', accent: 'bg-pink-600', accentText: 'text-white', border: 'border-pink-200', input: 'bg-white text-pink-900 border-pink-200' },
-            slate: { name: 'Slate', bg: 'bg-gray-100', card: 'bg-white', text: 'text-gray-800', accent: 'bg-gray-600', accentText: 'text-white', border: 'border-gray-300', input: 'bg-white text-gray-800 border-gray-300' },
-        };
-
-        const INITIAL_MASTER_DATA = {
-            businessTypes: ["Kirana / General Store", "Supermarket", "Restaurant / Hotel", "Corporate Office", "Gym / Fitness", "Hospital / Clinic", "Educational Inst."],
-            brands: ["Bisleri", "Kinley", "Aquafina", "Bailley", "Local Brand"],
-            bottleSizes: ["250ml", "500ml", "1L", "2L", "5L", "10L", "20L"],
-            problems: ["Late Delivery", "Leaking Bottles", "Inconsistent Taste", "High Price", "Rude Behavior", "No Bill provided"],
-            distributors: ["Direct Company", "Local Vendor", "Wholesaler"],
-            whiteLabelPurposes: ["Brand Building", "Customer Loyalty", "Event / Function", "Resale Profit"],
-            footfallRanges: ["0-50", "51-150", "151-300", "300+"],
-            willingToPayAmounts: ["1", "2", "3", "5", "10"]
-        };
-
-        /*******************************************************
-         * 1. EXPORT ENGINES (Fixed)
-         *******************************************************/
-        const generateUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); });
-        const formatDate = (iso) => !iso ? '' : new Date(iso).toLocaleDateString() + ' ' + new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
-
-        // --- ROBUST CSV GENERATOR ---
-        const convertToCSV = (data) => {
-            if (!data || !data.length) return null;
-            const items = Array.isArray(data) ? data : [data];
-            const flatData = items.map(row => {
-                const { buyingPrice, sellingPrice, profitPerBottle, gps, ...rest } = row;
-                const flat = { ...rest, lat: gps?.lat || '', lng: gps?.lng || '' };
-                if (buyingPrice) Object.keys(buyingPrice).forEach(k => flat[`Buy_${k}`] = buyingPrice[k]);
-                if (sellingPrice) Object.keys(sellingPrice).forEach(k => flat[`Sell_${k}`] = sellingPrice[k]);
-                if (profitPerBottle) Object.keys(profitPerBottle).forEach(k => flat[`Profit_${k}`] = profitPerBottle[k]);
-                ['distributorName', 'brands', 'bottleSizes', 'mainProblems', 'customPurpose'].forEach(f => {
-                    if (Array.isArray(flat[f])) flat[f] = flat[f].join('; ');
-                });
-                return flat;
-            });
-            const headers = Array.from(new Set(flatData.flatMap(Object.keys)));
-            const escapeCSV = (val) => {
-                if (val === null || val === undefined) return '';
-                const str = String(val);
-                if (str.includes(',') || str.includes('\n') || str.includes('"')) {
-                    return `"${str.replace(/"/g, '""')}"`;
-                }
-                return str;
-            };
-            const csvContent = [headers.join(','), ...flatData.map(row => headers.map(h => escapeCSV(row[h])).join(','))].join('\n');
-            return csvContent;
-        };
-
-        // --- ROBUST PDF GENERATOR ---
-        const generatePDF = async (inputData) => {
-            if (!window.jspdf || !window.jspdf.jsPDF) { alert("PDF Engine loading... please try again."); return; }
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const surveys = Array.isArray(inputData) ? inputData : [inputData];
-                if(surveys.length === 0) { alert("No data to export."); return; }
-
-                surveys.forEach((survey, index) => {
-                    if (index > 0) doc.addPage();
-                    let y = 20;
-                    doc.setFontSize(22); doc.setTextColor(41, 128, 185); doc.setFont("helvetica", "bold"); doc.text("VELLORA", 14, y);
-                    doc.setFontSize(10); doc.setTextColor(100); doc.setFont("helvetica", "normal"); doc.text(`Survey Report | ID: ${survey.id ? survey.id.slice(0,8) : 'N/A'}`, 14, y + 6); y += 20;
-
-                    const drawSection = (title, lines, bgColor = [255, 255, 255]) => {
-                        doc.setFillColor(...bgColor); doc.setDrawColor(220, 220, 220);
-                        const boxHeight = (lines.length * 6) + 14;
-                        doc.roundedRect(14, y, pageWidth - 28, boxHeight, 2, 2, 'FD');
-                        doc.setFontSize(9); doc.setTextColor(150); doc.setFont("helvetica", "bold"); doc.text(title.toUpperCase(), 18, y + 8);
-                        doc.setTextColor(0); doc.setFont("helvetica", "normal");
-                        lines.forEach((l, i) => doc.text(String(l), 18, y + 16 + (i*6)));
-                        y += boxHeight + 6;
-                    };
-
-                    drawSection("Business Profile", [`Name: ${survey.businessName}`, `Type: ${survey.businessType}`, `Location: ${survey.locationArea}`, `Footfall: ${survey.dailyFootfall || '-'}`, `Coordinates: ${survey.gps ? `${survey.gps.lat.toFixed(5)}, ${survey.gps.lng.toFixed(5)}` : 'N/A'}`]);
-                    drawSection("Contact", [`Person: ${survey.contactName}`, `Mobile: ${survey.contactMobile}`, `Captured: ${new Date(survey.timestamp).toLocaleString()}`]);
-                    const dists = Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName;
-                    const probs = Array.isArray(survey.mainProblems) ? survey.mainProblems.join(', ') : '';
-                    const supplyLines = [`Monthly Volume: ${survey.qtyMonthly} bottles`, `Distributors: ${dists}`, `Satisfaction: ${survey.happyWithService}`];
-                    if(survey.companyDetails) supplyLines.push(`Company: ${survey.companyDetails}`);
-                    if(survey.localVendorName) supplyLines.push(`Local Vendor: ${survey.localVendorName}`);
-                    if(probs) supplyLines.push(`Issues: ${probs}`);
-                    drawSection("Supply Chain", supplyLines);
-
-                    if (survey.interestedInCustomLogo === 'Yes') {
-                        const purposes = Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose;
-                        drawSection("White Label Lead", [`Interested: YES`, `Purpose: ${purposes}`, `Extra Pay: INR ${survey.extraWillingToPay}`], [255, 250, 235]);
-                    }
-
-                    doc.setFontSize(10); doc.setTextColor(50); doc.setFont("helvetica", "bold"); doc.text("PRICING MATRIX", 14, y + 4); y += 8;
-                    const tableRows = [];
-                    if (survey.brands) {
-                        survey.brands.forEach(b => {
-                            if (survey.bottleSizes) {
-                                survey.bottleSizes.forEach(s => {
-                                    const k = `${b}|${s}`;
-                                    if (survey.buyingPrice && survey.buyingPrice[k]) tableRows.push([b, s, survey.buyingPrice[k] || '-', survey.sellingPrice?.[k] || '-', survey.profitPerBottle?.[k] || '-']);
-                                });
-                            }
-                        });
-                    }
-                    if (tableRows.length > 0) {
-                        doc.autoTable({ startY: y, head: [['Brand', 'Size', 'Buy', 'Sell', 'Profit']], body: tableRows, theme: 'grid', headStyles: { fillColor: [41, 128, 185], fontSize: 9 }, styles: { fontSize: 8, cellPadding: 2 }, margin: { left: 14, right: 14 } });
-                    } else {
-                        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.text("No pricing data recorded.", 14, y + 5);
-                    }
-                });
-                const fname = surveys.length > 1 ? `Vellora_Bulk_Export_${new Date().toISOString().split('T')[0]}.pdf` : `Survey_${inputData.businessName}.pdf`;
-                doc.save(fname);
-            } catch(e) { console.error("PDF Gen Error", e); alert("Error generating PDF. Please check console or try refreshing."); }
-        };
-
-        /*******************************************************
-         * 2. ICONS
-         *******************************************************/
-        const Icons = {
-            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-            Home: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-            BarChart: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-            Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
-            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-            ChevronRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-            ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-            MapPin: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-            Download: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-            WifiOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
-            Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-            Filter: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
-            Map: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
-            Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8"/><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"/></svg>,
-            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-            FileText: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        };
-
-        /*******************************************************
-         * 3. DATA LAYER
-         *******************************************************/
-        const ThemeContext = React.createContext();
-        const AppContext = React.createContext();
-
-        class ErrorBoundary extends React.Component {
-            constructor(props) { super(props); this.state = { hasError: false }; }
-            static getDerivedStateFromError(error) { return { hasError: true }; }
-            componentDidCatch(error, errorInfo) { console.error("Uncaught error:", error, errorInfo); }
-            render() {
-                if (this.state.hasError) return <div className="p-6 text-red-500"><h2>App Error. Please Reload.</h2><button onClick={() => window.location.reload()} className="mt-4 p-2 bg-red-100 rounded">Reload</button></div>;
-                return this.props.children;
-            }
-        }
-
-        const Toast = ({ msg, type, onClose }) => {
-            React.useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
-            const bg = type === 'error' ? 'bg-red-500' : 'bg-green-500';
-            return <div className={`fixed top-4 left-4 right-4 p-3 rounded-lg shadow-lg z-[100] text-white font-bold flex justify-between items-center ${bg} slide-up`}><span>{msg}</span><button onClick={onClose}><Icons.X /></button></div>;
-        };
-
-        const AppProvider = ({ children }) => {
-            const [user, setUser] = React.useState(null);
-            const [surveys, setSurveys] = React.useState([]);
-            const [masterData, setMasterData] = React.useState(INITIAL_MASTER_DATA);
-            const [outbox, setOutbox] = React.useState([]);
-            const [isOnline, setIsOnline] = React.useState(navigator.onLine);
-            const [isSyncing, setIsSyncing] = React.useState(false);
-            const [themeKey, setThemeKey] = React.useState(localStorage.getItem('vellora_theme') || 'corporate');
-            const [toast, setToast] = React.useState(null);
-
-            React.useEffect(() => { localStorage.setItem('vellora_theme', themeKey); }, [themeKey]);
-            const currentTheme = THEMES[themeKey] || THEMES.corporate;
-
-            const showToast = (msg, type='info') => setToast({ msg, type });
-
-            React.useEffect(() => {
-                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-                firebase.auth().onAuthStateChanged(u => u ? setUser(u) : firebase.auth().signInAnonymously());
-                const handleOnline = () => { setIsOnline(true); flushOutbox(); };
-                const handleOffline = () => setIsOnline(false);
-                window.addEventListener('online', handleOnline);
-                window.addEventListener('offline', handleOffline);
-                loadLocalData();
-                return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
-            }, []);
-
-            React.useEffect(() => {
-                if (!user) return;
-                const db = firebase.firestore();
-                const syncCode = 'MAIN';
-                
-                const unsubscribeMaster = db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData')
-                    .onSnapshot(doc => {
-                        if (doc.exists) {
-                            const remote = doc.data();
-                            setMasterData(prev => {
-                                const merged = { ...prev, ...remote };
-                                localStorage.setItem('vellora_MAIN_master', JSON.stringify(merged));
-                                return merged;
-                            });
-                        } else doc.ref.set(INITIAL_MASTER_DATA);
-                    });
-
-                const unsubscribeSurveys = db.collection('artifacts').doc(syncCode).collection('data')
-                    .onSnapshot(snapshot => {
-                        const remoteSurveys = [];
-                        snapshot.forEach(doc => remoteSurveys.push(doc.data()));
-                        setSurveys(remoteSurveys);
-                        localStorage.setItem('vellora_MAIN_surveys', JSON.stringify(remoteSurveys));
-                    }, err => console.log("Sync Error", err));
-
-                return () => { unsubscribeMaster(); unsubscribeSurveys(); };
-            }, [user]);
-
-            const loadLocalData = () => {
-                const ls = localStorage.getItem('vellora_MAIN_surveys');
-                if (ls) try { setSurveys(JSON.parse(ls)); } catch(e){}
-                const lm = localStorage.getItem('vellora_MAIN_master');
-                if (lm) try { setMasterData(JSON.parse(lm)); } catch(e){}
-                const lo = localStorage.getItem('vellora_MAIN_outbox');
-                if (lo) try { setOutbox(JSON.parse(lo)); } catch(e){}
-            };
-
-            const addToOutbox = (action, payload) => {
-                const newItem = { id: generateUUID(), action, payload, timestamp: new Date().toISOString() };
-                const newOutbox = [...outbox, newItem];
-                setOutbox(newOutbox);
-                localStorage.setItem('vellora_MAIN_outbox', JSON.stringify(newOutbox));
-                
-                if (action === 'ADD_SURVEY') {
-                    setSurveys([payload, ...surveys]);
-                    showToast("Survey Saved Locally");
-                } else if (action === 'DELETE_SURVEY') {
-                     setSurveys(surveys.filter(s => s.id !== payload.id));
-                     showToast("Survey Deleted");
-                }
-
-                if (navigator.onLine) flushOutbox(newOutbox);
-            };
-
-            const flushOutbox = async (currentOutbox = outbox) => {
-                if (!currentOutbox.length || isSyncing) return;
-                setIsSyncing(true);
-                const db = firebase.firestore();
-                const remaining = [];
-                const syncCode = 'MAIN';
-
-                for (const item of currentOutbox) {
-                    try {
-                        const cleanPayload = JSON.parse(JSON.stringify(item.payload)); 
-                        if (item.action === 'ADD_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).set(cleanPayload);
-                        else if (item.action === 'DELETE_SURVEY') await db.collection('artifacts').doc(syncCode).collection('data').doc(item.payload.id).delete();
-                        else if (item.action === 'UPDATE_MASTER') await db.collection('artifacts').doc(syncCode).collection('settings').doc('masterData').set(cleanPayload);
-                    } catch (e) { remaining.push(item); }
-                }
-                
-                if(remaining.length < currentOutbox.length) showToast("Cloud Sync Complete", 'success');
-                setOutbox(remaining);
-                localStorage.setItem('vellora_MAIN_outbox', JSON.stringify(remaining));
-                setIsSyncing(false);
-            };
-
-            const updateMasterData = (key, value) => {
-                if (!masterData[key]) return;
-                const currentArr = Array.isArray(masterData[key]) ? masterData[key] : [];
-                if (!currentArr.includes(value)) {
-                    const newArr = [...currentArr, value];
-                    const newMaster = { ...masterData, [key]: newArr };
-                    setMasterData(newMaster);
-                    addToOutbox('UPDATE_MASTER', newMaster);
-                }
-            };
-
-            return (
-                <ThemeContext.Provider value={{ currentTheme, themeKey, setThemeKey }}>
-                    <AppContext.Provider value={{ user, surveys, masterData, isOnline, outbox, isSyncing, addToOutbox, updateMasterData, flushOutbox, showToast }}>
-                        {children}
-                        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-                    </AppContext.Provider>
-                </ThemeContext.Provider>
-            );
-        };
-
-        /*******************************************************
-         * 4. COMPONENT LIBRARY
-         *******************************************************/
-        const Modal = ({ isOpen, onClose, title, children }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            if (!isOpen) return null;
-            return (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <div className={`${currentTheme.card} ${currentTheme.text} w-full max-w-lg rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto`}>
-                        <div className={`p-4 border-b ${currentTheme.border} flex justify-between items-center sticky top-0 ${currentTheme.card} z-10`}>
-                            <h3 className="font-bold text-lg">{title}</h3>
-                            <button onClick={onClose} className="p-2 opacity-70 hover:opacity-100 font-bold text-xl"><Icons.X /></button>
-                        </div>
-                        <div className="p-4">{children}</div>
-                    </div>
-                </div>
-            );
-        };
-
-        const ConfirmationModal = ({ isOpen, onConfirm, onCancel, message }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            if(!isOpen) return null;
-            return (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-                    <div className={`${currentTheme.card} ${currentTheme.text} p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border ${currentTheme.border}`}>
-                        <div className="text-red-500 mb-4 flex justify-center"><Icons.Trash /></div>
-                        <h3 className="text-xl font-bold mb-2">Are you sure?</h3>
-                        <p className="opacity-70 mb-6 text-sm">{message}</p>
-                        <div className="flex gap-3">
-                            <button onClick={onCancel} className={`flex-1 py-3 rounded-xl font-bold border ${currentTheme.border}`}>Cancel</button>
-                            <button onClick={onConfirm} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white shadow-lg">Delete</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        const ExportMenu = ({ isOpen, onClose, onExport }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            if(!isOpen) return null;
-            return (
-                <Modal isOpen={isOpen} onClose={onClose} title="Export Data">
-                    <div className="grid gap-3">
-                        <button onClick={() => onExport('csv')} className={`p-4 rounded-xl border ${currentTheme.border} flex items-center gap-3 font-bold hover:bg-gray-50/10`}>
-                            <div className="p-2 bg-green-100 text-green-700 rounded-lg"><Icons.FileText /></div>
-                            <span>Export as CSV (Excel)</span>
-                        </button>
-                        <button onClick={() => onExport('json')} className={`p-4 rounded-xl border ${currentTheme.border} flex items-center gap-3 font-bold hover:bg-gray-50/10`}>
-                            <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg"><Icons.FileText /></div>
-                            <span>Export as JSON</span>
-                        </button>
-                        <button onClick={() => onExport('pdf')} className={`p-4 rounded-xl border ${currentTheme.border} flex items-center gap-3 font-bold hover:bg-gray-50/10`}>
-                            <div className="p-2 bg-red-100 text-red-700 rounded-lg"><Icons.FileText /></div>
-                            <span>Export as PDF Report</span>
-                        </button>
-                    </div>
-                </Modal>
-            );
-        }
-
-        const ButtonGrid = ({ options, selected, onSelect, allowOther, onAddOther }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            const [isAdding, setIsAdding] = React.useState(false);
-            const [otherVal, setOtherVal] = React.useState('');
-
-            const handleAdd = () => {
-                if(otherVal.trim()) {
-                    onAddOther(otherVal.trim());
-                    if (Array.isArray(selected)) onSelect([...selected, otherVal.trim()]);
-                    else onSelect(otherVal.trim());
-                    setOtherVal('');
-                    setIsAdding(false);
-                }
-            };
-
-            return (
-                <div className="flex flex-wrap gap-2">
-                    {options.map(opt => {
-                        const isSelected = Array.isArray(selected) ? selected.includes(opt) : selected === opt;
-                        return (
-                            <button key={opt} onClick={() => {
-                                if (Array.isArray(selected)) {
-                                    const newSel = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
-                                    onSelect(newSel);
-                                } else {
-                                    onSelect(opt);
-                                }
-                            }}
-                            className={`px-4 py-3 rounded-lg text-sm font-medium transition-all shadow-sm active:scale-95 ${isSelected ? `${currentTheme.accent} ${currentTheme.accentText} ring-2 ring-offset-1 ring-offset-transparent ring-opacity-50` : `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}`}`}>
-                                {opt}
-                            </button>
-                        );
-                    })}
-                    {allowOther && (!isAdding ? (
-                        <button onClick={() => setIsAdding(true)} className={`px-4 py-3 border border-dashed ${currentTheme.border} rounded-lg text-sm opacity-70 hover:opacity-100`}>+ Other</button>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <input autoFocus value={otherVal} onChange={e => setOtherVal(e.target.value)} className={`px-3 py-2 rounded-lg border ${currentTheme.border} ${currentTheme.input} text-sm w-32`} placeholder="Type..." />
-                            <button onClick={handleAdd} className={`${currentTheme.accent} ${currentTheme.accentText} p-2 rounded-lg`}><Icons.Check /></button>
-                        </div>
-                    ))}
-                </div>
-            );
-        };
-
-        // --- Step Components ---
-        const StepA = ({ data, update, master, addMaster }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            const [loadingLoc, setLoadingLoc] = React.useState(false);
-            const handleGeo = () => {
-                setLoadingLoc(true);
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const { latitude, longitude } = pos.coords;
-                    update('gps', { lat: latitude, lng: longitude });
-                    try {
-                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-                        const json = await res.json();
-                        const area = json.address.suburb || json.address.neighbourhood || json.address.town || '';
-                        if(area) update('locationArea', area);
-                    } catch(e){} finally { setLoadingLoc(false); }
-                }, () => setLoadingLoc(false), { enableHighAccuracy: true });
-            };
-            return (
-                <div className="space-y-6 pb-24">
-                    <h2 className="text-xl font-bold">Business Profile</h2>
-                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Business Name *</label><input value={data.businessName||''} onChange={e=>update('businessName', e.target.value)} className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} placeholder="Shop Name" /></div>
-                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Type</label><ButtonGrid options={master.businessTypes} selected={data.businessType} onSelect={v=>update('businessType',v)} allowOther={true} onAddOther={v=>addMaster('businessTypes',v)} /></div>
-                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Footfall</label><ButtonGrid options={master.footfallRanges} selected={data.dailyFootfall} onSelect={v=>update('dailyFootfall',v)} allowOther={true} onAddOther={v=>addMaster('footfallRanges',v)} /></div>
-                    <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.bg} space-y-4`}>
-                        <div className="flex justify-between items-center"><label className="text-xs font-bold opacity-70">Location</label><button onClick={handleGeo} className={`flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full ${currentTheme.accent} ${currentTheme.accentText}`}>{loadingLoc?'...':'Detect'}</button></div>
-                        <input value={data.locationArea||''} onChange={e=>update('locationArea',e.target.value)} className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} placeholder="Area Name" />
-                    </div>
-                </div>
-            );
-        };
-
-        const QtySlider = ({ value, onChange, theme }) => (
-            <div className="space-y-4">
-                <div className="flex justify-between items-center"><span className="text-2xl font-bold">{value} <span className="text-sm opacity-60 font-normal">bottles/mo</span></span><input type="number" value={value||''} onChange={e=>onChange(e.target.value===''?'':parseInt(e.target.value))} className={`w-24 p-2 text-center rounded border ${theme.border} ${theme.input}`} /></div>
-                <input type="range" min="0" max="1000" step="5" value={value||0} onChange={e=>onChange(parseInt(e.target.value))} className={`range-slider ${theme.text}`} />
-            </div>
-        );
-
-        const StepB = ({ data, update, master, addMaster }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            return (
-                <div className="space-y-8 pb-24">
-                    <h2 className="text-xl font-bold">Water Usage</h2>
-                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Brands (Multi)</label><ButtonGrid options={master.brands} selected={data.brands||[]} onSelect={v=>update('brands',v)} allowOther={true} onAddOther={v=>addMaster('brands',v)} /></div>
-                    <div className="space-y-2"><label className="text-xs font-bold opacity-70">Sizes (Multi)</label><ButtonGrid options={master.bottleSizes} selected={data.bottleSizes||[]} onSelect={v=>update('bottleSizes',v)} allowOther={true} onAddOther={v=>addMaster('bottleSizes',v)} /></div>
-                    <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}><label className="text-xs font-bold opacity-70 mb-4 block">Monthly Quantity</label><QtySlider value={data.qtyMonthly} onChange={v=>update('qtyMonthly',v)} theme={currentTheme} /></div>
-                </div>
-            );
-        };
-
-        const StepC = ({ data, update }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            if(!data.brands?.length || !data.bottleSizes?.length) return <div className="p-8 text-center opacity-70">Select Brands/Sizes first.</div>;
-            const handlePrice = (type, key, val) => {
-                update(type, { ...data[type], [key]: val });
-                if(type === 'buyingPrice' || type === 'sellingPrice') {
-                    const buy = type === 'buyingPrice' ? val : (data.buyingPrice?.[key] || 0);
-                    const sell = type === 'sellingPrice' ? val : (data.sellingPrice?.[key] || 0);
-                    update('profitPerBottle', { ...data.profitPerBottle, [key]: (parseFloat(sell)||0)-(parseFloat(buy)||0) });
-                }
-            };
-            return (
-                <div className="space-y-6 pb-24">
-                    <h2 className="text-xl font-bold">Pricing Matrix</h2>
-                    <div className="flex flex-col gap-6">
-                        {data.brands.map(b => (
-                            <div key={b} className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card}`}>
-                                <h3 className={`font-bold text-lg mb-3 ${currentTheme.accentText === 'text-white'?'text-current':'text-blue-600'}`}>{b}</h3>
-                                <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-end mb-2 text-xs font-bold opacity-60"><span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span></div>
-                                <div className="space-y-3">
-                                    {data.bottleSizes.map(s => {
-                                        const k = `${b}|${s}`;
-                                        return (
-                                            <div key={k} className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center">
-                                                <span className="text-sm font-medium truncate">{s}</span>
-                                                <input type="number" placeholder="0" value={data.buyingPrice?.[k]||''} onChange={e=>handlePrice('buyingPrice',k,e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
-                                                <input type="number" placeholder="0" value={data.sellingPrice?.[k]||''} onChange={e=>handlePrice('sellingPrice',k,e.target.value)} className={`w-full p-2 rounded border ${currentTheme.border} ${currentTheme.input} text-center`} />
-                                                <div className={`text-center font-bold text-sm py-2 rounded ${data.profitPerBottle?.[k]>0?'bg-green-100 text-green-800':'bg-gray-100 text-gray-500'}`}>{data.profitPerBottle?.[k]||0}</div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-
-        const StepE = ({ data, update, master, addMaster }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            return (
-                <div className="space-y-6 pb-24">
-                     <h2 className="text-xl font-bold">Distributor</h2>
-                     <div className="space-y-2"><label className="text-xs font-bold opacity-70">Source (Multi)</label><ButtonGrid options={master.distributors} selected={data.distributorName||[]} onSelect={v=>update('distributorName',v)} allowOther={true} onAddOther={v=>addMaster('distributors',v)} /></div>
-                     {data.distributorName?.includes('Direct Company') && <div className="space-y-2 animate-fade-in"><label className="text-xs font-bold opacity-70">Details</label><input placeholder="Company Info" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.companyDetails||''} onChange={e=>update('companyDetails',e.target.value)} /></div>}
-                     {data.distributorName?.includes('Local Vendor') && <div className="space-y-2 animate-fade-in"><label className="text-xs font-bold opacity-70">Vendor Info</label><input placeholder="Name" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input} mb-2`} value={data.localVendorName||''} onChange={e=>update('localVendorName',e.target.value)} /><input placeholder="Mobile" type="tel" className={`w-full p-3 rounded-lg border ${currentTheme.border} ${currentTheme.input}`} value={data.localVendorMobile||''} onChange={e=>update('localVendorMobile',e.target.value)} /></div>}
-                     <div className="space-y-2"><label className="text-xs font-bold opacity-70">Happy?</label><div className="flex gap-2">{['Yes', 'No'].map(opt=><button key={opt} onClick={()=>update('happyWithService',opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.happyWithService===opt?`${currentTheme.accent} ${currentTheme.accentText}`:`${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}</div></div>
-                     {data.happyWithService === 'No' && <div className="space-y-2 animate-fade-in"><label className="text-xs font-bold opacity-70 text-red-500">Problems (Multi)</label><ButtonGrid options={master.problems} selected={data.mainProblems||[]} onSelect={v=>update('mainProblems',v)} allowOther={true} onAddOther={v=>addMaster('problems',v)} /></div>}
-                </div>
-            );
-        };
-
-        const StepG = ({ data, update, master, addMaster }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            return (
-                 <div className="space-y-6 pb-24">
-                     <h2 className="text-xl font-bold">White Label</h2>
-                     <div className="space-y-2"><label className="text-xs font-bold opacity-70">Interested?</label><div className="flex gap-2">{['Yes', 'No'].map(opt=><button key={opt} onClick={()=>update('interestedInCustomLogo',opt)} className={`flex-1 p-3 rounded-lg border font-bold ${data.interestedInCustomLogo===opt?`${currentTheme.accent} ${currentTheme.accentText}`:`${currentTheme.border} ${currentTheme.card}`}`}>{opt}</button>)}</div></div>
-                     {data.interestedInCustomLogo === 'Yes' && (
-                        <div className="space-y-6 animate-fade-in">
-                            <div className="space-y-2"><label className="text-xs font-bold opacity-70">Purpose (Multi)</label><ButtonGrid options={master.whiteLabelPurposes} selected={data.customPurpose||[]} onSelect={v=>update('customPurpose',v)} allowOther={true} onAddOther={v=>addMaster('whiteLabelPurposes',v)} /></div>
-                            <div className="space-y-2"><label className="text-xs font-bold opacity-70">Extra Pay (₹)</label><ButtonGrid options={master.willingToPayAmounts} selected={data.extraWillingToPay} onSelect={v=>update('extraWillingToPay',v)} allowOther={true} onAddOther={v=>addMaster('willingToPayAmounts',v)} /></div>
-                        </div>
-                     )}
-                 </div>
-            );
-        };
-
-        const StepI = ({ data, update, onSubmit }) => {
-             const { currentTheme } = React.useContext(ThemeContext);
-             return (
-                <div className="space-y-6 pb-24">
-                    <h2 className="text-xl font-bold">Final Contact</h2>
-                    <input placeholder="Name" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactName||''} onChange={e=>update('contactName',e.target.value)} />
-                     <input placeholder="Mobile Number *" type="tel" className={`w-full p-4 rounded-xl border ${currentTheme.border} ${currentTheme.input}`} value={data.contactMobile||''} onChange={e=>update('contactMobile',e.target.value)} />
-                    <div className={`p-4 rounded-xl ${currentTheme.bg} border ${currentTheme.border} text-sm opacity-80`}>
-                        <p><strong>Business:</strong> {data.businessName}</p>
-                        <p><strong>Area:</strong> {data.locationArea}</p>
-                    </div>
-                    <button onClick={onSubmit} className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>SAVE SURVEY</button>
-                </div>
-             );
-        };
-
-        const SurveyWizard = ({ onClose }) => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            const { masterData, updateMasterData, addToOutbox } = React.useContext(AppContext);
-            const [step, setStep] = React.useState(0);
-            const [data, setData] = React.useState({ id: generateUUID(), timestamp: new Date().toISOString(), syncCode: 'MAIN' });
-
-            const update = (field, val) => setData(prev => ({ ...prev, [field]: val }));
-            const steps = [StepA, StepB, StepC, StepE, StepG, StepI];
-            const handleNext = () => { if(step===0&&!data.businessName){alert("Name Required");return;} if(step<steps.length-1)setStep(step+1); };
-            const handleSubmit = () => { if(!data.contactMobile){alert("Mobile Required");return;} addToOutbox('ADD_SURVEY', data); onClose(); };
-            const CurrentComp = steps[step];
-
-            return (
-                <div className={`fixed inset-0 z-50 ${currentTheme.bg} ${currentTheme.text} flex flex-col h-full animate-fade-in`}>
-                    <div className={`p-4 flex items-center justify-between border-b ${currentTheme.border}`}>
-                         <button onClick={onClose} className="p-2 opacity-60">Cancel</button>
-                         <span className="font-bold">Step {step + 1}/{steps.length}</span>
-                         <div className="w-10"></div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4"><CurrentComp data={data} update={update} master={masterData} addMaster={updateMasterData} onSubmit={handleSubmit} /></div>
-                    <div className={`p-4 border-t ${currentTheme.border} ${currentTheme.card} flex items-center gap-4`}>
-                        {step > 0 ? <button onClick={()=>setStep(step-1)} className={`p-4 rounded-xl border ${currentTheme.border} font-bold`}><Icons.ChevronLeft /></button> : <div className="w-14"></div>}
-                        {step < steps.length - 1 ? <button onClick={handleNext} className={`flex-1 py-4 rounded-xl font-bold text-lg shadow-lg ${currentTheme.accent} ${currentTheme.accentText}`}>NEXT</button> : <div className="flex-1"></div>}
-                    </div>
-                </div>
-            );
-        };
-
-        const SurveyList = ({ onOpenDetail }) => {
-            const { surveys = [], currentTheme, outbox = [], isOnline, flushOutbox, isSyncing } = React.useContext(AppContext);
-            const { currentTheme: theme } = React.useContext(ThemeContext);
-            const [filter, setFilter] = React.useState('');
-            const filtered = surveys.filter(s => (s.businessName?.toLowerCase().includes(filter.toLowerCase()) || s.locationArea?.toLowerCase().includes(filter.toLowerCase()))).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-            return (
-                <div className="pb-24 pt-4 px-4 space-y-4">
-                    <div className="flex justify-between items-center text-xs font-bold opacity-60"><span className={isOnline?'text-green-600':'text-red-500'}>{isOnline?'● ONLINE':'● OFFLINE'}</span><span>{surveys.length} Surveys</span></div>
-                    <div className={`flex items-center px-3 rounded-lg border ${theme.border} ${theme.card}`}><Icons.Search /><input className={`w-full p-3 bg-transparent outline-none ${theme.input} border-none`} placeholder="Search..." value={filter} onChange={e=>setFilter(e.target.value)} /></div>
-                    <div className="space-y-3">
-                        {outbox.length > 0 && <div onClick={()=>flushOutbox()} className="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-sm font-bold flex justify-between cursor-pointer active:opacity-70 transition-opacity shadow-sm"><div className="flex items-center gap-2">{isSyncing?<div className="spinner border-yellow-600 border-t-transparent"></div>:<Icons.WifiOff />}<span>{outbox.length} unsynced. Tap to Sync.</span></div><Icons.Refresh /></div>}
-                        {filtered.map(s => (
-                            <div key={s.id} onClick={()=>onOpenDetail(s)} className={`p-4 rounded-xl border ${theme.border} ${theme.card} active:scale-[0.98] transition-transform`}>
-                                <div className="flex justify-between items-start mb-2"><h3 className="font-bold text-lg">{s.businessName}</h3><span className="text-xs opacity-50">{new Date(s.timestamp).toLocaleDateString()}</span></div>
-                                <div className="flex flex-wrap gap-2 text-xs font-medium opacity-70 mb-2"><span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.businessType}</span><span className={`px-2 py-1 rounded-md border ${theme.border}`}>{s.locationArea}</span></div>
-                                {s.interestedInCustomLogo === 'Yes' && <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">WHITE LABEL LEAD</div>}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-
-        const DetailModal = ({ survey, onClose }) => {
-            const { currentTheme: theme } = React.useContext(ThemeContext);
-            const { addToOutbox } = React.useContext(AppContext);
-            const [showConfirm, setShowConfirm] = React.useState(false);
-            
-            const handleExport = () => generatePDF(survey);
-            if(!survey) return null;
-
-            return (
-                <>
-                    <Modal isOpen={!!survey} onClose={onClose} title={survey.businessName}>
-                        <div className="space-y-6">
-                            <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
-                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Business Profile</h4>
-                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                    <div><span className="opacity-60 block text-xs">Type</span><span className="font-medium">{survey.businessType}</span></div>
-                                    <div><span className="opacity-60 block text-xs">Footfall</span><span className="font-medium">{survey.dailyFootfall || 'N/A'}</span></div>
-                                    <div><span className="opacity-60 block text-xs">Area</span><span className="font-medium">{survey.locationArea}</span></div>
-                                    <div><span className="opacity-60 block text-xs">Date</span><span className="font-medium">{new Date(survey.timestamp).toLocaleDateString()}</span></div>
-                                    {survey.gps && <div className="col-span-2 mt-1"><span className="opacity-60 block text-xs">GPS</span><span className="font-mono text-xs opacity-80">{survey.gps.lat.toFixed(5)}, {survey.gps.lng.toFixed(5)}</span></div>}
-                                </div>
-                            </div>
-                            <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
-                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Contact</h4>
-                                <div className="text-sm"><div className="font-bold text-lg">{survey.contactName}</div><div className="font-mono opacity-80">{survey.contactMobile}</div></div>
-                            </div>
-                            <div className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}>
-                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Supply Chain</h4>
-                                <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between items-center"><span className="opacity-70">Volume</span><span className="font-bold text-lg">{survey.qtyMonthly} <span className="text-xs font-normal opacity-60">bottles</span></span></div>
-                                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-2 border-t border-dashed border-gray-200">
-                                        <div><span className="opacity-60 block text-xs">Distributors</span><span className="font-medium">{Array.isArray(survey.distributorName) ? survey.distributorName.join(', ') : survey.distributorName}</span></div>
-                                        <div><span className="opacity-60 block text-xs">Satisfaction</span><span className={`font-bold ${survey.happyWithService === 'No' ? 'text-red-500' : 'text-green-600'}`}>{survey.happyWithService}</span></div>
-                                        {survey.companyDetails && <div className="col-span-2"><span className="opacity-60 block text-xs">Company Details</span><span className="font-medium">{survey.companyDetails}</span></div>}
-                                        {(survey.localVendorName || survey.localVendorMobile) && <div className="col-span-2"><span className="opacity-60 block text-xs">Local Vendor</span><span className="font-medium">{survey.localVendorName} ({survey.localVendorMobile})</span></div>}
-                                    </div>
-                                    {survey.mainProblems && survey.mainProblems.length > 0 && <div className="pt-2"><span className="opacity-60 block text-xs mb-1">Issues</span><div className="flex flex-wrap gap-2">{survey.mainProblems.map(p => <span key={p} className="px-2 py-1 bg-red-50 text-red-700 border border-red-100 text-[10px] rounded-md font-bold">{p}</span>)}</div></div>}
-                                </div>
-                            </div>
-                            {survey.interestedInCustomLogo === 'Yes' && (
-                                <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900">
-                                    <h4 className="font-bold text-xs uppercase opacity-60 mb-3 border-b border-amber-200 pb-1">White Label</h4>
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div><span className="opacity-60 block text-xs">Purpose</span><span className="font-bold">{Array.isArray(survey.customPurpose) ? survey.customPurpose.join(', ') : survey.customPurpose}</span></div>
-                                        <div><span className="opacity-60 block text-xs">Extra Willingness</span><span className="font-bold">₹{survey.extraWillingToPay}</span></div>
-                                    </div>
-                                </div>
-                            )}
-                            <div className={`p-4 rounded-xl border ${theme.border} bg-opacity-50`}>
-                                <h4 className="font-bold text-xs uppercase opacity-50 mb-3 border-b pb-1">Pricing</h4>
-                                {survey.brands?.map(b => (
-                                    <div key={b} className="mb-3 last:mb-0"><div className="font-bold text-sm mb-1">{b}</div><div className="grid grid-cols-4 gap-1 text-[10px] opacity-60 uppercase font-bold mb-1"><span>Size</span><span>Buy</span><span>Sell</span><span>Profit</span></div>{survey.bottleSizes?.map(s => { const k = `${b}|${s}`; if(!survey.buyingPrice?.[k]) return null; return <div key={k} className="grid grid-cols-4 gap-1 text-xs border-b border-dashed border-gray-300 py-1"><span>{s}</span><span>{survey.buyingPrice[k]}</span><span>{survey.sellingPrice[k]}</span><span className="font-bold text-green-600">{survey.profitPerBottle?.[k]}</span></div>; })}</div>
-                                ))}
-                            </div>
-                            <div className="flex flex-wrap gap-2 pt-2 sticky bottom-0 bg-white/80 backdrop-blur-sm pb-2 border-t mt-4">
-                                <a href={`tel:${survey.contactMobile}`} className={`flex-1 py-3 text-center rounded-lg font-bold bg-green-500 text-white flex items-center justify-center gap-2 shadow-sm`}>Call</a>
-                                {survey.gps && <a href={`https://www.google.com/maps?q=${survey.gps.lat},${survey.gps.lng}`} target="_blank" className={`flex-1 py-3 text-center rounded-lg font-bold bg-blue-500 text-white flex items-center justify-center gap-2 shadow-sm`}><Icons.Map /> Map</a>}
-                                <button onClick={handleExport} className={`px-4 py-3 rounded-lg font-bold ${theme.bg} border ${theme.border} text-blue-600 flex items-center justify-center shadow-sm`}><Icons.Download /></button>
-                                <button onClick={()=>setShowConfirm(true)} className="px-4 py-3 rounded-lg font-bold bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shadow-sm"><Icons.Trash /></button>
-                            </div>
-                        </div>
-                    </Modal>
-                    <ConfirmationModal isOpen={showConfirm} message="This will permanently delete this survey." onConfirm={()=>{ addToOutbox('DELETE_SURVEY', survey); setShowConfirm(false); onClose(); }} onCancel={()=>setShowConfirm(false)} />
-                </>
-            );
-        };
-
-        // --- NEW CHART COMPONENT ---
-        const ChartRenderer = ({ type, data, theme }) => {
-            const height = 200;
-            const width = 300;
-            const padding = 20;
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-
-            if (!data || data.length === 0) return <div className="h-48 flex items-center justify-center opacity-50">No Data</div>;
-
-            if (type === 'bar') {
-                const maxVal = Math.max(...data.map(d => d.value));
-                const barWidth = (width - (padding*2)) / data.length;
-                return (
-                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-                        {data.map((d, i) => {
-                            const h = (d.value / maxVal) * (height - padding * 2);
-                            return (
-                                <g key={i}>
-                                    <rect x={padding + (i * barWidth)} y={height - padding - h} width={barWidth - 5} height={h} fill={colors[i % colors.length]} rx="2" />
-                                    <text x={padding + (i * barWidth) + (barWidth/2)} y={height - 5} fontSize="8" textAnchor="middle" fill="currentColor" className="opacity-60">{d.label.substring(0,6)}</text>
-                                </g>
-                            );
-                        })}
-                    </svg>
-                );
-            }
-            if (type === 'pie') {
-                const total = data.reduce((acc, d) => acc + d.value, 0);
-                let cumulativePercent = 0;
-                const getCoordinatesForPercent = (percent) => {
-                    const x = Math.cos(2 * Math.PI * percent);
-                    const y = Math.sin(2 * Math.PI * percent);
-                    return [x, y];
-                };
-                return (
-                    <div className="flex items-center gap-4">
-                        <svg viewBox="-1 -1 2 2" className="w-32 h-32 transform -rotate-90">
-                            {data.map((d, i) => {
-                                const percent = d.value / total;
-                                const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
-                                cumulativePercent += percent;
-                                const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
-                                const largeArcFlag = percent > .5 ? 1 : 0;
-                                const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`;
-                                return <path key={i} d={pathData} fill={colors[i % colors.length]} stroke="white" strokeWidth="0.02" />;
-                            })}
-                        </svg>
-                        <div className="text-xs space-y-1">
-                            {data.map((d, i) => (
-                                <div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{background:colors[i%colors.length]}}></div><span className="opacity-70">{d.label}</span><span className="font-bold">{Math.round((d.value/total)*100)}%</span></div>
-                            ))}
-                        </div>
-                    </div>
-                );
-            }
-            if (type === 'line' || type === 'area') {
-                const maxVal = Math.max(...data.map(d => d.value));
-                if (maxVal === 0) return <div className="h-48 flex items-center justify-center opacity-50">No Data</div>;
-                const points = data.map((d, i) => {
-                    const x = padding + (i * ((width - padding*2) / (data.length - 1)));
-                    const y = height - padding - ((d.value / maxVal) * (height - padding*2));
-                    return `${x},${y}`;
-                }).join(' ');
-                
-                return (
-                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-                        {type === 'area' && <polygon points={`${padding},${height-padding} ${points} ${width-padding},${height-padding}`} fill={colors[0]} fillOpacity="0.2" />}
-                        <polyline points={points} fill="none" stroke={colors[0]} strokeWidth="2" />
-                        {data.map((d, i) => {
-                             const x = padding + (i * ((width - padding*2) / (data.length - 1)));
-                             const y = height - padding - ((d.value / maxVal) * (height - padding*2));
-                             return <circle key={i} cx={x} cy={y} r="3" fill={colors[0]} />
-                        })}
-                    </svg>
-                );
-            }
-            // Fallback for Scatter/Histogram (Simplified as Bars for now or custom logic)
-            return <div className="text-center p-4">Select a different chart type for this data.</div>;
-        };
-
-        const Analytics = () => {
-             const { surveys, currentTheme: theme } = React.useContext(AppContext);
-             const { currentTheme } = React.useContext(ThemeContext);
-             const [chartType, setChartType] = React.useState('bar');
-             const [metric, setMetric] = React.useState('brands'); // brands, types, profit, volume_trend, wl_purpose
-
-             // --- Data Processing Helpers ---
-             const getAggregatedData = () => {
-                 if (metric === 'brands') {
-                     const counts = surveys.flatMap(s => s.brands || []).reduce((acc, b) => { acc[b] = (acc[b] || 0) + 1; return acc; }, {});
-                     return Object.entries(counts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value).slice(0, 6);
-                 }
-                 if (metric === 'types') {
-                     const counts = surveys.reduce((acc, s) => { acc[s.businessType] = (acc[s.businessType] || 0) + 1; return acc; }, {});
-                     return Object.entries(counts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value).slice(0, 6);
-                 }
-                 if (metric === 'profit') {
-                     const profits = {};
-                     surveys.forEach(s => {
-                         if(s.profitPerBottle) {
-                             Object.entries(s.profitPerBottle).forEach(([key, val]) => {
-                                 const brand = key.split('|')[0];
-                                 if(!profits[brand]) profits[brand] = { sum: 0, count: 0 };
-                                 profits[brand].sum += (parseFloat(val) || 0);
-                                 profits[brand].count++;
-                             });
-                         }
-                     });
-                     return Object.entries(profits).map(([label, {sum, count}]) => ({ label, value: Math.round(sum/count) })).sort((a,b) => b.value - a.value);
-                 }
-                 if (metric === 'volume_trend') {
-                     // Group by date (simple sorted)
-                     const sorted = [...surveys].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
-                     // Take last 10 points for readability
-                     return sorted.slice(-10).map(s => ({ label: new Date(s.timestamp).toLocaleDateString(undefined, {month:'short', day:'numeric'}), value: s.qtyMonthly || 0 }));
-                 }
-                 if (metric === 'wl_purpose') {
-                     const counts = surveys.flatMap(s => s.customPurpose || []).reduce((acc, p) => { acc[p] = (acc[p] || 0) + 1; return acc; }, {});
-                     return Object.entries(counts).map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value);
-                 }
-                 return [];
-             };
-
-             const data = getAggregatedData();
-
-             // Stats
-             const total = surveys.length;
-             const wlLeads = surveys.filter(s => s.interestedInCustomLogo === 'Yes').length;
-             const totalVol = surveys.reduce((acc, s) => acc + (s.qtyMonthly || 0), 0);
-
-             return (
-                 <div className="pb-24 pt-4 px-4 space-y-6 animate-fade-in">
-                     {/* KPI Cards */}
-                     <div className="grid grid-cols-3 gap-2">
-                         <div className={`p-3 rounded-xl border ${currentTheme.border} ${currentTheme.card} text-center`}><div className="text-2xl font-bold">{total}</div><div className="text-[10px] opacity-60 uppercase">Surveys</div></div>
-                         <div className={`p-3 rounded-xl border ${currentTheme.border} ${currentTheme.card} text-center`}><div className="text-2xl font-bold text-blue-500">{totalVol}</div><div className="text-[10px] opacity-60 uppercase">Vol/Mo</div></div>
-                         <div className={`p-3 rounded-xl border ${currentTheme.border} ${currentTheme.card} text-center`}><div className="text-2xl font-bold text-orange-500">{wlLeads}</div><div className="text-[10px] opacity-60 uppercase">Leads</div></div>
-                     </div>
-
-                     {/* Dashboard Controls */}
-                     <div className="space-y-4">
-                         <div>
-                             <label className="text-xs font-bold opacity-60 uppercase mb-2 block">Visualization Type</label>
-                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                                 {['bar', 'line', 'pie', 'area'].map(t => (
-                                     <button key={t} onClick={() => setChartType(t)} className={`px-4 py-2 rounded-lg text-xs font-bold capitalize border transition-colors whitespace-nowrap ${chartType === t ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.card} ${currentTheme.border}`}`}>
-                                         {t} Chart
-                                     </button>
-                                 ))}
-                             </div>
-                         </div>
-                         <div>
-                             <label className="text-xs font-bold opacity-60 uppercase mb-2 block">Data Metric</label>
-                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                                 {[
-                                     { id: 'brands', label: 'Top Brands' },
-                                     { id: 'types', label: 'Biz Types' },
-                                     { id: 'volume_trend', label: 'Volume Trend' },
-                                     { id: 'profit', label: 'Avg Profit' },
-                                     { id: 'wl_purpose', label: 'WL Purpose' }
-                                 ].map(m => (
-                                     <button key={m.id} onClick={() => setMetric(m.id)} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap ${metric === m.id ? `${currentTheme.accent} ${currentTheme.accentText}` : `${currentTheme.card} ${currentTheme.border}`}`}>
-                                         {m.label}
-                                     </button>
-                                 ))}
-                             </div>
-                         </div>
-                     </div>
-
-                     {/* Main Chart Area */}
-                     <div className={`p-4 rounded-xl border ${currentTheme.border} ${currentTheme.card} min-h-[300px] flex flex-col`}>
-                         <h3 className="font-bold text-lg mb-4 capitalize">{metric.replace('_', ' ')} Analysis</h3>
-                         <div className="flex-1 flex items-center justify-center">
-                             <ChartRenderer type={chartType} data={data} theme={currentTheme} />
-                         </div>
-                     </div>
-                 </div>
-             );
-        };
-
-        const Settings = () => {
-             const { currentTheme, setThemeKey, themeKey } = React.useContext(ThemeContext);
-             const { surveys } = React.useContext(AppContext);
-             const [showExport, setShowExport] = React.useState(false);
-
-             const handleExport = (type) => {
-                 if (surveys.length === 0) { alert("No data to export."); return; }
-                 
-                 if(type === 'csv') {
-                     const csvContent = convertToCSV(surveys);
-                     if(csvContent) {
-                         const url = window.URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-                         const a = document.createElement('a'); a.href = url; a.download = `vellora_data.csv`; a.click();
-                     }
-                 } else if (type === 'json') {
-                     const url = window.URL.createObjectURL(new Blob([JSON.stringify(surveys,null,2)], { type: 'application/json' }));
-                     const a = document.createElement('a'); a.href = url; a.download = `vellora_data.json`; a.click();
-                 } else if (type === 'pdf') {
-                     generatePDF(surveys);
-                 }
-                 setShowExport(false);
-             };
-
-             return (
-                 <div className="pb-24 pt-4 px-4 space-y-6 animate-fade-in">
-                     <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Theme</label><div className="grid grid-cols-2 gap-2">{Object.entries(THEMES).map(([key, t]) => <button key={key} onClick={() => setThemeKey(key)} className={`p-3 text-xs font-bold rounded-lg border flex items-center gap-2 ${themeKey === key ? 'ring-2 ring-blue-500' : ''} ${t.bg} ${t.text} ${t.border}`}><div className={`w-4 h-4 rounded-full ${t.accent}`}></div>{t.name}</button>)}</div></div>
-                     <div className="space-y-2"><label className="text-xs uppercase font-bold opacity-70">Data</label><button onClick={() => setShowExport(true)} className={`w-full py-3 rounded-lg border ${currentTheme.border} font-bold flex items-center justify-center gap-2 ${currentTheme.card}`}><Icons.Download /> Export Data</button></div>
-                     <ExportMenu isOpen={showExport} onClose={()=>setShowExport(false)} onExport={handleExport} />
-                 </div>
-             );
-        };
-
-        const App = () => {
-            const { currentTheme } = React.useContext(ThemeContext);
-            const [view, setView] = React.useState('list');
-            const [isWizardOpen, setWizardOpen] = React.useState(false);
-            const [selectedSurvey, setSelectedSurvey] = React.useState(null);
-
-            const NavBtn = ({ v, icon: Icon, label }) => (<button onClick={() => setView(v)} className={`flex flex-col items-center justify-center space-y-1 w-full h-full ${view === v ? currentTheme.accentText === 'text-white' ? 'text-blue-600' : 'opacity-100 font-bold' : 'opacity-50'}`}><Icon /><span className="text-[10px] font-bold">{label}</span></button>);
-
-            return (
-                <div className={`min-h-screen transition-colors duration-300 ${currentTheme.bg} ${currentTheme.text}`}>
-                    <div className={`h-16 flex items-center justify-center border-b ${currentTheme.border} ${currentTheme.card} sticky top-0 z-30 shadow-sm`}><h1 className="font-bold text-lg tracking-wide">VELLORA</h1></div>
-                    <div className="max-w-2xl mx-auto min-h-[80vh]">
-                        {view === 'list' && <SurveyList onOpenDetail={setSelectedSurvey} />}
-                        {view === 'analytics' && <Analytics />}
-                        {view === 'settings' && <Settings />}
-                    </div>
-                    {/* FULL WIDTH START BUTTON */}
-                    {!isWizardOpen && view === 'list' && (
-                        <div className="fixed bottom-[80px] left-4 right-4 z-40 max-w-2xl mx-auto">
-                            <button onClick={() => setWizardOpen(true)} className={`w-full py-4 rounded-xl shadow-xl flex items-center justify-center gap-2 font-bold text-lg ${currentTheme.accent} ${currentTheme.accentText} active:scale-95 transition-transform`}>
-                                <Icons.Plus /> START NEW SURVEY
-                            </button>
-                        </div>
-                    )}
-                    {!isWizardOpen && (
-                        <div className={`fixed bottom-0 left-0 right-0 h-16 ${currentTheme.card} border-t ${currentTheme.border} flex justify-around items-center z-50 max-w-2xl mx-auto`}>
-                            <NavBtn v="list" icon={Icons.Home} label="Surveys" />
-                            <NavBtn v="analytics" icon={Icons.BarChart} label="Analytics" />
-                            <NavBtn v="settings" icon={Icons.Settings} label="Settings" />
-                        </div>
-                    )}
-                    {isWizardOpen && <SurveyWizard onClose={() => setWizardOpen(false)} />}
-                    {selectedSurvey && <DetailModal survey={selectedSurvey} onClose={() => setSelectedSurvey(null)} />}
-                </div>
-            );
-        };
-
-        const Root = () => <ErrorBoundary><AppProvider><App /></AppProvider></ErrorBoundary>;
-        ReactDOM.render(<Root />, document.getElementById('root'));
-    </script>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-title">
+      <span>📋</span>
+      <span>SurveyMaker</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-icon btn-secondary" onclick="showExportModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Analytics Page -->
+    <div id="page-analytics" class="page active">
+      <h2 class="mb-4">Analytics</h2>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-surveys">0</div>
+          <div class="stat-label">Surveys</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-responses">0</div>
+          <div class="stat-label">Responses</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-rate">0%</div>
+          <div class="stat-label">Completion</div>
+        </div>
+      </div>
+
+      <div id="analytics-content">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <div class="empty-state-title">No Data Yet</div>
+          <p>Create surveys and collect responses to see analytics</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surveys Page -->
+    <div id="page-surveys" class="page">
+      <div class="flex justify-between items-center mb-4">
+        <h2>My Surveys</h2>
+        <button class="btn btn-primary" onclick="showCreateSurveyModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Survey
+        </button>
+      </div>
+
+      <div id="surveys-list" class="survey-list">
+        <!-- Surveys will be rendered here -->
+      </div>
+
+      <div id="surveys-empty" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <div class="empty-state-title">No Surveys Yet</div>
+        <p>Tap the button above to create your first survey</p>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div id="page-settings" class="page">
+      <h2 class="mb-4">Settings</h2>
+
+      <div class="settings-list">
+        <div class="settings-item" onclick="showThemeModal()">
+          <div class="settings-item-content">
+            <div class="settings-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            </div>
+            <div class="settings-item-text">
+              <h4>Theme</h4>
+              <p id="current-theme-name">Midnight Black</p>
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+
+        <div class="settings-item" onclick="showRecycleBinModal()">
+          <div class="settings-item-content">
+            <div class="settings-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </div>
+            <div class="settings-item-text">
+              <h4>Recycle Bin</h4>
+              <p>Restore deleted items (PIN protected)</p>
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+
+        <div class="settings-item" onclick="showExportModal()">
+          <div class="settings-item-content">
+            <div class="settings-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div class="settings-item-text">
+              <h4>Export Data</h4>
+              <p>PDF, CSV, JSON, or Text</p>
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+
+        <div class="settings-item" onclick="showPinModal()">
+          <div class="settings-item-content">
+            <div class="settings-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div class="settings-item-text">
+              <h4>Security PIN</h4>
+              <p>Set or change your PIN</p>
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+
+        <div class="settings-item" onclick="showAboutModal()">
+          <div class="settings-item-content">
+            <div class="settings-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </div>
+            <div class="settings-item-text">
+              <h4>About</h4>
+              <p>Version 1.0.0</p>
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Survey Fill Page (Hidden by default) -->
+    <div id="page-fill-survey" class="page">
+      <div id="fill-survey-content"></div>
+    </div>
+  </main>
+
+  <!-- FAB for New Survey (on Surveys page) -->
+  <button id="fab-new-survey" class="fab hidden" onclick="showCreateSurveyModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="analytics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Analytics</span>
+    </button>
+    <button class="nav-item" data-page="surveys">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+      <span>Surveys</span>
+    </button>
+    <button class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Modal: Create Survey -->
+  <div id="modal-create-survey" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Survey</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-create-survey')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Survey Title</label>
+          <input type="text" id="survey-title" class="form-input" placeholder="Enter survey title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="survey-description" class="form-textarea" placeholder="Enter description (optional)"></textarea>
+        </div>
+        
+        <div class="flex justify-between items-center mb-2">
+          <label class="form-label mb-0">Questions</label>
+          <button class="btn btn-secondary text-sm" onclick="showAddQuestionModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Question
+          </button>
+        </div>
+        
+        <div id="questions-container">
+          <!-- Questions will be added here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary flex-1" onclick="closeModal('modal-create-survey')">Cancel</button>
+        <button class="btn btn-primary flex-1" onclick="saveSurvey()">Save Survey</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Question -->
+  <div id="modal-add-question" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Question</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-add-question')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Select Question Type</label>
+        <div class="question-types">
+          <button class="question-type-btn" onclick="selectQuestionType('text')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="9" x2="20" y2="9"/>
+              <line x1="4" y1="15" x2="20" y2="15"/>
+              <line x1="10" y1="3" x2="8" y2="21"/>
+              <line x1="16" y1="3" x2="14" y2="21"/>
+            </svg>
+            <span>Text</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('number')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 17h6"/>
+              <path d="M14 17h6"/>
+              <path d="M4 12h16"/>
+              <path d="M4 7h6"/>
+              <path d="M14 7h6"/>
+            </svg>
+            <span>Number</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('radio')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="4" fill="currentColor"/>
+            </svg>
+            <span>Single Choice</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('checkbox')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <polyline points="9 11 12 14 22 4"/>
+            </svg>
+            <span>Multiple Choice</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('dropdown')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+            <span>Dropdown</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('rating')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <span>Rating</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('date')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Date</span>
+          </button>
+          <button class="question-type-btn" onclick="selectQuestionType('textarea')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+              <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
+            </svg>
+            <span>Long Text</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Configure Question -->
+  <div id="modal-config-question" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Configure Question</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-config-question')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Question Text</label>
+          <input type="text" id="question-text" class="form-input" placeholder="Enter your question">
+        </div>
+        
+        <div id="options-container" class="hidden">
+          <div class="flex justify-between items-center mb-2">
+            <label class="form-label mb-0">Options</label>
+            <button class="btn btn-secondary text-sm" onclick="addOption()">+ Add Option</button>
+          </div>
+          <div id="options-list"></div>
+        </div>
+
+        <div class="form-group mt-4">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="question-required">
+            <span>Required question</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary flex-1" onclick="closeModal('modal-config-question')">Cancel</button>
+        <button class="btn btn-primary flex-1" onclick="addQuestionToSurvey()">Add Question</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Theme -->
+  <div id="modal-theme" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Choose Theme</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-theme')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Light Themes</label>
+        <div class="theme-grid mb-4">
+          <div class="theme-item" data-theme="snow-white" data-name="Snow White" style="background: linear-gradient(135deg, #ffffff, #f5f5f5)" onclick="setTheme('snow-white')"></div>
+          <div class="theme-item" data-theme="pearl-grey" data-name="Pearl Grey" style="background: linear-gradient(135deg, #f8f8f8, #e5e5e5)" onclick="setTheme('pearl-grey')"></div>
+          <div class="theme-item" data-theme="sky-blue" data-name="Sky Blue" style="background: linear-gradient(135deg, #e0f2fe, #bae6fd)" onclick="setTheme('sky-blue')"></div>
+          <div class="theme-item" data-theme="mint-light" data-name="Mint Light" style="background: linear-gradient(135deg, #ecfdf5, #a7f3d0)" onclick="setTheme('mint-light')"></div>
+          <div class="theme-item" data-theme="sand-beige" data-name="Sand Beige" style="background: linear-gradient(135deg, #fef3c7, #fde68a)" onclick="setTheme('sand-beige')"></div>
+        </div>
+        
+        <label class="form-label">Dark Themes</label>
+        <div class="theme-grid">
+          <div class="theme-item active" data-theme="midnight-black" data-name="Midnight" style="background: linear-gradient(135deg, #0a0a0a, #171717)" onclick="setTheme('midnight-black')"></div>
+          <div class="theme-item" data-theme="space-grey" data-name="Space Grey" style="background: linear-gradient(135deg, #1f2937, #374151)" onclick="setTheme('space-grey')"></div>
+          <div class="theme-item" data-theme="deep-purple" data-name="Purple" style="background: linear-gradient(135deg, #1e1b4b, #312e81)" onclick="setTheme('deep-purple')"></div>
+          <div class="theme-item" data-theme="emerald-dark" data-name="Emerald" style="background: linear-gradient(135deg, #022c22, #064e3b)" onclick="setTheme('emerald-dark')"></div>
+          <div class="theme-item" data-theme="copper-night" data-name="Copper" style="background: linear-gradient(135deg, #1c1917, #44403c)" onclick="setTheme('copper-night')"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Export -->
+  <div id="modal-export" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Export Data</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-export')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-list">
+          <div class="settings-item" onclick="exportData('pdf')">
+            <div class="settings-item-content">
+              <div class="settings-item-icon" style="background: #ef4444;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                </svg>
+              </div>
+              <div class="settings-item-text">
+                <h4>Export as PDF</h4>
+                <p>Beautiful formatted document</p>
+              </div>
+            </div>
+          </div>
+          <div class="settings-item" onclick="exportData('csv')">
+            <div class="settings-item-content">
+              <div class="settings-item-icon" style="background: #22c55e;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                </svg>
+              </div>
+              <div class="settings-item-text">
+                <h4>Export as CSV</h4>
+                <p>Spreadsheet compatible</p>
+              </div>
+            </div>
+          </div>
+          <div class="settings-item" onclick="exportData('json')">
+            <div class="settings-item-content">
+              <div class="settings-item-icon" style="background: #3b82f6;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                </svg>
+              </div>
+              <div class="settings-item-text">
+                <h4>Export as JSON</h4>
+                <p>Raw data format</p>
+              </div>
+            </div>
+          </div>
+          <div class="settings-item" onclick="exportData('txt')">
+            <div class="settings-item-content">
+              <div class="settings-item-icon" style="background: #a855f7;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                </svg>
+              </div>
+              <div class="settings-item-text">
+                <h4>Export as Text</h4>
+                <p>Plain text format</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: PIN -->
+  <div id="modal-pin" class="modal-overlay">
+    <div class="modal center">
+      <div class="modal-header">
+        <h3 class="modal-title" id="pin-modal-title">Set PIN</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-pin')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Enter 4-digit PIN</label>
+          <input type="password" id="pin-input" class="form-input" maxlength="4" placeholder="••••" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary flex-1" onclick="closeModal('modal-pin')">Cancel</button>
+        <button class="btn btn-primary flex-1" onclick="submitPin()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Recycle Bin -->
+  <div id="modal-recycle-bin" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Recycle Bin</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-recycle-bin')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="recycle-bin-content">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            <div class="empty-state-title">Recycle Bin Empty</div>
+            <p>Deleted items will appear here</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-block" onclick="emptyRecycleBin()">Empty Recycle Bin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: About -->
+  <div id="modal-about" class="modal-overlay">
+    <div class="modal center">
+      <div class="modal-header">
+        <h3 class="modal-title">About SurveyMaker</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-about')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body text-center">
+        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+        <h2 style="margin-bottom: 8px;">SurveyMaker</h2>
+        <p class="text-muted mb-4">Version 1.0.0</p>
+        <p class="text-sm text-muted">Build powerful survey apps with analytics. Works offline as a PWA.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: View Survey -->
+  <div id="modal-view-survey" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="view-survey-title">Survey</h3>
+        <button class="btn btn-icon btn-secondary" onclick="closeModal('modal-view-survey')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="view-survey-content">
+        <!-- Survey form will be rendered here -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary flex-1" onclick="closeModal('modal-view-survey')">Cancel</button>
+        <button class="btn btn-primary flex-1" onclick="submitSurveyResponse()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">Message</div>
+
+  <script>
+    // ==================== STATE ====================
+    let surveys = [];
+    let responses = [];
+    let trash = [];
+    let settings = {
+      theme: 'midnight-black',
+      pinHash: null
+    };
+    let currentSurveyQuestions = [];
+    let currentQuestionType = null;
+    let currentViewSurveyId = null;
+    let pinCallback = null;
+
+    // ==================== DATABASE ====================
+    const DB_NAME = 'SurveyMakerDB';
+    const DB_VERSION = 1;
+    let db = null;
+
+    async function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          db = request.result;
+          resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+          const database = event.target.result;
+          
+          if (!database.objectStoreNames.contains('surveys')) {
+            database.createObjectStore('surveys', { keyPath: 'id' });
+          }
+          if (!database.objectStoreNames.contains('responses')) {
+            const store = database.createObjectStore('responses', { keyPath: 'id' });
+            store.createIndex('surveyId', 'surveyId', { unique: false });
+          }
+          if (!database.objectStoreNames.contains('trash')) {
+            database.createObjectStore('trash', { keyPath: 'id' });
+          }
+          if (!database.objectStoreNames.contains('settings')) {
+            database.createObjectStore('settings', { keyPath: 'key' });
+          }
+        };
+      });
+    }
+
+    async function dbGet(store, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readonly');
+        const request = tx.objectStore(store).get(key);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function dbGetAll(store) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readonly');
+        const request = tx.objectStore(store).getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function dbPut(store, value) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readwrite');
+        const request = tx.objectStore(store).put(value);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function dbDelete(store, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readwrite');
+        const request = tx.objectStore(store).delete(key);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    // ==================== UTILITIES ====================
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    async function hashPin(pin) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pin);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ==================== NAVIGATION ====================
+    function navigateTo(pageName) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      
+      document.getElementById(`page-${pageName}`).classList.add('active');
+      document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+      
+      // Show/hide FAB
+      const fab = document.getElementById('fab-new-survey');
+      if (pageName === 'surveys') {
+        fab.classList.remove('hidden');
+      } else {
+        fab.classList.add('hidden');
+      }
+
+      // Update content based on page
+      if (pageName === 'surveys') {
+        renderSurveysList();
+      } else if (pageName === 'analytics') {
+        renderAnalytics();
+      }
+    }
+
+    // ==================== MODALS ====================
+    function showModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function showCreateSurveyModal() {
+      currentSurveyQuestions = [];
+      document.getElementById('survey-title').value = '';
+      document.getElementById('survey-description').value = '';
+      renderQuestionsContainer();
+      showModal('modal-create-survey');
+    }
+
+    function showAddQuestionModal() {
+      showModal('modal-add-question');
+    }
+
+    function showThemeModal() {
+      // Mark current theme as active
+      document.querySelectorAll('.theme-item').forEach(t => t.classList.remove('active'));
+      const current = document.querySelector(`[data-theme="${settings.theme}"]`);
+      if (current) current.classList.add('active');
+      showModal('modal-theme');
+    }
+
+    function showExportModal() {
+      showModal('modal-export');
+    }
+
+    function showPinModal(title = 'Set PIN', callback = null) {
+      document.getElementById('pin-modal-title').textContent = title;
+      document.getElementById('pin-input').value = '';
+      pinCallback = callback;
+      showModal('modal-pin');
+    }
+
+    function showRecycleBinModal() {
+      if (settings.pinHash) {
+        showPinModal('Enter PIN to Access', async (pin) => {
+          const hash = await hashPin(pin);
+          if (hash === settings.pinHash) {
+            renderRecycleBin();
+            showModal('modal-recycle-bin');
+          } else {
+            showToast('Incorrect PIN');
+          }
+        });
+      } else {
+        renderRecycleBin();
+        showModal('modal-recycle-bin');
+      }
+    }
+
+    function showAboutModal() {
+      showModal('modal-about');
+    }
+
+    // ==================== QUESTIONS ====================
+    function selectQuestionType(type) {
+      currentQuestionType = type;
+      closeModal('modal-add-question');
+      
+      document.getElementById('question-text').value = '';
+      document.getElementById('question-required').checked = false;
+      
+      const optionsContainer = document.getElementById('options-container');
+      const optionsList = document.getElementById('options-list');
+      optionsList.innerHTML = '';
+      
+      if (['radio', 'checkbox', 'dropdown'].includes(type)) {
+        optionsContainer.classList.remove('hidden');
+        addOption();
+        addOption();
+      } else {
+        optionsContainer.classList.add('hidden');
+      }
+      
+      showModal('modal-config-question');
+    }
+
+    function addOption() {
+      const optionsList = document.getElementById('options-list');
+      const index = optionsList.children.length;
+      const optionDiv = document.createElement('div');
+      optionDiv.className = 'option-item';
+      optionDiv.innerHTML = `
+        <input type="text" class="form-input option-input" placeholder="Option ${index + 1}">
+        <button class="btn btn-icon btn-secondary" onclick="this.parentElement.remove()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      `;
+      optionsList.appendChild(optionDiv);
+    }
+
+    function addQuestionToSurvey() {
+      const questionText = document.getElementById('question-text').value.trim();
+      const required = document.getElementById('question-required').checked;
+      
+      if (!questionText) {
+        showToast('Please enter question text');
+        return;
+      }
+      
+      const question = {
+        id: generateId(),
+        type: currentQuestionType,
+        label: questionText,
+        required: required
+      };
+      
+      if (['radio', 'checkbox', 'dropdown'].includes(currentQuestionType)) {
+        const options = Array.from(document.querySelectorAll('.option-input'))
+          .map(i => i.value.trim())
+          .filter(v => v);
+        if (options.length < 2) {
+          showToast('Please add at least 2 options');
+          return;
+        }
+        question.options = options;
+      }
+      
+      currentSurveyQuestions.push(question);
+      renderQuestionsContainer();
+      closeModal('modal-config-question');
+    }
+
+    function removeQuestion(id) {
+      currentSurveyQuestions = currentSurveyQuestions.filter(q => q.id !== id);
+      renderQuestionsContainer();
+    }
+
+    function renderQuestionsContainer() {
+      const container = document.getElementById('questions-container');
+      
+      if (currentSurveyQuestions.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No questions added yet</p>';
+        return;
+      }
+      
+      container.innerHTML = currentSurveyQuestions.map((q, idx) => `
+        <div class="question-item">
+          <div class="question-item-header">
+            <span>${idx + 1}. ${q.label}</span>
+            <div class="flex gap-2">
+              <span class="question-type-badge">${q.type}</span>
+              <button class="btn btn-icon btn-secondary" onclick="removeQuestion('${q.id}')" style="width:28px;height:28px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          ${q.options ? `<div class="text-sm text-muted">Options: ${q.options.join(', ')}</div>` : ''}
+          ${q.required ? '<div class="text-sm" style="color: var(--danger);">Required</div>' : ''}
+        </div>
+      `).join('');
+    }
+
+    // ==================== SURVEYS ====================
+    async function saveSurvey() {
+      const title = document.getElementById('survey-title').value.trim();
+      const description = document.getElementById('survey-description').value.trim();
+      
+      if (!title) {
+        showToast('Please enter a survey title');
+        return;
+      }
+      
+      if (currentSurveyQuestions.length === 0) {
+        showToast('Please add at least one question');
+        return;
+      }
+      
+      const survey = {
+        id: generateId(),
+        title,
+        description,
+        questions: currentSurveyQuestions,
+        createdAt: new Date().toISOString()
+      };
+      
+      await dbPut('surveys', survey);
+      surveys.push(survey);
+      
+      closeModal('modal-create-survey');
+      showToast('Survey created successfully!');
+      renderSurveysList();
+      updateStats();
+    }
+
+    async function deleteSurvey(id) {
+      const survey = surveys.find(s => s.id === id);
+      if (!survey) return;
+      
+      // Move to trash
+      await dbPut('trash', { ...survey, deletedAt: new Date().toISOString() });
+      await dbDelete('surveys', id);
+      
+      trash.push({ ...survey, deletedAt: new Date().toISOString() });
+      surveys = surveys.filter(s => s.id !== id);
+      
+      showToast('Survey moved to recycle bin');
+      renderSurveysList();
+      updateStats();
+    }
+
+    function openSurvey(id) {
+      const survey = surveys.find(s => s.id === id);
+      if (!survey) return;
+      
+      currentViewSurveyId = id;
+      document.getElementById('view-survey-title').textContent = survey.title;
+      
+      const content = document.getElementById('view-survey-content');
+      content.innerHTML = survey.questions.map((q, idx) => {
+        let inputHtml = '';
+        
+        switch (q.type) {
+          case 'text':
+            inputHtml = `<input type="text" class="form-input" data-question-id="${q.id}">`;
+            break;
+          case 'textarea':
+            inputHtml = `<textarea class="form-textarea" data-question-id="${q.id}"></textarea>`;
+            break;
+          case 'number':
+            inputHtml = `<input type="number" class="form-input" data-question-id="${q.id}">`;
+            break;
+          case 'date':
+            inputHtml = `<input type="date" class="form-input" data-question-id="${q.id}">`;
+            break;
+          case 'rating':
+            inputHtml = `
+              <div class="flex gap-2" data-question-id="${q.id}">
+                ${[1,2,3,4,5].map(n => `
+                  <button type="button" class="btn btn-secondary rating-btn" data-value="${n}" onclick="selectRating(this)">${n}★</button>
+                `).join('')}
+              </div>
+            `;
+            break;
+          case 'radio':
+            inputHtml = q.options.map(opt => `
+              <label class="flex items-center gap-2 mb-2">
+                <input type="radio" name="q_${q.id}" value="${opt}" data-question-id="${q.id}">
+                <span>${opt}</span>
+              </label>
+            `).join('');
+            break;
+          case 'checkbox':
+            inputHtml = q.options.map(opt => `
+              <label class="flex items-center gap-2 mb-2">
+                <input type="checkbox" value="${opt}" data-question-id="${q.id}">
+                <span>${opt}</span>
+              </label>
+            `).join('');
+            break;
+          case 'dropdown':
+            inputHtml = `
+              <select class="form-select" data-question-id="${q.id}">
+                <option value="">Select an option</option>
+                ${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+              </select>
+            `;
+            break;
+        }
+        
+        return `
+          <div class="form-group">
+            <label class="form-label">${idx + 1}. ${q.label} ${q.required ? '<span style="color:var(--danger)">*</span>' : ''}</label>
+            ${inputHtml}
+          </div>
+        `;
+      }).join('');
+      
+      showModal('modal-view-survey');
+    }
+
+    function selectRating(btn) {
+      const container = btn.parentElement;
+      container.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('btn-primary'));
+      container.querySelectorAll('.rating-btn').forEach(b => b.classList.add('btn-secondary'));
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-primary');
+      container.dataset.value = btn.dataset.value;
+    }
+
+    async function submitSurveyResponse() {
+      const survey = surveys.find(s => s.id === currentViewSurveyId);
+      if (!survey) return;
+      
+      const answers = {};
+      let valid = true;
+      
+      survey.questions.forEach(q => {
+        let value = null;
+        
+        if (q.type === 'checkbox') {
+          const checked = document.querySelectorAll(`[data-question-id="${q.id}"]:checked`);
+          value = Array.from(checked).map(c => c.value);
+        } else if (q.type === 'radio') {
+          const checked = document.querySelector(`[name="q_${q.id}"]:checked`);
+          value = checked ? checked.value : null;
+        } else if (q.type === 'rating') {
+          const container = document.querySelector(`[data-question-id="${q.id}"]`);
+          value = container.dataset.value || null;
+        } else {
+          const input = document.querySelector(`[data-question-id="${q.id}"]`);
+          value = input ? input.value : null;
+        }
+        
+        if (q.required && (!value || (Array.isArray(value) && value.length === 0))) {
+          valid = false;
+        }
+        
+        answers[q.id] = value;
+      });
+      
+      if (!valid) {
+        showToast('Please answer all required questions');
+        return;
+      }
+      
+      const response = {
+        id: generateId(),
+        surveyId: currentViewSurveyId,
+        answers,
+        createdAt: new Date().toISOString()
+      };
+      
+      await dbPut('responses', response);
+      responses.push(response);
+      
+      closeModal('modal-view-survey');
+      showToast('Response submitted successfully!');
+      updateStats();
+      renderAnalytics();
+    }
+
+    function renderSurveysList() {
+      const list = document.getElementById('surveys-list');
+      const empty = document.getElementById('surveys-empty');
+      
+      if (surveys.length === 0) {
+        list.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+      
+      empty.classList.add('hidden');
+      list.classList.remove('hidden');
+      
+      list.innerHTML = surveys.map(s => {
+        const responseCount = responses.filter(r => r.surveyId === s.id).length;
+        const date = new Date(s.createdAt).toLocaleDateString();
+        
+        return `
+          <div class="survey-item" onclick="openSurvey('${s.id}')">
+            <div class="survey-item-header">
+              <div class="survey-item-title">${s.title}</div>
+              <button class="btn btn-icon btn-secondary" onclick="event.stopPropagation(); deleteSurvey('${s.id}')" style="width:32px;height:32px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+            <div class="survey-item-meta">
+              <span class="survey-item-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                ${date}
+              </span>
+              <span class="survey-item-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+                ${responseCount} responses
+              </span>
+              <span class="survey-item-badge">${s.questions.length} questions</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==================== ANALYTICS ====================
+    function renderAnalytics() {
+      const container = document.getElementById('analytics-content');
+      
+      if (surveys.length === 0 || responses.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <div class="empty-state-title">No Data Yet</div>
+            <p>Create surveys and collect responses to see analytics</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Build analytics for each survey
+      container.innerHTML = surveys.map(survey => {
+        const surveyResponses = responses.filter(r => r.surveyId === survey.id);
+        if (surveyResponses.length === 0) return '';
+        
+        return `
+          <div class="card mb-4">
+            <h3 class="card-title mb-4">${survey.title}</h3>
+            <p class="text-sm text-muted mb-4">${surveyResponses.length} responses</p>
+            ${survey.questions.map(q => {
+              const questionResponses = surveyResponses.map(r => r.answers[q.id]).filter(a => a);
+              
+              if (['radio', 'dropdown', 'rating'].includes(q.type)) {
+                const counts = {};
+                const options = q.options || ['1', '2', '3', '4', '5'];
+                options.forEach(o => counts[o] = 0);
+                questionResponses.forEach(a => {
+                  if (counts[a] !== undefined) counts[a]++;
+                });
+                const maxCount = Math.max(...Object.values(counts), 1);
+                
+                return `
+                  <div class="chart-container">
+                    <div class="chart-header">
+                      <span class="chart-title">${q.label}</span>
+                    </div>
+                    <div class="chart-canvas">
+                      ${Object.entries(counts).map(([opt, count]) => `
+                        <div class="chart-bar" style="height: ${(count / maxCount) * 100}%">
+                          <span class="chart-bar-label">${opt} (${count})</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+              } else if (q.type === 'checkbox') {
+                const counts = {};
+                (q.options || []).forEach(o => counts[o] = 0);
+                questionResponses.forEach(a => {
+                  if (Array.isArray(a)) {
+                    a.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+                  }
+                });
+                const maxCount = Math.max(...Object.values(counts), 1);
+                
+                return `
+                  <div class="chart-container">
+                    <div class="chart-header">
+                      <span class="chart-title">${q.label}</span>
+                    </div>
+                    <div class="chart-canvas">
+                      ${Object.entries(counts).map(([opt, count]) => `
+                        <div class="chart-bar" style="height: ${(count / maxCount) * 100}%">
+                          <span class="chart-bar-label">${opt} (${count})</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="card mb-2" style="background: var(--bg-tertiary);">
+                    <div class="text-sm text-muted">${q.label}</div>
+                    <div class="mt-2">${questionResponses.length} text responses</div>
+                  </div>
+                `;
+              }
+            }).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateStats() {
+      document.getElementById('stat-surveys').textContent = surveys.length;
+      document.getElementById('stat-responses').textContent = responses.length;
+      
+      if (surveys.length > 0 && responses.length > 0) {
+        const rate = Math.round((responses.length / surveys.length) * 10);
+        document.getElementById('stat-rate').textContent = Math.min(rate, 100) + '%';
+      }
+    }
+
+    // ==================== THEMES ====================
+    const themes = {
+      'midnight-black': {
+        bgPrimary: '#0a0a0a', bgSecondary: '#141414', bgTertiary: '#1f1f1f', bgCard: '#171717',
+        textPrimary: '#fafafa', textSecondary: '#a1a1aa', textMuted: '#71717a',
+        border: '#27272a', accent: '#3b82f6'
+      },
+      'space-grey': {
+        bgPrimary: '#111827', bgSecondary: '#1f2937', bgTertiary: '#374151', bgCard: '#1f2937',
+        textPrimary: '#f9fafb', textSecondary: '#d1d5db', textMuted: '#9ca3af',
+        border: '#374151', accent: '#6366f1'
+      },
+      'deep-purple': {
+        bgPrimary: '#0f0a1e', bgSecondary: '#1a1333', bgTertiary: '#2d2452', bgCard: '#1a1333',
+        textPrimary: '#f5f3ff', textSecondary: '#c4b5fd', textMuted: '#a78bfa',
+        border: '#3730a3', accent: '#8b5cf6'
+      },
+      'emerald-dark': {
+        bgPrimary: '#022c22', bgSecondary: '#064e3b', bgTertiary: '#065f46', bgCard: '#064e3b',
+        textPrimary: '#ecfdf5', textSecondary: '#a7f3d0', textMuted: '#6ee7b7',
+        border: '#047857', accent: '#10b981'
+      },
+      'copper-night': {
+        bgPrimary: '#1c1917', bgSecondary: '#292524', bgTertiary: '#44403c', bgCard: '#292524',
+        textPrimary: '#fafaf9', textSecondary: '#d6d3d1', textMuted: '#a8a29e',
+        border: '#57534e', accent: '#f97316'
+      },
+      'snow-white': {
+        bgPrimary: '#ffffff', bgSecondary: '#f5f5f5', bgTertiary: '#e5e5e5', bgCard: '#fafafa',
+        textPrimary: '#171717', textSecondary: '#525252', textMuted: '#737373',
+        border: '#d4d4d4', accent: '#2563eb'
+      },
+      'pearl-grey': {
+        bgPrimary: '#f8fafc', bgSecondary: '#f1f5f9', bgTertiary: '#e2e8f0', bgCard: '#ffffff',
+        textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#64748b',
+        border: '#cbd5e1', accent: '#0ea5e9'
+      },
+      'sky-blue': {
+        bgPrimary: '#f0f9ff', bgSecondary: '#e0f2fe', bgTertiary: '#bae6fd', bgCard: '#f0f9ff',
+        textPrimary: '#0c4a6e', textSecondary: '#0369a1', textMuted: '#0284c7',
+        border: '#7dd3fc', accent: '#0284c7'
+      },
+      'mint-light': {
+        bgPrimary: '#ecfdf5', bgSecondary: '#d1fae5', bgTertiary: '#a7f3d0', bgCard: '#ecfdf5',
+        textPrimary: '#064e3b', textSecondary: '#047857', textMuted: '#059669',
+        border: '#6ee7b7', accent: '#059669'
+      },
+      'sand-beige': {
+        bgPrimary: '#fffbeb', bgSecondary: '#fef3c7', bgTertiary: '#fde68a', bgCard: '#fffbeb',
+        textPrimary: '#78350f', textSecondary: '#92400e', textMuted: '#b45309',
+        border: '#fcd34d', accent: '#d97706'
+      }
+    };
+
+    async function setTheme(themeName) {
+      const theme = themes[themeName];
+      if (!theme) return;
+      
+      settings.theme = themeName;
+      await dbPut('settings', { key: 'theme', value: themeName });
+      
+      document.documentElement.style.setProperty('--bg-primary', theme.bgPrimary);
+      document.documentElement.style.setProperty('--bg-secondary', theme.bgSecondary);
+      document.documentElement.style.setProperty('--bg-tertiary', theme.bgTertiary);
+      document.documentElement.style.setProperty('--bg-card', theme.bgCard);
+      document.documentElement.style.setProperty('--text-primary', theme.textPrimary);
+      document.documentElement.style.setProperty('--text-secondary', theme.textSecondary);
+      document.documentElement.style.setProperty('--text-muted', theme.textMuted);
+      document.documentElement.style.setProperty('--border-color', theme.border);
+      document.documentElement.style.setProperty('--accent', theme.accent);
+      
+      // Update theme name display
+      const themeNames = {
+        'midnight-black': 'Midnight Black',
+        'space-grey': 'Space Grey',
+        'deep-purple': 'Deep Purple',
+        'emerald-dark': 'Emerald Dark',
+        'copper-night': 'Copper Night',
+        'snow-white': 'Snow White',
+        'pearl-grey': 'Pearl Grey',
+        'sky-blue': 'Sky Blue',
+        'mint-light': 'Mint Light',
+        'sand-beige': 'Sand Beige'
+      };
+      document.getElementById('current-theme-name').textContent = themeNames[themeName];
+      
+      // Update active theme indicator
+      document.querySelectorAll('.theme-item').forEach(t => t.classList.remove('active'));
+      const current = document.querySelector(`[data-theme="${themeName}"]`);
+      if (current) current.classList.add('active');
+      
+      closeModal('modal-theme');
+      showToast(`Theme changed to ${themeNames[themeName]}`);
+    }
+
+    // ==================== PIN ====================
+    async function submitPin() {
+      const pin = document.getElementById('pin-input').value;
+      if (pin.length !== 4) {
+        showToast('PIN must be 4 digits');
+        return;
+      }
+      
+      closeModal('modal-pin');
+      
+      if (pinCallback) {
+        pinCallback(pin);
+        pinCallback = null;
+      } else {
+        // Setting new PIN
+        settings.pinHash = await hashPin(pin);
+        await dbPut('settings', { key: 'pinHash', value: settings.pinHash });
+        showToast('PIN set successfully');
+      }
+    }
+
+    // ==================== RECYCLE BIN ====================
+    function renderRecycleBin() {
+      const content = document.getElementById('recycle-bin-content');
+      
+      if (trash.length === 0) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            <div class="empty-state-title">Recycle Bin Empty</div>
+            <p>Deleted items will appear here</p>
+          </div>
+        `;
+        return;
+      }
+      
+      content.innerHTML = trash.map(item => `
+        <div class="card">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="font-medium">${item.title}</div>
+              <div class="text-sm text-muted">Deleted ${new Date(item.deletedAt).toLocaleDateString()}</div>
+            </div>
+            <button class="btn btn-secondary text-sm" onclick="restoreFromTrash('${item.id}')">Restore</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function restoreFromTrash(id) {
+      const item = trash.find(t => t.id === id);
+      if (!item) return;
+      
+      delete item.deletedAt;
+      await dbPut('surveys', item);
+      await dbDelete('trash', id);
+      
+      surveys.push(item);
+      trash = trash.filter(t => t.id !== id);
+      
+      renderRecycleBin();
+      showToast('Survey restored');
+      updateStats();
+    }
+
+    async function emptyRecycleBin() {
+      if (trash.length === 0) {
+        showToast('Recycle bin is already empty');
+        return;
+      }
+      
+      if (settings.pinHash) {
+        closeModal('modal-recycle-bin');
+        showPinModal('Enter PIN to Empty Bin', async (pin) => {
+          const hash = await hashPin(pin);
+          if (hash === settings.pinHash) {
+            for (const item of trash) {
+              await dbDelete('trash', item.id);
+            }
+            trash = [];
+            showToast('Recycle bin emptied');
+          } else {
+            showToast('Incorrect PIN');
+          }
+        });
+      } else {
+        for (const item of trash) {
+          await dbDelete('trash', item.id);
+        }
+        trash = [];
+        renderRecycleBin();
+        showToast('Recycle bin emptied');
+      }
+    }
+
+    // ==================== EXPORT ====================
+    function exportData(format) {
+      if (surveys.length === 0) {
+        showToast('No data to export');
+        return;
+      }
+      
+      const data = {
+        surveys,
+        responses,
+        exportedAt: new Date().toISOString()
+      };
+      
+      let content, filename, type;
+      
+      switch (format) {
+        case 'json':
+          content = JSON.stringify(data, null, 2);
+          filename = 'surveymaker-export.json';
+          type = 'application/json';
+          break;
+        case 'csv':
+          // Simple CSV export
+          const rows = [['Survey', 'Question', 'Response', 'Date']];
+          responses.forEach(r => {
+            const survey = surveys.find(s => s.id === r.surveyId);
+            if (!survey) return;
+            survey.questions.forEach(q => {
+              const answer = r.answers[q.id];
+              rows.push([
+                survey.title,
+                q.label,
+                Array.isArray(answer) ? answer.join('; ') : (answer || ''),
+                new Date(r.createdAt).toLocaleDateString()
+              ]);
+            });
+          });
+          content = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+          filename = 'surveymaker-export.csv';
+          type = 'text/csv';
+          break;
+        case 'txt':
+          let text = 'SURVEYMAKER EXPORT\n==================\n\n';
+          surveys.forEach(s => {
+            text += `Survey: ${s.title}\n`;
+            text += `Description: ${s.description || 'N/A'}\n`;
+            text += `Questions: ${s.questions.length}\n`;
+            text += `Responses: ${responses.filter(r => r.surveyId === s.id).length}\n\n`;
+          });
+          content = text;
+          filename = 'surveymaker-export.txt';
+          type = 'text/plain';
+          break;
+        case 'pdf':
+          generatePDF();
+          closeModal('modal-export');
+          return;
+      }
+      
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      closeModal('modal-export');
+      showToast(`Exported as ${format.toUpperCase()}`);
+    }
+
+    function generatePDF() {
+      // Simple PDF generation using canvas
+      const printWindow = window.open('', '_blank');
+      let html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>SurveyMaker Export</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+            h1 { color: #3b82f6; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
+            h2 { color: #1f2937; margin-top: 30px; }
+            .survey { page-break-after: always; margin-bottom: 40px; }
+            .question { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            .question-label { font-weight: bold; color: #374151; }
+            .response { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+            .meta { color: #6b7280; font-size: 14px; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <h1>📋 SurveyMaker Export</h1>
+          <p class="meta">Generated: ${new Date().toLocaleString()}</p>
+      `;
+      
+      surveys.forEach(s => {
+        const surveyResponses = responses.filter(r => r.surveyId === s.id);
+        html += `
+          <div class="survey">
+            <h2>${s.title}</h2>
+            <p class="meta">${s.description || ''}</p>
+            <p class="meta">${s.questions.length} questions • ${surveyResponses.length} responses</p>
+            
+            ${s.questions.map((q, idx) => `
+              <div class="question">
+                <div class="question-label">${idx + 1}. ${q.label}</div>
+                <div class="meta">Type: ${q.type} ${q.required ? '• Required' : ''}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      });
+      
+      html += `
+          <button class="no-print" onclick="window.print()">Print / Save as PDF</button>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(html);
+      printWindow.document.close();
+      showToast('PDF preview opened in new tab');
+    }
+
+    // ==================== INITIALIZATION ====================
+    async function init() {
+      await initDB();
+      
+      // Load data
+      surveys = await dbGetAll('surveys') || [];
+      responses = await dbGetAll('responses') || [];
+      trash = await dbGetAll('trash') || [];
+      
+      // Load settings
+      const themeSetting = await dbGet('settings', 'theme');
+      if (themeSetting) {
+        settings.theme = themeSetting.value;
+        setTheme(settings.theme);
+      }
+      
+      const pinSetting = await dbGet('settings', 'pinHash');
+      if (pinSetting) {
+        settings.pinHash = pinSetting.value;
+      }
+      
+      // Setup navigation
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          navigateTo(item.dataset.page);
+        });
+      });
+      
+      // Close modals on overlay click
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            overlay.classList.remove('active');
+          }
+        });
+      });
+      
+      // Initial render
+      updateStats();
+      renderSurveysList();
+      renderAnalytics();
+      
+      // Register service worker for PWA
+      if ('serviceWorker' in navigator) {
+        const swCode = `
+          self.addEventListener('install', e => self.skipWaiting());
+          self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+          self.addEventListener('fetch', e => {
+            e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+          });
+        `;
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(() => {});
+      }
+    }
+
+    init();
+  </script>
 </body>
 </html>
