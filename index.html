@@ -22,11 +22,18 @@
                         'text-muted': 'var(--color-text-muted)',
                         border: 'var(--color-border)',
                         input: 'var(--color-input)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
                     }
                 }
             }
         }
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Base Theme Variables will be injected by ThemeContext */
         body {
@@ -103,16 +110,16 @@
         };
 
         const THEMES = {
-            'corporate': { name: 'Corporate Light', brand: '#3b82f6', accent: '#2563eb', bg: '#f3f4f6', surface: '#ffffff', surfaceHighlight: '#e5e7eb', text: '#111827', textMuted: '#6b7280', border: '#d1d5db', input: '#ffffff' },
-            'sunset': { name: 'Sunset', brand: '#f97316', accent: '#ea580c', bg: '#fff7ed', surface: '#ffffff', surfaceHighlight: '#ffedd5', text: '#431407', textMuted: '#9a3412', border: '#fed7aa', input: '#ffffff' },
-            'forest': { name: 'Forest Rain', brand: '#10b981', accent: '#059669', bg: '#ecfdf5', surface: '#ffffff', surfaceHighlight: '#d1fae5', text: '#064e3b', textMuted: '#047857', border: '#a7f3d0', input: '#ffffff' },
-            'berry': { name: 'Berry', brand: '#ec4899', accent: '#db2777', bg: '#fdf2f8', surface: '#ffffff', surfaceHighlight: '#fce7f3', text: '#831843', textMuted: '#9d174d', border: '#fbcfe8', input: '#ffffff' },
-            'slate': { name: 'Slate', brand: '#64748b', accent: '#475569', bg: '#f1f5f9', surface: '#ffffff', surfaceHighlight: '#cbd5e1', text: '#334155', textMuted: '#64748b', border: '#cbd5e1', input: '#ffffff' },
-            'midnight': { name: 'Midnight Dark', brand: '#60a5fa', accent: '#3b82f6', bg: '#0f172a', surface: '#1e293b', surfaceHighlight: '#334155', text: '#f8fafc', textMuted: '#94a3b8', border: '#334155', input: '#1e293b' },
-            'obsidian': { name: 'Obsidian', brand: '#ffffff', accent: '#383838', bg: '#000000', surface: '#121212', surfaceHighlight: '#272727', text: '#ffffff', textMuted: '#a3a3a3', border: '#333333', input: '#121212' },
-            'oceanic': { name: 'Oceanic', brand: '#06b6d4', accent: '#0891b2', bg: '#ecfeff', surface: '#ffffff', surfaceHighlight: '#cffafe', text: '#164e63', textMuted: '#155e75', border: '#a5f3fc', input: '#ffffff' },
-            'royal': { name: 'Royal', brand: '#8b5cf6', accent: '#7c3aed', bg: '#faf5ff', surface: '#ffffff', surfaceHighlight: '#f3e8ff', text: '#2e1065', textMuted: '#5b21b6', border: '#e9d5ff', input: '#ffffff' },
-            'luxury': { name: 'Luxury', brand: '#d4af37', accent: '#b4941f', bg: '#1c1917', surface: '#292524', surfaceHighlight: '#44403c', text: '#fafaf9', textMuted: '#a8a29e', border: '#57534e', input: '#292524' },
+            'corporate': { name: 'Corporate Light', brand: '#2563eb', accent: '#1d4ed8', bg: '#f8fafc', surface: '#ffffff', surfaceHighlight: '#e2e8f0', text: '#0f172a', textMuted: '#475569', border: '#cbd5e1', input: '#ffffff' },
+            'sunset': { name: 'Sunset', brand: '#ea580c', accent: '#c2410c', bg: '#fff7ed', surface: '#ffffff', surfaceHighlight: '#ffedd5', text: '#431407', textMuted: '#9a3412', border: '#fed7aa', input: '#ffffff' },
+            'forest': { name: 'Forest Rain', brand: '#059669', accent: '#047857', bg: '#f0fdf4', surface: '#ffffff', surfaceHighlight: '#dcfce7', text: '#064e3b', textMuted: '#065f46', border: '#86efac', input: '#ffffff' },
+            'berry': { name: 'Berry', brand: '#db2777', accent: '#be185d', bg: '#fdf2f8', surface: '#ffffff', surfaceHighlight: '#fce7f3', text: '#831843', textMuted: '#9d174d', border: '#fbcfe8', input: '#ffffff' },
+            'slate': { name: 'Slate', brand: '#475569', accent: '#334155', bg: '#f1f5f9', surface: '#ffffff', surfaceHighlight: '#cbd5e1', text: '#1e293b', textMuted: '#475569', border: '#cbd5e1', input: '#ffffff' },
+            'midnight': { name: 'Midnight Dark', brand: '#60a5fa', accent: '#3b82f6', bg: '#020617', surface: '#0f172a', surfaceHighlight: '#1e293b', text: '#f8fafc', textMuted: '#94a3b8', border: '#1e293b', input: '#0f172a' },
+            'obsidian': { name: 'Obsidian', brand: '#ffffff', accent: '#eeeeee', bg: '#000000', surface: '#111111', surfaceHighlight: '#222222', text: '#ffffff', textMuted: '#a3a3a3', border: '#333333', input: '#111111' },
+            'oceanic': { name: 'Oceanic', brand: '#0891b2', accent: '#0e7490', bg: '#ecfeff', surface: '#ffffff', surfaceHighlight: '#cffafe', text: '#164e63', textMuted: '#155e75', border: '#a5f3fc', input: '#ffffff' },
+            'royal': { name: 'Royal', brand: '#7c3aed', accent: '#6d28d9', bg: '#faf5ff', surface: '#ffffff', surfaceHighlight: '#f3e8ff', text: '#2e1065', textMuted: '#5b21b6', border: '#e9d5ff', input: '#ffffff' },
+            'luxury': { name: 'Luxury', brand: '#d4af37', accent: '#b4941f', bg: '#0c0a09', surface: '#1c1917', surfaceHighlight: '#292524', text: '#fafaf9', textMuted: '#a8a29e', border: '#44403c', input: '#1c1917' },
         };
 
         const INITIAL_MASTER_DATA = {
@@ -125,7 +132,7 @@
         };
 
         // --- 1. UTILS ---
-        const { useState, useEffect, useContext, createContext, useMemo, useCallback } = React;
+        const { useState, useEffect, useContext, createContext, useMemo, useCallback, useRef } = React;
 
         // --- 2. CONTEXTS ---
 
@@ -529,6 +536,11 @@
                 }
             };
 
+            const updateSyncCode = (newCode) => {
+                localStorage.setItem('vellora_sync_code', newCode);
+                setSyncCode(newCode);
+            };
+
             return (
                 <DataContext.Provider value={{
                     syncCode,
@@ -552,6 +564,41 @@
             );
         };
 
+        // --- 0b. ERROR BOUNDARY ---
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error("Uncaught error:", error, errorInfo);
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="h-screen w-full flex flex-col items-center justify-center p-8 text-center text-red-500 bg-white">
+                            <h1 className="text-2xl font-bold mb-2">Something went wrong.</h1>
+                            <p className="mb-4 text-sm text-gray-600">Please try reloading.</p>
+                            <pre className="text-xs bg-gray-100 p-2 rounded text-left overflow-auto max-w-sm mx-auto mb-4 border border-gray-300">
+                                {this.state.error && this.state.error.toString()}
+                            </pre>
+                            <button onClick={() => window.location.reload()} className="px-6 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
+                                Reload App
+                            </button>
+                        </div>
+                    );
+                }
+
+                return this.props.children;
+            }
+        }
+
         // --- 3. UI COMPONENTS ---
 
         // Simple Icons to avoid external deps
@@ -565,18 +612,26 @@
             Chart: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>,
             Settings: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
             ChevronRight: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>,
-            WifiOff: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            WifiOff: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>,
+            Lock: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>,
+            Close: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+            MapPin: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>,
+            Phone: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>,
+            Edit: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>,
+            Download: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>,
+            Store: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><path d="M15 22v-5" /><path d="M9 22v-5" /><path d="M2 7h20" /><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7" /></svg>,
+            BarChart: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
         };
 
         // --- Atoms ---
         const Button = ({ children, onClick, variant = 'primary', className = '', ...props }) => {
-            const base = "px-4 py-3 rounded-xl font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 touch-action-manipulation focus:outline-none focus:ring-2 focus:ring-offset-2";
+            const base = "px-6 py-3 rounded-full font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 touch-action-manipulation focus:outline-none focus:ring-4 focus:ring-brand/20";
             const variants = {
-                primary: "bg-brand text-white shadow-lg shadow-brand/30 hover:bg-brand/90",
-                secondary: "bg-surface-highlight text-text hover:bg-opacity-80 border border-border",
-                ghost: "bg-transparent text-text hover:bg-surface-highlight",
+                primary: "bg-brand text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5",
+                secondary: "bg-surface-highlight text-text hover:bg-gray-200 border border-transparent",
+                ghost: "bg-transparent text-text hover:bg-surface-highlight/50",
                 danger: "bg-red-500 text-white shadow-lg shadow-red-500/30",
-                outline: "border-2 border-brand text-brand bg-transparent hover:bg-brand/10"
+                outline: "border-2 border-brand text-brand bg-transparent hover:bg-brand/5"
             };
             return (
                 <button
@@ -590,18 +645,18 @@
         };
 
         const Input = ({ label, error, ...props }) => (
-            <div className="flex flex-col gap-1 w-full">
-                {label && <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">{label}</label>}
+            <div className="flex flex-col gap-1.5 w-full">
+                {label && <label className="text-xs font-semibold uppercase tracking-wider text-text-muted ml-1 opacity-70">{label}</label>}
                 <input
-                    className={`w-full bg-input text-text border ${error ? 'border-red-500' : 'border-border'} rounded-xl px-4 py-3 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all`}
+                    className={`w-full bg-surface-highlight/50 backdrop-blur-md text-text border-0 ring-1 ring-border/50 focus:ring-2 focus:ring-brand rounded-2xl px-5 py-4 outline-none transition-all placeholder:text-text-muted/50`}
                     {...props}
                 />
-                {error && <span className="text-red-500 text-xs ml-1">{error}</span>}
+                {error && <span className="text-red-500 text-xs ml-1 font-medium">{error}</span>}
             </div>
         );
 
         const Card = ({ children, className = '', onClick }) => (
-            <div onClick={onClick} className={`bg-surface border border-border rounded-2xl p-4 shadow-sm ${className}`}>
+            <div onClick={onClick} className={`bg-surface/70 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-glass ${className}`}>
                 {children}
             </div>
         );
@@ -743,29 +798,53 @@
             const isValid = data.businessName && data.businessType && data.locationArea;
 
             return (
-                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                    <h2 className="text-xl font-bold text-center">Step A: Profile</h2>
+                <div className="flex flex-col gap-8 animate-in slide-in-from-right duration-300">
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-sm divide-y divide-border/50 border border-white/10">
+                        {/* Business Name */}
+                        <div className="p-4 flex items-center gap-4 bg-white/5">
+                            <label className="w-1/3 text-sm font-semibold text-text-muted">Business Name</label>
+                            <input
+                                value={data.businessName || ''}
+                                onChange={e => onChange('businessName', e.target.value)}
+                                placeholder="Required"
+                                className="flex-1 text-right text-lg font-bold bg-transparent outline-none placeholder:text-text-muted/30 text-brand"
+                            />
+                        </div>
 
-                    <Input
-                        label="Business Name *"
-                        value={data.businessName || ''}
-                        onChange={e => onChange('businessName', e.target.value)}
-                        placeholder="e.g. Wellness Gym"
-                    />
+                        {/* Location */}
+                        <div className="p-4 flex items-center gap-4 bg-white/5">
+                            <label className="w-1/3 text-sm font-semibold text-text-muted">Location</label>
+                            <div className="flex-1 flex items-center gap-2 justify-end">
+                                <input
+                                    value={data.locationArea || ''}
+                                    onChange={e => onChange('locationArea', e.target.value)}
+                                    placeholder="Area / Suburb"
+                                    className="flex-1 text-right text-lg font-medium bg-transparent outline-none placeholder:text-text-muted/30"
+                                />
+                                <button onClick={getGeo} className="bg-surface-highlight p-2 rounded-full text-brand hover:scale-105 transition-transform shadow-sm">
+                                    {loadingGeo ? <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" /> : <Icons.MapPin />}
+                                </button>
+                            </div>
+                        </div>
+                        {geoError && <div className="p-2 text-center text-xs text-red-500 bg-red-50">{geoError}</div>}
+                    </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Business Type *</label>
-                        <div className="grid grid-cols-2 gap-2">
+                    {/* Business Type Grid */}
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Business Type</label>
+                        <div className="grid grid-cols-2 gap-3">
                             {masterData.businessTypes.map(t => (
                                 <button
                                     key={t}
                                     onClick={() => onChange('businessType', t)}
-                                    className={`p-3 rounded-lg text-sm font-semibold border transition-all ${data.businessType === t ? 'bg-brand text-white border-brand shadow-lg' : 'bg-surface text-text border-border hover:border-brand'}`}
+                                    className={`p-4 rounded-2xl text-sm font-bold transition-all border shadow-sm flex flex-col items-center justify-center gap-2 h-24 ${data.businessType === t ? 'bg-brand text-white border-brand shadow-lg scale-[1.02]' : 'bg-surface/50 text-text border-transparent active:scale-95'}`}
                                 >
+                                    <div className={`p-2 rounded-full ${data.businessType === t ? 'bg-white/20' : 'bg-surface-highlight'}`}>
+                                        <Icons.Store size={20} />
+                                    </div>
                                     {t}
                                 </button>
                             ))}
-                            {/* Add Custom Type Flow */}
                             <button
                                 onClick={() => {
                                     const val = prompt("Enter new Business Type:");
@@ -774,50 +853,29 @@
                                         onChange('businessType', val);
                                     }
                                 }}
-                                className="p-3 rounded-lg text-sm font-semibold border border-dashed border-brand/50 text-brand bg-brand/5 hover:bg-brand/10"
+                                className="p-4 rounded-2xl text-sm font-bold border-2 border-dashed border-border text-text-muted bg-transparent hover:bg-surface-highlight active:scale-95 flex flex-col items-center justify-center gap-2 h-24"
                             >
-                                + Other
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Location *</label>
-                        <div className="flex gap-2">
-                            <Button onClick={getGeo} variant="secondary" className="whitespace-nowrap">
-                                {loadingGeo ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" /> : <Icons.Menu />}
-                            </Button>
-                            <Input
-                                value={data.locationArea || ''}
-                                onChange={e => onChange('locationArea', e.target.value)}
-                                placeholder="Area / Suburb"
-                            />
-                        </div>
-                        {data.gpsString && <div className="text-xs font-mono text-text-muted text-center bg-gray-50 p-1 rounded border border-gray-100">{data.gpsString}</div>}
-                        {geoError && <div className="text-xs text-red-500 text-center">{geoError}</div>}
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Daily Footfall</label>
-                        <div className="flex flex-wrap gap-2">
-                            {['0-50', '51-150', '151-300', '300+'].map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => onChange('footfall', f)}
-                                    className={`px-3 py-2 rounded-full text-xs font-bold border transition-colors ${data.footfall === f ? 'bg-brand text-white border-brand' : 'bg-surface text-text border-border'}`}
-                                >
-                                    {f}
-                                </button>
-                            ))}
-                            <button
-                                onClick={() => {
-                                    const val = prompt("Enter Footfall:");
-                                    if (val) onChange('footfall', val);
-                                }}
-                                className={`px-3 py-2 rounded-full text-xs font-bold border border-dashed border-gray-400 text-gray-500`}
-                            >
+                                <Icons.Plus />
                                 Other
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Footfall */}
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Daily Footfall</label>
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-2 shadow-sm border border-white/10">
+                            <div className="flex bg-surface-highlight/50 p-1 rounded-xl">
+                                {['0-50', '51-150', '151-300', '300+'].map(f => (
+                                    <button
+                                        key={f}
+                                        onClick={() => onChange('footfall', f)}
+                                        className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${data.footfall === f ? 'bg-white text-text shadow-md scale-[1.02]' : 'text-text-muted hover:text-text'}`}
+                                    >
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -847,70 +905,78 @@
             };
 
             return (
-                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                    <h2 className="text-xl font-bold text-center">Step B: Water Usage</h2>
+                <div className="flex flex-col gap-8 animate-in slide-in-from-right duration-300">
 
                     {/* Brands */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Brands Stocked</label>
-                        <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center px-2">
+                            <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Brands Stocked</label>
+                            <button onClick={() => { const v = prompt("Add Brand:"); handleAddBrand(v); }} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
+                        </div>
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 flex flex-wrap gap-2 shadow-sm border border-white/10">
                             {masterData.brands.map(b => (
                                 <button
                                     key={b}
                                     onClick={() => toggleItem('brands', b)}
-                                    className={`px-3 py-2 rounded-full text-sm transition-all ${data.brands?.includes(b) ? 'bg-brand text-white shadow-md transform scale-105' : 'bg-surface border border-border text-text'}`}
+                                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${data.brands?.includes(b) ? 'bg-brand text-white border-transparent shadow-lg shadow-brand/20 scale-[1.02]' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight active:scale-95'}`}
                                 >
                                     {b}
                                 </button>
                             ))}
-                            <button onClick={() => { const v = prompt("Add Brand:"); handleAddBrand(v); }} className="px-3 py-2 rounded-full text-sm border border-dashed border-brand text-brand">
-                                + Add
-                            </button>
                         </div>
                     </div>
 
                     {/* Sizes */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Bottle Sizes</label>
-                        <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center px-2">
+                            <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Bottle Sizes</label>
+                            <button onClick={() => { const v = prompt("Add Size:"); handleAddSize(v); }} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
+                        </div>
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 flex flex-wrap gap-2 shadow-sm border border-white/10">
                             {masterData.bottleSizes.map(s => (
                                 <button
                                     key={s}
                                     onClick={() => toggleItem('bottleSizes', s)}
-                                    className={`px-3 py-2 rounded-full text-sm transition-all ${data.bottleSizes?.includes(s) ? 'bg-brand text-white shadow-md transform scale-105' : 'bg-surface border border-border text-text'}`}
+                                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${data.bottleSizes?.includes(s) ? 'bg-brand text-white border-transparent shadow-lg shadow-brand/20 scale-[1.02]' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight active:scale-95'}`}
                                 >
                                     {s}
                                 </button>
                             ))}
-                            <button onClick={() => { const v = prompt("Add Size:"); handleAddSize(v); }} className="px-3 py-2 rounded-full text-sm border border-dashed border-brand text-brand">
-                                + Add
-                            </button>
                         </div>
                     </div>
 
-                    {/* Monthly Qty Slider */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Monthly Quantity (Crates/Bottles)</label>
-                        <div className="bg-surface border border-border rounded-xl p-4 flex flex-col gap-4">
-                            <div className="text-3xl font-bold text-center text-brand">
-                                {data.qtyMonthly || 0}
+                    {/* Monthly Qty Slider - Apple Health Style */}
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Monthly Volume</label>
+                        <div className="bg-surface rounded-[2rem] p-6 shadow-sm flex flex-col items-center gap-8 border border-white/10 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand/20 to-transparent"></div>
+
+                            <div className="flex flex-col items-center z-10">
+                                <span className="text-7xl font-black tracking-tighter text-text tabular-nums drop-shadow-sm">{data.qtyMonthly || 0}</span>
+                                <span className="text-brand font-bold text-xs uppercase tracking-widest mt-1 bg-brand/10 px-3 py-1 rounded-full">Crates / Month</span>
                             </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="2000"
-                                step="5"
-                                value={data.qtyMonthly || 0}
-                                onChange={e => onChange('qtyMonthly', parseInt(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand"
-                            />
-                            <Input
-                                type="number"
-                                value={data.qtyMonthly || ''}
-                                onChange={e => onChange('qtyMonthly', parseInt(e.target.value) || 0)}
-                                placeholder="Type exact number..."
-                                className="text-center bg-gray-50"
-                            />
+
+                            <div className="w-full relative h-12 flex items-center">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="2000"
+                                    step="10"
+                                    value={data.qtyMonthly || 0}
+                                    onChange={e => onChange('qtyMonthly', parseInt(e.target.value))}
+                                    className="w-full h-12 opacity-0 cursor-pointer absolute z-20"
+                                />
+                                <div className="w-full h-4 bg-surface-highlight rounded-full overflow-hidden absolute z-10">
+                                    <div className="h-full bg-gradient-to-r from-brand to-accent transition-all duration-100" style={{ width: `${Math.min(100, (data.qtyMonthly / 2000) * 100)}%` }}></div>
+                                </div>
+                                <div className="absolute w-8 h-8 bg-white shadow-md border-2 border-surface-highlight rounded-full z-10 pointer-events-none transition-all duration-100" style={{ left: `calc(${Math.min(100, (data.qtyMonthly / 2000) * 100)}% - 16px)` }}></div>
+                            </div>
+
+                            <div className="flex gap-2 w-full">
+                                {[100, 500, 1000, 2000].map(v => (
+                                    <button key={v} onClick={() => onChange('qtyMonthly', v)} className="flex-1 py-3 rounded-2xl bg-surface-highlight/30 text-xs font-bold text-text-muted hover:bg-brand hover:text-white transition-all shadow-sm active:scale-90">{v}</button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -939,55 +1005,44 @@
             };
 
             return (
-                <div className="flex flex-col gap-4 animate-in slide-in-from-right duration-300 h-full">
-                    <h2 className="text-xl font-bold text-center">Step C: Smart Pricing</h2>
-                    <p className="text-xs text-text-muted text-center">Enter Buying & Selling Price per crate/bottle</p>
+                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300 h-full">
+                    {/* Info Card */}
+                    <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50 shadow-sm flex items-center gap-3">
+                        <div className="bg-blue-100 p-2 rounded-full text-blue-600"><Icons.BarChart size={16} /></div>
+                        <p className="text-xs text-blue-800 font-medium">Enter Buying & Selling Price per crate/bottle</p>
+                    </div>
 
-                    <div className="flex-1 overflow-x-auto border border-border rounded-xl shadow-inner bg-surface-highlight/30">
-                        <table className="w-full border-collapse min-w-[600px]">
-                            <thead>
-                                <tr>
-                                    <th className="p-2 border border-border bg-surface sticky left-0 z-10">Brand \ Size</th>
-                                    {sizes.map(s => (
-                                        <th key={s} className="p-2 border border-border bg-surface text-xs font-bold text-brand min-w-[120px]">{s}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {brands.map(b => (
-                                    <tr key={b}>
-                                        <td className="p-2 border border-border bg-surface sticky left-0 z-10 font-bold text-xs">{b}</td>
-                                        {sizes.map(s => {
-                                            const profit = calcProfit(b, s);
-                                            const pClass = profit > 0 ? 'text-green-600 bg-green-50' : (profit < 0 ? 'text-red-500 bg-red-50' : 'text-gray-400');
-                                            return (
-                                                <td key={s} className="p-2 border border-border bg-surface min-w-[120px]">
-                                                    <div className="flex flex-col gap-1">
-                                                        <input
-                                                            type="number"
-                                                            placeholder="Buy"
-                                                            value={getVal('buyingPrice', b, s)}
-                                                            onChange={e => handlePriceChange('buyingPrice', b, s, e.target.value)}
-                                                            className="w-full p-1 text-xs border border-border rounded focus:border-brand outline-none"
-                                                        />
-                                                        <input
-                                                            type="number"
-                                                            placeholder="Sell"
-                                                            value={getVal('sellingPrice', b, s)}
-                                                            onChange={e => handlePriceChange('sellingPrice', b, s, e.target.value)}
-                                                            className="w-full p-1 text-xs border border-border rounded focus:border-brand outline-none"
-                                                        />
-                                                        <div className={`text-xs font-bold text-center border rounded px-1 ${pClass}`}>
-                                                            {profit > 0 ? '+' : ''}{profit}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="flex flex-col gap-6">
+                        {brands.map((b, idx) => (
+                            <div key={b} className="bg-surface/50 backdrop-blur-md rounded-3xl overflow-hidden shadow-sm border border-white/10 animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${idx * 50}ms` }}>
+                                <div className="bg-surface-highlight/30 px-6 py-3 border-b border-border/50 flex justify-between items-center">
+                                    <h3 className="font-bold text-lg">{b}</h3>
+                                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider bg-white/50 px-2 py-1 rounded-lg">Pricing Sheet</span>
+                                </div>
+                                <div className="p-4 flex flex-col gap-4">
+                                    {sizes.map(s => {
+                                        const profit = calcProfit(b, s);
+                                        const isProfit = profit > 0;
+                                        return (
+                                            <div key={s} className="grid grid-cols-[80px_1fr_1fr_60px] gap-2 items-center bg-white/5 p-2 rounded-2xl border border-transparent hover:border-border/50 transition-colors">
+                                                <div className="font-bold text-sm pl-2">{s}</div>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-bold">IN</span>
+                                                    <input type="number" placeholder="0" value={getVal('buyingPrice', b, s)} onChange={e => handlePriceChange('buyingPrice', b, s, e.target.value)} className="w-full bg-surface-highlight/50 rounded-xl py-2.5 pl-8 pr-2 text-center text-sm font-bold outline-none focus:ring-2 focus:ring-brand/50 transition-all" />
+                                                </div>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-bold">OUT</span>
+                                                    <input type="number" placeholder="0" value={getVal('sellingPrice', b, s)} onChange={e => handlePriceChange('sellingPrice', b, s, e.target.value)} className="w-full bg-surface-highlight/50 rounded-xl py-2.5 pl-8 pr-2 text-center text-sm font-bold outline-none focus:ring-2 focus:ring-brand/50 transition-all" />
+                                                </div>
+                                                <div className={`text-xs font-black text-center py-2 rounded-xl ${isProfit ? 'bg-green-100 text-green-700' : (profit < 0 ? 'bg-red-100 text-red-600' : 'bg-surface-highlight text-text-muted')}`}>
+                                                    {profit > 0 ? '+' : ''}{profit}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
@@ -1010,54 +1065,137 @@
 
             return (
                 <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                    <h2 className="text-xl font-bold text-center">Step E: Distributor</h2>
 
-                    <div className="flex flex-col gap-2">
-                        <SelfLearningSelect
-                            label="Distributor Name"
-                            value={data.distributorName}
-                            onChange={v => onChange('distributorName', v)}
-                            options={masterData.distributors}
-                            onAddNew={v => addMasterItem('distributors', v)}
-                            placeholder="Select Distributor..."
-                        />
+                    <div className="flex flex-col gap-3">
+                        <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Distributor Source</label>
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white/10">
+                            <SelfLearningSelect
+                                label="Distributor Name"
+                                value={data.distributorName}
+                                onChange={v => onChange('distributorName', v)}
+                                options={masterData.distributors}
+                                onAddNew={v => addMasterItem('distributors', v)}
+                                placeholder="Select Distributor..."
+                            />
+                        </div>
                     </div>
 
                     {data.distributorName === 'Direct Company' && (
-                        <div className="pl-4 border-l-2 border-brand flex flex-col gap-2 animate-in fade-in">
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in border border-white/10">
                             <Input label="Company Name (Optional)" value={data.distCompany || ''} onChange={e => onChange('distCompany', e.target.value)} />
                             <Input label="Reg Number (Optional)" value={data.distReg || ''} onChange={e => onChange('distReg', e.target.value)} />
                         </div>
                     )}
 
                     {data.distributorName === 'Local Vendor' && (
-                        <div className="pl-4 border-l-2 border-brand flex flex-col gap-2 animate-in fade-in">
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in border border-white/10">
                             <Input label="Vendor Name *" value={data.localVendorName || ''} onChange={e => onChange('localVendorName', e.target.value)} />
                             <Input label="Mobile Number" type="tel" value={data.localVendorMobile || ''} onChange={e => onChange('localVendorMobile', e.target.value)} />
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Happy with Service?</label>
-                        <div className="flex gap-4">
-                            <Button className="flex-1" variant={data.happyWithService === 'Yes' ? 'primary' : 'secondary'} onClick={() => onChange('happyWithService', 'Yes')}>Yes</Button>
-                            <Button className="flex-1" variant={data.happyWithService === 'No' ? 'danger' : 'secondary'} onClick={() => onChange('happyWithService', 'No')}>No</Button>
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between border border-white/10">
+                        <label className="text-sm font-bold text-text">Happy with Service?</label>
+                        <div className="flex bg-surface-highlight rounded-xl p-1">
+                            <button onClick={() => onChange('happyWithService', 'Yes')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${data.happyWithService === 'Yes' ? 'bg-white shadow text-green-600' : 'text-text-muted hover:text-text'}`}>Yes</button>
+                            <button onClick={() => onChange('happyWithService', 'No')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${data.happyWithService === 'No' ? 'bg-white shadow text-red-600' : 'text-text-muted hover:text-text'}`}>No</button>
                         </div>
                     </div>
 
                     {data.happyWithService === 'No' && (
-                        <div className="flex flex-col gap-2 animate-in fade-in">
-                            <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Main Problems</label>
-                            <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-col gap-3 animate-in fade-in">
+                            <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Main Problems</label>
+                            <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex flex-wrap gap-2 border border-white/10">
                                 {masterData.problems.map(p => (
-                                    <button key={p} onClick={() => toggleProblem(p)} className={`px-3 py-1.5 rounded-full text-xs border ${data.mainProblems?.includes(p) ? 'bg-red-100 text-red-700 border-red-300' : 'bg-surface border-border'}`}>
+                                    <button key={p} onClick={() => toggleProblem(p)} className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${data.mainProblems?.includes(p) ? 'bg-red-500 text-white border-red-500 shadow-lg scale-105' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight'}`}>
                                         {p}
                                     </button>
                                 ))}
-                                <button onClick={() => { const v = prompt("Add Problem:"); if (v) { addMasterItem('problems', v); toggleProblem(v); } }} className="px-3 py-1.5 rounded-full text-xs border border-dashed border-red-500 text-red-500">+ Add</button>
+                                <button onClick={() => { const v = prompt("Add Problem:"); if (v) { addMasterItem('problems', v); toggleProblem(v); } }} className="px-4 py-2.5 rounded-xl text-xs font-bold border border-brand/20 text-brand bg-brand/5 hover:bg-brand/10 transition-colors">+ Add</button>
                             </div>
                         </div>
                     )}
+                </div>
+            );
+
+        };
+
+        const SurveyFullSummary = ({ data }) => {
+            if (!data) return null;
+
+            const sections = [
+                {
+                    title: "Business Profile",
+                    icon: Icons.Store,
+                    color: "text-blue-600",
+                    bg: "bg-blue-50/50",
+                    border: "border-blue-100",
+                    items: [
+                        { label: "Business Name", value: data.businessName, valueColor: "text-blue-900 font-black" },
+                        { label: "Type", value: data.businessType, valueColor: "text-blue-700" },
+                        { label: "Location", value: data.locationArea },
+                        { label: "Footfall", value: data.dailyFootfall }
+                    ]
+                },
+                {
+                    title: "Water Usage",
+                    icon: Icons.BarChart,
+                    color: "text-cyan-600",
+                    bg: "bg-cyan-50/50",
+                    border: "border-cyan-100",
+                    items: [
+                        { label: "Brands Stocked", value: (data.brands || []).join(', '), valueColor: "text-cyan-800" },
+                        { label: "Bottle Sizes", value: (data.bottleSizes || []).join(', ') },
+                        { label: "Monthly Volume", value: data.qtyMonthly ? `${data.qtyMonthly} crates` : '', valueColor: "text-cyan-900 font-bold text-lg" }
+                    ]
+                },
+                {
+                    title: "Pricing & Distribution",
+                    icon: Icons.List,
+                    color: "text-emerald-600",
+                    bg: "bg-emerald-50/50",
+                    border: "border-emerald-100",
+                    items: [
+                        { label: "Distributor", value: data.distributorName, valueColor: "text-emerald-800" },
+                        { label: "Buy Price", value: data.buyPrice ? `₹${data.buyPrice}` : '', valueColor: "text-emerald-700 font-bold" },
+                        { label: "Sell Price", value: data.sellPrice ? `₹${data.sellPrice}` : '', valueColor: "text-emerald-700 font-bold" },
+                        { label: "Profit Margin", value: (data.sellPrice && data.buyPrice) ? `${Math.round(((data.sellPrice - data.buyPrice) / data.buyPrice) * 100)}%` : '', valueColor: "text-green-600 font-black" }
+                    ]
+                },
+                {
+                    title: "Feedback",
+                    icon: Icons.Settings,
+                    color: "text-purple-600",
+                    bg: "bg-purple-50/50",
+                    border: "border-purple-100",
+                    items: [
+                        { label: "Happy with Service?", value: data.happyWithService, valueColor: data.happyWithService === 'Yes' ? 'text-green-600 font-bold' : 'text-red-500 font-bold' },
+                        data.happyWithService === 'No' ? { label: "Issues", value: (data.mainProblems || []).join(', '), valueColor: "text-red-600" } : null,
+                        { label: "Custom Logo Interest", value: data.interestedInCustomLogo, valueColor: "text-purple-800 font-bold" }
+                    ].filter(Boolean)
+                }
+            ];
+
+            return (
+                <div className="flex flex-col gap-4 animate-in fade-in">
+                    {sections.map((section, idx) => (
+                        <div key={idx} className={`rounded-3xl overflow-hidden shadow-sm border ${section.border} ${section.bg}`}>
+                            <div className={`px-5 py-3 border-b ${section.border} flex items-center gap-2`}>
+                                <div className={`${section.color}`}><section.icon size={18} /></div>
+                                <h4 className={`text-xs font-black uppercase tracking-widest ${section.color} opacity-80`}>{section.title}</h4>
+                            </div>
+                            <div className="divide-y divide-black/5 bg-white/40 backdrop-blur-sm">
+                                {section.items.map((item, i) => (
+                                    item.value ? (
+                                        <div key={i} className="flex justify-between items-center p-4 text-sm group hover:bg-white/60 transition-colors">
+                                            <span className="text-text-muted font-medium text-xs uppercase tracking-wide">{item.label}</span>
+                                            <span className={`text-right max-w-[60%] ${item.valueColor || 'text-text font-semibold'}`}>{item.value}</span>
+                                        </div>
+                                    ) : null
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             );
         };
@@ -1066,35 +1204,34 @@
             const { masterData, addMasterItem } = useContext(DataContext);
             return (
                 <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                    <h2 className="text-xl font-bold text-center">Step G: White Label</h2>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Interested in Custom Logo?</label>
-                        <div className="flex gap-4">
-                            <Button className="flex-1" variant={data.interestedInCustomLogo === 'Yes' ? 'primary' : 'secondary'} onClick={() => onChange('interestedInCustomLogo', 'Yes')}>Yes</Button>
-                            <Button className="flex-1" variant={data.interestedInCustomLogo === 'No' ? 'secondary' : 'ghost'} onClick={() => onChange('interestedInCustomLogo', 'No')}>No</Button>
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between border border-white/10">
+                        <label className="text-sm font-bold text-text">Interested in Custom Logo?</label>
+                        <div className="flex bg-surface-highlight rounded-lg p-1">
+                            <button onClick={() => onChange('interestedInCustomLogo', 'Yes')} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${data.interestedInCustomLogo === 'Yes' ? 'bg-white shadow text-brand' : 'text-text-muted hover:text-text'}`}>Yes</button>
+                            <button onClick={() => onChange('interestedInCustomLogo', 'No')} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${data.interestedInCustomLogo === 'No' ? 'bg-white shadow text-text' : 'text-text-muted hover:text-text'}`}>No</button>
                         </div>
                     </div>
 
                     {data.interestedInCustomLogo === 'Yes' && (
                         <>
-                            <div className="flex flex-col gap-2 animate-in fade-in">
-                                <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Extra Willing To Pay (₹)</label>
-                                <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-col gap-3 animate-in fade-in">
+                                <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Willing To Pay (Extra)</label>
+                                <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex flex-wrap gap-3 border border-white/10">
                                     {['0', '1', '2', '5', '10'].map(p => (
-                                        <button key={p} onClick={() => onChange('extraWillingToPay', p)} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${data.extraWillingToPay === p ? 'bg-brand text-white' : 'bg-surface'}`}>{p}</button>
+                                        <button key={p} onClick={() => onChange('extraWillingToPay', p)} className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg transition-all shadow-sm ${data.extraWillingToPay === p ? 'bg-brand text-white scale-110 shadow-lg shadow-brand/30' : 'bg-surface-highlight/50 text-text hover:bg-surface-highlight'}`}>₹{p}</button>
                                     ))}
-                                    <button onClick={() => { const v = prompt("Price:"); if (v) onChange('extraWillingToPay', v); }} className="w-10 h-10 rounded-full flex items-center justify-center font-bold border border-dashed text-text-muted">?</button>
+                                    <button onClick={() => { const v = prompt("Price:"); if (v) onChange('extraWillingToPay', v); }} className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg border-2 border-dashed border-border text-text-muted hover:text-brand hover:border-brand/50 transition-colors">?</button>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2 animate-in fade-in">
-                                <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-1">Purpose needed?</label>
-                                <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-col gap-3 animate-in fade-in">
+                                <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Primary Goal</label>
+                                <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex flex-wrap gap-2 border border-white/10">
                                     {masterData.whiteLabelPurposes.map(p => (
-                                        <button key={p} onClick={() => onChange('customPurpose', p)} className={`px-3 py-2 rounded-lg text-xs font-semibold border ${data.customPurpose === p ? 'bg-brand text-white' : 'bg-surface'}`}>{p}</button>
+                                        <button key={p} onClick={() => onChange('customPurpose', p)} className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${data.customPurpose === p ? 'bg-brand text-white border-transparent shadow-lg scale-105' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight'}`}>{p}</button>
                                     ))}
-                                    <button onClick={() => { const v = prompt("Purpose:"); if (v) { addMasterItem('whiteLabelPurposes', v); onChange('customPurpose', v); } }} className="px-3 py-2 rounded-lg text-xs font-semibold border border-dashed border-brand text-brand">+ Other</button>
+                                    <button onClick={() => { const v = prompt("Purpose:"); if (v) { addMasterItem('whiteLabelPurposes', v); onChange('customPurpose', v); } }} className="px-4 py-2.5 rounded-xl text-xs font-bold bg-brand/5 text-brand border border-brand/20 hover:bg-brand/10">+ Add</button>
                                 </div>
                             </div>
                         </>
@@ -1112,22 +1249,26 @@
             };
 
             return (
-                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                    <h2 className="text-xl font-bold text-center">Step I: Closing</h2>
-
-                    <Input label="Contact Name *" value={data.contactName || ''} onChange={e => onChange('contactName', e.target.value)} />
-                    <Input label="Mobile Number *" type="tel" value={data.contactMobile || ''} onChange={e => onChange('contactMobile', e.target.value)} />
-
-                    <Card className="bg-gray-50 mt-4">
-                        <div className="flex flex-col gap-2 text-xs text-text-muted">
-                            <p><strong>Business:</strong> {data.businessName}</p>
-                            <p><strong>Location:</strong> {data.locationArea}</p>
-                            <p><strong>Brands:</strong> {data.brands?.join(', ')}</p>
-                            <p><strong>Distributor:</strong> {data.distributorName}</p>
+                <div className="flex flex-col gap-8 animate-in slide-in-from-right duration-300">
+                    <div className="text-center space-y-2">
+                        <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-brand mb-4">
+                            <Icons.Check size={32} />
                         </div>
-                    </Card>
+                        <h2 className="text-3xl font-black text-text tracking-tight">Almost Done!</h2>
+                        <p className="text-text-muted">Please provide contact details to finalize.</p>
+                    </div>
 
-                    <Button onClick={handleSave} variant="primary" className="mt-4 w-full py-4 text-lg shadow-xl shadow-brand/40">
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 border border-white/10">
+                        <Input label="Contact Name *" value={data.contactName || ''} onChange={e => onChange('contactName', e.target.value)} />
+                        <Input label="Mobile Number *" type="tel" value={data.contactMobile || ''} onChange={e => onChange('contactMobile', e.target.value)} />
+                    </div>
+
+                    <div className="mt-4">
+                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-2 mb-3 block">Summary</label>
+                        <SurveyFullSummary data={data} />
+                    </div>
+
+                    <Button onClick={handleSave} variant="primary" className="mt-8 w-full py-4 text-xl font-bold shadow-2xl shadow-brand/40 rounded-[2rem] h-16 transition-transform active:scale-[0.98]">
                         {saving ? 'Saving...' : 'COMPLETE SURVEY'}
                     </Button>
                 </div>
@@ -1135,48 +1276,169 @@
         };
 
         const SurveyDetailModal = ({ survey, onClose, onEdit, onDelete }) => {
+            const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
             const handlePDF = () => {
                 const doc = new jspdf.jsPDF();
                 const logo = localStorage.getItem('app_logo');
+
+                // Vibrant Apple Palette
+                const COLORS = {
+                    primary: [0, 0, 0],       // Black text
+                    secondary: [142, 142, 147], // Gray text
+                    accent: THEMES.corporate.brand === '#3B82F6' ? [0, 122, 255] : [52, 199, 89], // Apple Blue or Green
+                    bgParams: [242, 242, 247], // System Gray 6 (light gray bg)
+                    cardBg: [255, 255, 255],   // White card
+                    success: [52, 199, 89],
+                    danger: [255, 59, 48],
+                    headerBg: [245, 245, 250]
+                };
+
+                // --- HEADER SECTION ---
+                // Full light header background
+                doc.setFillColor(...COLORS.headerBg);
+                doc.rect(0, 0, 210, 50, 'F'); // Taller header
+
                 if (logo) {
-                    try { doc.addImage(logo, 'PNG', 10, 10, 20, 20); } catch (e) { console.error("Logo err", e); }
+                    try {
+                        // Circle clip simulation for logo not easy in raw jsPDF, just placing it nicely
+                        doc.addImage(logo, 'PNG', 15, 12, 26, 26);
+                    } catch (e) { }
                 }
 
-                doc.setFontSize(22);
-                doc.setTextColor(THEMES.corporate.brand); // Use theme color later if needed, fallback default
-                doc.text("VELLORA Market Survey", 40, 25);
+                // Title
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(24);
+                doc.setTextColor(...COLORS.primary);
+                doc.text("VELLORA", 50, 22);
+
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(...COLORS.accent); // Color the subtitle!
+                doc.text("Enterprise Market Insight Report", 50, 30);
 
                 doc.setFontSize(10);
-                doc.setTextColor(100);
-                doc.text(`Generated: ${new Date().toLocaleString()}`, 150, 25);
+                doc.setTextColor(...COLORS.secondary);
+                doc.text(`Generated: ${new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 50, 38);
 
-                doc.setFontSize(14);
-                doc.setTextColor(0);
-                doc.text(`Business: ${survey.businessName} (${survey.businessType})`, 10, 45);
+                // --- BUSINESS SUMMARY CARD ---
+                // We'll draw a "card" visual below the header
+                // doc.setFillColor(...COLORS.cardBg);
+                // doc.roundedRect(15, 55, 180, 25, 3, 3, 'F'); // Card background
+
+                doc.setFontSize(20);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(0, 50, 100); // Dark Blue-ish for Business Name
+                doc.text(survey.businessName, 15, 65);
+
+                // Badges (Colored Rectangles with Text)
+                const badges = [
+                    { text: survey.businessType, r: 0, g: 122, b: 255 }, // Blue
+                    { text: survey.locationArea, r: 255, g: 149, b: 0 }  // Orange
+                ];
+
+                let xPos = 15;
+                const badgeY = 72;
+                badges.forEach(b => {
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+                    const w = doc.getTextWidth(b.text) + 8;
+                    doc.setFillColor(b.r, b.g, b.b);
+                    doc.roundedRect(xPos, badgeY, w, 7, 2, 2, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(b.text, xPos + 4, badgeY + 5);
+                    xPos += w + 5;
+                });
+
+                // Contact Info Line
                 doc.setFontSize(10);
-                doc.text(`Location: ${survey.locationArea}`, 10, 52);
-                doc.text(`Contact: ${survey.contactName} (${survey.contactMobile})`, 10, 58);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(80, 80, 84);
+                doc.text(`Contact: ${survey.contactName}  •  ${survey.contactMobile}`, 15, badgeY + 15);
 
+
+                // --- RICH DATA TABLE ---
+                // We will color specific values in the table logic
                 const dataBody = [
-                    ['Date', new Date(survey.timestamp).toLocaleString()],
+                    ['Survey Timestamp', new Date(survey.timestamp).toLocaleString()],
                     ['Monthly Volume', `${survey.qtyMonthly || 0} crates`],
+                    ['Buying Price', survey.buyPrice ? `₹${survey.buyPrice}` : '-'],
+                    ['Selling Price', survey.sellPrice ? `₹${survey.sellPrice}` : '-'],
+                    ['Profit Margin', (survey.sellPrice && survey.buyPrice) ? `${Math.round(((survey.sellPrice - survey.buyPrice) / survey.buyPrice) * 100)}%` : '-'],
                     ['Brands Stocked', (survey.brands || []).join(', ')],
+                    ['Bottle Sizes', (survey.bottleSizes || []).join(', ')],
                     ['Distributor', survey.distributorName],
-                    ['Buyer', `${survey.distCompany || survey.localVendorName || 'N/A'}`],
-                    ['Happy?', survey.happyWithService],
-                    ['Problems', (survey.mainProblems || []).join(', ')],
-                    ['Interested in Custom?', survey.interestedInCustomLogo]
+                    ['Service Satisfaction', survey.happyWithService],
+                    ['Issues Reported', (survey.mainProblems || []).join(', ')],
+                    ['Custom Logo Interest', survey.interestedInCustomLogo]
                 ];
 
                 doc.autoTable({
-                    startY: 70,
-                    head: [['Field', 'Value']],
+                    startY: 100,
+                    head: [['Metric', 'Value']],
                     body: dataBody,
-                    theme: 'striped',
-                    styles: { textColor: [30, 30, 30], fontSize: 10 }
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [242, 242, 247], // Light gray header
+                        textColor: [0, 0, 0],       // Black text
+                        fontStyle: 'bold',
+                        lineWidth: 0,
+                        cellPadding: 4
+                    },
+                    columnStyles: {
+                        0: { fontStyle: 'bold', cellWidth: 70, textColor: [100, 100, 100] }, // Label color
+                        1: { textColor: [0, 0, 0], fontStyle: 'bold' } // Value color default
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 4,
+                        lineColor: [230, 230, 235],
+                        lineWidth: 0.1,
+                        overflow: 'linebreak'
+                    },
+                    didParseCell: function (data) {
+                        // COLOR LOGIC FOR VALUES
+                        if (data.section === 'body' && data.column.index === 1) {
+                            const rowLabel = data.row.raw[0];
+                            const val = data.cell.raw;
+
+                            if (rowLabel === 'Service Satisfaction') {
+                                if (val === 'Yes') data.cell.styles.textColor = [52, 199, 89]; // Green
+                                else data.cell.styles.textColor = [255, 59, 48]; // Red
+                            }
+                            if (rowLabel === 'Issues Reported' && val && val.length > 0) {
+                                data.cell.styles.textColor = [255, 59, 48]; // Red
+                            }
+                            if (rowLabel === 'Custom Logo Interest') {
+                                if (val === 'Yes') data.cell.styles.textColor = [0, 122, 255]; // Blue
+                            }
+                            if (rowLabel === 'Monthly Volume') {
+                                data.cell.styles.textColor = [0, 122, 255]; // Blue
+                                data.cell.styles.fontSize = 11;
+                            }
+                            if (rowLabel === 'Profit Margin') {
+                                data.cell.styles.textColor = [52, 199, 89]; // Green
+                            }
+                        }
+                    }
                 });
 
-                doc.save(`vellora_${survey.businessName.replace(/\s/g, '_')}.pdf`);
+                // Footer
+                const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+
+                // Decorative colored bottom bar
+                const bottomColors = [[0, 122, 255], [52, 199, 89], [255, 149, 0], [255, 59, 48]];
+                let bW = 210 / 4;
+                bottomColors.forEach((c, i) => {
+                    doc.setFillColor(...c);
+                    doc.rect(i * bW, pageHeight - 2, bW, 2, 'F');
+                });
+
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text("Design & Analytics by Vellora", 105, pageHeight - 8, { align: 'center' });
+
+                doc.save(`vellora_report_${survey.businessName.replace(/\s/g, '_')}.pdf`);
             };
 
             const openMap = () => {
@@ -1186,41 +1448,59 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-                    <Card className="w-full max-w-sm max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-start mb-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="w-full max-w-md bg-bg rounded-[2rem] shadow-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div className="bg-surface/80 backdrop-blur-xl border-b border-border/50 p-4 flex items-center justify-between sticky top-0 z-10">
                             <div>
-                                <h2 className="text-xl font-bold">{survey.businessName}</h2>
-                                <span className="bg-surface-highlight text-xs px-2 py-0.5 rounded">{survey.businessType}</span>
+                                <h2 className="text-xl font-black">{survey.businessName}</h2>
+                                <span className="bg-brand/10 text-brand text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">{survey.businessType}</span>
                             </div>
-                            <button onClick={onClose}><Icons.Close /></button>
+                            <button onClick={onClose} className="bg-surface-highlight p-2 rounded-full hover:bg-border/20 transition-colors"><Icons.Close /></button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                            <div className="p-3 bg-surface-highlight rounded-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" onClick={openMap}>
+                        {/* Modal Actions */}
+                        <div className="p-4 grid grid-cols-4 gap-2 bg-surface">
+                            <button onClick={openMap} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-highlight/50 hover:bg-surface-highlight transition-all active:scale-95">
                                 <div className="text-brand"><Icons.MapPin /></div>
-                                <span className="text-xs font-bold">Map</span>
-                            </div>
-                            <div className="p-3 bg-surface-highlight rounded-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" onClick={() => window.open(`tel:${survey.contactMobile}`)}>
+                                <span className="text-[10px] font-bold">Map</span>
+                            </button>
+                            <button onClick={() => window.open(`tel:${survey.contactMobile}`)} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-highlight/50 hover:bg-surface-highlight transition-all active:scale-95">
                                 <div className="text-green-600"><Icons.Phone /></div>
-                                <span className="text-xs font-bold">Call</span>
-                            </div>
-                            <div className="p-3 bg-surface-highlight rounded-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" onClick={() => { onClose(); onEdit(survey); }}>
+                                <span className="text-[10px] font-bold">Call</span>
+                            </button>
+                            <button onClick={() => { onClose(); onEdit(survey); }} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-highlight/50 hover:bg-surface-highlight transition-all active:scale-95">
                                 <div className="text-blue-600"><Icons.Edit /></div>
-                                <span className="text-xs font-bold">Edit</span>
-                            </div>
-                            <div className="p-3 bg-surface-highlight rounded-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" onClick={handlePDF}>
+                                <span className="text-[10px] font-bold">Edit</span>
+                            </button>
+                            <button onClick={handlePDF} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-highlight/50 hover:bg-surface-highlight transition-all active:scale-95">
                                 <div className="text-red-600"><Icons.Download /></div>
-                                <span className="text-xs font-bold">PDF</span>
-                            </div>
+                                <span className="text-[10px] font-bold">PDF</span>
+                            </button>
                         </div>
 
-                        <div className="border-t border-border pt-4">
-                            <Button variant="danger" className="w-full bg-red-50 text-red-600 hover:bg-red-100" onClick={() => onDelete(survey.id)}>
-                                <Icons.Trash /> Move to Recycle Bin
-                            </Button>
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto p-4 bg-bg">
+                            <SurveyFullSummary data={survey} />
+
+                            <div className="mt-8 border-t border-border/50 pt-6">
+                                {showDeleteConfirm ? (
+                                    <div className="bg-red-50 p-4 rounded-2xl animate-in fade-in slide-in-from-bottom-2 border border-red-100">
+                                        <h4 className="font-bold text-red-700 mb-2 text-center">Are you sure?</h4>
+                                        <p className="text-xs text-red-600/80 text-center mb-4">This will permanently remove this survey from your device.</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => setShowDeleteConfirm(false)} className="py-2.5 font-bold text-sm bg-white text-text-muted rounded-xl border border-border shadow-sm">Cancel</button>
+                                            <button onClick={() => onDelete(survey.id)} className="py-2.5 font-bold text-sm bg-red-500 text-white rounded-xl shadow-lg shadow-red-500/30">Yes, Delete</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button className="w-full py-4 text-red-600 font-bold text-base bg-red-50 rounded-2xl hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-sm border border-red-100" onClick={() => setShowDeleteConfirm(true)}>
+                                        <Icons.Trash /> Delete Survey from Device
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             );
         };
@@ -1238,113 +1518,154 @@
             if (!unlocked) {
                 return (
                     <div className="flex flex-col items-center justify-center h-64 gap-4 animate-in fade-in">
-                        <div className="text-4xl text-text-muted"><Icons.Lock /></div>
-                        <h3 className="font-bold">Recycle Bin Locked</h3>
-                        <div className="flex gap-2">
-                            <Input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="Enter PIN" className="w-32 text-center" />
-                            <Button onClick={checkPin}>Open</Button>
+                        <div className="w-16 h-16 bg-surface-highlight rounded-full flex items-center justify-center text-text-muted mb-2 animate-bounce">
+                            <Icons.Lock />
                         </div>
-                        <button onClick={() => setPin('8926')} className="text-xs text-text-muted underline">Forgot? Reset to Default</button>
+                        <h3 className="font-bold text-xl">Recycle Bin Locked</h3>
+                        <p className="text-text-muted text-sm -mt-2 mb-4">Enter passcode to view deleted items</p>
+                        <div className="flex gap-2">
+                            <Input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="• • • •" className="w-32 text-center text-lg tracking-widest font-mono" />
+                            <Button onClick={checkPin} variant="primary">Unlock</Button>
+                        </div>
                     </div>
                 );
             }
 
             return (
                 <div className="flex flex-col gap-4 animate-in fade-in">
-                    <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-lg">Deleted Surveys ({deletedSurveys.length})</h3>
-                        <Button variant="ghost" onClick={() => setUnlocked(false)} size="sm">Lock</Button>
+                    <div className="flex justify-between items-end px-4">
+                        <h3 className="font-bold text-2xl tracking-tight">Recently Deleted</h3>
+                        <Button variant="ghost" onClick={() => setUnlocked(false)} size="sm" className="text-brand">Lock</Button>
                     </div>
-                    {deletedSurveys.length === 0 && <p className="text-center text-text-muted text-sm py-10">Bin is empty.</p>}
-                    {deletedSurveys.map(s => (
-                        <Card key={s.id} className="bg-red-50/50 border-red-100">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h4 className="font-bold">{s.businessName}</h4>
-                                    <p className="text-xs text-text-muted">Deleted: {new Date(s.deletedAt).toLocaleString()}</p>
+
+                    {deletedSurveys.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-40">
+                            <Icons.Trash />
+                            <p className="mt-4 font-medium">No deleted items</p>
+                        </div>
+                    ) : (
+                        <div className="bg-surface/50 backdrop-blur-xl rounded-2xl overflow-hidden shadow-sm border border-border/50 mx-2">
+                            {deletedSurveys.map((s, idx) => (
+                                <div key={s.id} className={`p-4 flex items-center justify-between group hover:bg-white/50 transition-colors ${idx !== deletedSurveys.length - 1 ? 'border-b border-border/50' : ''}`}>
+                                    <div className="flex flex-col gap-1">
+                                        <h4 className="font-bold text-text leading-none">{s.businessName}</h4>
+                                        <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold">Deleted {new Date(s.deletedAt).toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => restoreSurvey(s.id)} className="text-blue-500 font-bold text-sm bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">Recover</button>
+                                        <button onClick={() => { if (confirm("Permanently delete? This cannot be undone.")) permDeleteSurvey(s.id); }} className="text-red-500 font-bold text-sm bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">Delete</button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="secondary" onClick={() => restoreSurvey(s.id)}>Restore</Button>
-                                    <Button size="sm" variant="danger" onClick={() => { if (confirm("Forever?")) permDeleteSurvey(s.id); }}>Delete</Button>
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
+                            ))}
+                        </div>
+                    )}
+                    <p className="text-center text-xs text-text-muted mt-4 px-8">Items in the Recycle Bin may be permanently deleted after 30 days.</p>
                 </div>
             );
         };
 
-        const SurveyList = ({ onEdit }) => {
+        const SurveyList = ({ onEdit, onScrollChange }) => {
             const { surveys, deleteSurvey } = useContext(DataContext);
             const [filter, setFilter] = useState('');
+            const [filterCategory, setFilterCategory] = useState('All');
             const [selected, setSelected] = useState(null);
 
-            const filtered = surveys.filter(s =>
-                (s.businessName || '').toLowerCase().includes(filter.toLowerCase()) ||
-                (s.locationArea || '').toLowerCase().includes(filter.toLowerCase())
-            );
+            useEffect(() => {
+                const handleScroll = () => {
+                    if (onScrollChange) onScrollChange(window.scrollY > 50);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, [onScrollChange]);
+
+            const filtered = surveys.filter(s => {
+                const searchMatch = (s.businessName || '').toLowerCase().includes(filter.toLowerCase()) ||
+                    (s.locationArea || '').toLowerCase().includes(filter.toLowerCase());
+
+                if (!searchMatch) return false;
+
+                if (filterCategory === 'All') return true;
+                if (filterCategory === 'High Volume') return (s.qtyMonthly || 0) > 500;
+                if (filterCategory === 'Recently Added') return new Date(s.timestamp) > new Date(Date.now() - 86400000 * 2); // Last 2 days
+
+                // Partial match for Type
+                return (s.businessType || '').includes(filterCategory);
+            });
 
             return (
-                <div className="flex flex-col gap-4 p-4 animate-in fade-in duration-500 pb-32">
-                    {/* Big New Survey Button */}
-                    <div className="w-full">
-                        <Button
-                            variant="primary"
-                            className="w-full h-16 text-xl font-bold shadow-lg bg-gradient-to-r from-brand to-accent"
-                            onClick={() => onEdit(null)} // Triggers new survey
-                        >
-                            + New Survey
-                        </Button>
-                    </div>
-
-                    <div className="flex flex-col gap-2 sticky top-0 bg-bg z-10 py-2">
-                        <Input
-                            value={filter}
-                            onChange={e => setFilter(e.target.value)}
-                            placeholder="🔍 Search business, area..."
-                            className="bg-surface shadow-sm h-12 text-lg"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                        {filtered.length === 0 && (
-                            <div className="text-center text-text-muted py-10 opacity-50">
-                                <Icons.List />
-                                <p className="mt-2 text-sm">No surveys found.</p>
+                <div className="flex flex-col gap-8 animate-in fade-in duration-500 pb-32">
+                    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-36 font-sans">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-2 pt-2">
+                            <h2 className="text-3xl font-bold tracking-tight text-text">Surveys</h2>
+                            <div className="relative">
+                                <input
+                                    value={filter}
+                                    onChange={e => setFilter(e.target.value)}
+                                    placeholder="Search"
+                                    className="bg-surface-highlight/50 pl-9 pr-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:bg-surface-highlight focus:ring-2 focus:ring-brand w-36 focus:w-48 transition-all"
+                                />
+                                <div className="absolute left-3 top-2.5 text-text-muted"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
                             </div>
-                        )}
-                        {filtered.map(s => {
-                            const date = s.timestamp ? new Date(s.timestamp).toLocaleDateString() : 'N/A';
-                            // Template Highlighting Rule (Example: High Volume > 500)
-                            const isHighVal = (s.qtyMonthly || 0) > 500;
+                        </div>
+                        {/* Filters */}
+                        <div className="flex flex-col gap-2 -mt-2">
+                            <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar px-2 -mx-2 snap-x">
+                                {['All', 'High Volume', 'Corporate', 'Retail', 'Gym', 'Hotel', 'Recently Added'].map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setFilterCategory(cat)}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border snap-start ${filterCategory === cat ? 'bg-text text-bg border-transparent shadow-lg scale-105' : 'bg-surface text-text-muted border-transparent hover:bg-surface-highlight'}`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                            return (
-                                <Card key={s.id} onClick={() => setSelected(s)} className={`active:scale-[0.99] transition-transform cursor-pointer relative overflow-hidden group ${isHighVal ? 'border-l-4 border-l-yellow-400' : ''}`}>
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-bold text-lg">{s.businessName}</h3>
-                                            <div className="flex items-center gap-2 text-xs text-text-muted mt-1">
-                                                <span className="bg-surface-highlight px-2 py-0.5 rounded">{s.businessType}</span>
-                                                <span>•</span>
-                                                <span>{s.locationArea}</span>
+                        <div className="flex flex-col gap-4">
+                            {filtered.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                                    <div className="bg-surface-highlight p-6 rounded-full mb-4"><Icons.List /></div>
+                                    <h3 className="font-bold text-lg">No Surveys Yet</h3>
+                                    <p className="text-text-muted text-sm">Tap + to start a new visit.</p>
+                                </div>
+                            )}
+                            {filtered.map(s => {
+                                const date = s.timestamp ? new Date(s.timestamp).toLocaleDateString() : 'N/A';
+                                const isHighVal = (s.qtyMonthly || 0) > 500;
+
+                                return (
+                                    <Card key={s.id} onClick={() => setSelected(s)} className={`active:scale-[0.98] transition-transform cursor-pointer group hover:shadow-xl border-0 !bg-surface/80 !backdrop-blur-xl !rounded-[1.5rem] !p-5 ${isHighVal ? 'ring-2 ring-yellow-400/50' : ''}`}>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex flex-col">
+                                                    <h3 className="font-bold text-lg leading-tight">{s.businessName}</h3>
+                                                    <span className="text-xs font-semibold text-brand uppercase tracking-wider mt-0.5">{s.businessType}</span>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-text-muted bg-surface-highlight/50 px-2 py-1 rounded-full">{date}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm text-text-muted">
+                                                <Icons.MapPin />
+                                                <span className="truncate max-w-[200px]">{s.locationArea}</span>
+                                            </div>
+
+                                            <div className="mt-1 pt-3 border-t border-white/10 flex justify-between items-center">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-xl font-bold text-text tabular-nums">{s.qtyMonthly || 0}</span>
+                                                    <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Crates</span>
+                                                </div>
+                                                {isHighVal && <span className="text-[10px] font-bold text-yellow-700 bg-yellow-400/20 px-2 py-1 rounded-full shadow-sm">PREMIUM</span>}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            <span className="text-[10px] text-text-muted font-mono">{date}</span>
-                                            {isHighVal && <span className="text-[10px] font-bold text-yellow-600 bg-yellow-50 px-1 rounded">PREMIUM</span>}
-                                        </div>
-                                    </div>
+                                    </Card>
+                                );
+                            })}
+                        </div>
 
-                                    <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
-                                        <div className="text-xs text-text-muted">
-                                            <strong>{s.qtyMonthly || 0}</strong> crates/mo
-                                        </div>
-                                        <div className="text-brand text-xs font-bold">View Details &rarr;</div>
-                                    </div>
-                                </Card>
-                            );
-                        })}
                     </div>
+
 
                     {selected && (
                         <SurveyDetailModal
@@ -1354,7 +1675,8 @@
                             onDelete={(id) => { deleteSurvey(id); setSelected(null); }}
                         />
                     )}
-                </div>
+
+                </div >
             );
         };
 
@@ -1502,39 +1824,73 @@
             };
 
             return (
-                <div className="flex flex-col gap-6 p-4 pb-32 animate-in fade-in duration-500">
-                    <h2 className="text-2xl font-bold text-text">Analytics</h2>
+                <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-32">
 
-                    <div className="flex flex-col gap-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-bold text-text-muted uppercase">Data Source</label>
-                                <select value={dataType} onChange={e => setDataType(e.target.value)} className="p-2 rounded bg-surface border border-border text-sm">
-                                    {DATA_SOURCES.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
-                                </select>
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-2 pt-4">
+                        <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-brand to-accent drop-shadow-sm">Analytics</h2>
+                        <div className="w-10 h-10 rounded-full bg-surface-highlight flex items-center justify-center shadow-inner text-text-muted">
+                            <Icons.Chart />
+                        </div>
+                    </div>
+
+                    {/* Summary Widgets (Apple Health Style) */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-br from-brand to-blue-600 rounded-[2rem] p-5 text-white shadow-xl shadow-blue-500/30 flex flex-col justify-between h-44 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                            <div className="absolute top-0 right-0 p-4 opacity-20 transform scale-150 rotate-12"><Icons.List /></div>
+                            <span className="text-blue-100/80 text-xs font-bold uppercase tracking-widest pl-1">Total Surveys</span>
+                            <div>
+                                <span className="text-6xl font-black tracking-tighter drop-shadow-md">{surveys.length}</span>
+                                <span className="text-blue-100 text-xs font-bold block mt-1 pl-1">Visits Completed</span>
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-bold text-text-muted uppercase">Chart Type</label>
-                                <select value={chartType} onChange={e => setChartType(e.target.value)} className="p-2 rounded bg-surface border border-border text-sm">
-                                    {CHART_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                                </select>
+                        </div>
+                        <div className="bg-surface rounded-[2rem] p-5 border border-white/10 shadow-lg flex flex-col justify-between h-44 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-brand/5 rounded-full blur-2xl group-hover:bg-brand/10 transition-colors"></div>
+                            <span className="text-text-muted text-xs font-bold uppercase tracking-widest pl-1">Total Volume</span>
+                            <div>
+                                <span className="text-4xl font-black tracking-tighter text-text">{surveys.reduce((a, s) => a + (parseInt(s.qtyMonthly) || 0), 0).toLocaleString()}</span>
+                                <span className="text-text-muted text-xs font-bold block mt-1 pl-1">Crates / Month</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Controls & Chart */}
+                    <div className="flex flex-col gap-6">
+                        {/* Data Source - Horizontal Scroll Pills */}
+                        <div className="flex flex-col gap-3">
+                            <h3 className="text-sm font-bold text-text-muted uppercase tracking-widest px-2">Trends by Category</h3>
+                            <div className="flex overflow-x-auto pb-2 gap-3 no-scrollbar snap-x px-2 -mx-2">
+                                {DATA_SOURCES.map(d => (
+                                    <button
+                                        key={d.id}
+                                        onClick={() => setDataType(d.id)}
+                                        className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all snap-start shadow-sm border ${dataType === d.id ? 'bg-text text-bg border-transparent shadow-lg scale-105' : 'bg-surface text-text-muted border-transparent hover:bg-surface-highlight'}`}
+                                    >
+                                        {d.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        <Card>
-                            <ChartCanvas />
-                        </Card>
-                    </div>
+                        <div className="flex flex-col gap-3">
+                            <div className="bg-surface p-1 rounded-2xl flex overflow-x-auto gap-1 scrollbar-hide shadow-inner border border-white/5">
+                                {CHART_TYPES.slice(0, 5).map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setChartType(t.id)}
+                                        className={`flex-1 min-w-[60px] py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${chartType === t.id ? 'bg-white shadow text-brand' : 'text-text-muted hover:text-text hover:bg-white/50'}`}
+                                    >
+                                        {t.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Card className="bg-gradient-to-br from-brand to-accent text-white border-none">
-                            <div className="text-xs opacity-80 uppercase tracking-wider">Total Surveys</div>
-                            <div className="text-3xl font-bold mt-1">{surveys.length}</div>
-                        </Card>
-                        <Card className="bg-surface-highlight border-none">
-                            <div className="text-xs text-text-muted uppercase tracking-wider">Total Volume</div>
-                            <div className="text-3xl font-bold text-brand mt-1">{surveys.reduce((a, s) => a + (s.qtyMonthly || 0), 0).toLocaleString()}</div>
-                            <div className="text-[10px] text-text-muted">Crates / Month</div>
+                        <Card className="!p-6 !rounded-[2.5rem] bg-surface/80 backdrop-blur-xl border border-white/20 shadow-xl relative overflow-hidden min-h-[350px]">
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+                            <div className="h-full w-full">
+                                <ChartCanvas />
+                            </div>
                         </Card>
                     </div>
                 </div>
@@ -1574,76 +1930,128 @@
                 else window.location.reload();
             };
 
+            const titles = { A: 'Info', B: 'Volume', C: 'Pricing', E: 'Distributor', G: 'White Label', I: 'Notes' };
+
             return (
-                <div className="pb-32 px-4 pt-6 fixed inset-0 bg-bg z-50 overflow-y-auto w-full h-full">
-                    <div className="flex items-center justify-between mb-6 max-w-md mx-auto">
-                        <button onClick={onClose || (() => window.location.reload())} className="text-text-muted flex items-center gap-1"><Icons.ChevronRight className="rotate-180" /> Back</button>
-                        <div className="flex gap-1">
-                            {['A', 'B', 'C', 'E', 'G', 'I'].map(s => (
-                                <div key={s} className={`h-1.5 w-6 rounded-full transition-colors ${step === s ? 'bg-brand' : (s <= step ? 'bg-brand/40' : 'bg-gray-200')}`}></div>
-                            ))}
+                <div className="fixed inset-0 bg-bg z-50 overflow-hidden flex flex-col font-sans">
+                    {/* Header - Blurs on scroll */}
+                    <div className="absolute top-0 left-0 right-0 h-20 bg-surface/80 backdrop-blur-xl border-b border-white/10 z-20 flex items-end justify-between px-6 pb-4">
+                        <button onClick={onClose || (() => window.location.reload())} className="text-brand font-medium text-lg flex items-center gap-1 active:opacity-60 transition-opacity">
+                            Cancel
+                        </button>
+                        <span className="font-bold text-sm opacity-0 transition-opacity duration-300" id="sticky-title">Step {step}: {titles[step]}</span>
+                        <div className="w-16"></div>
+                    </div>
+
+                    {/* Content Scroll Area */}
+                    <div className="flex-1 overflow-y-auto pt-24 pb-48" onScroll={(e) => {
+                        const title = document.getElementById('sticky-title');
+                        if (title) title.style.opacity = e.target.scrollTop > 40 ? '1' : '0';
+                    }}>
+                        <div className="max-w-xl mx-auto px-6 flex flex-col gap-6 animate-in slide-in-from-right duration-300">
+
+                            {/* Large Title */}
+                            <div>
+                                <h1 className="text-4xl font-black tracking-tight text-text mb-2">{titles[step]}</h1>
+                                <p className="text-text-muted font-medium">Step {Object.keys(titles).indexOf(step) + 1} of {Object.keys(titles).length}</p>
+                            </div>
+
+                            {/* Render Steps */}
+                            {step === 'A' && <StepBusinessProfile data={data} onChange={updateData} />}
+                            {step === 'B' && <StepWaterUsage data={data} onChange={updateData} />}
+                            {step === 'C' && <StepPricing data={data} onChange={updateData} />}
+                            {step === 'E' && <StepDistributor data={data} onChange={updateData} />}
+                            {step === 'G' && <StepWhiteLabel data={data} onChange={updateData} />}
+                            {step === 'I' && <StepClosing data={data} onChange={updateData} onSave={handleFinalSave} />}
                         </div>
                     </div>
 
-                    <Card className="min-h-[80vh] flex flex-col justify-between shadow-2xl border-brand/20 max-w-md mx-auto">
-                        {step === 'A' && <StepBusinessProfile data={data} onChange={updateData} />}
-                        {step === 'B' && <StepWaterUsage data={data} onChange={updateData} />}
-                        {step === 'C' && <StepPricing data={data} onChange={updateData} />}
-                        {step === 'E' && <StepDistributor data={data} onChange={updateData} />}
-                        {step === 'G' && <StepWhiteLabel data={data} onChange={updateData} />}
-                        {step === 'I' && <StepClosing data={data} onChange={updateData} onSave={handleFinalSave} />}
-
-                        {step !== 'I' && (
-                            <div className="flex justify-between mt-8 pt-4 border-t border-border">
-                                <Button variant="ghost" onClick={() => {
-                                    if (step === 'B') setStep('A');
-                                    if (step === 'C') setStep('B');
-                                    if (step === 'E') setStep('C');
-                                    if (step === 'G') setStep('E');
-                                    if (step === 'I') setStep('G');
-                                }}>Back</Button>
-
-                                <Button onClick={nextStep}>Next <Icons.ChevronRight /></Button>
-                            </div>
-                        )}
-                    </Card>
+                    {/* Sticky Bottom Action Bar */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-xl border-t border-white/20 p-6 z-50 pb-safe shadow-2xl">
+                        <div className="max-w-xl mx-auto flex gap-4 items-center">
+                            {step !== 'A' && step !== 'I' && (
+                                <button
+                                    onClick={() => {
+                                        if (step === 'B') setStep('A');
+                                        if (step === 'C') setStep('B');
+                                        if (step === 'E') setStep('C');
+                                        if (step === 'G') setStep('E');
+                                        if (step === 'I') setStep('G');
+                                    }}
+                                    className="h-14 w-14 rounded-full bg-surface-highlight flex items-center justify-center text-text shadow-sm active:scale-95 transition-transform"
+                                >
+                                    <Icons.ChevronRight className="rotate-180" />
+                                </button>
+                            )}
+                            {step !== 'I' && (
+                                <Button onClick={nextStep} variant="primary" className="flex-1 h-14 text-lg shadow-xl shadow-brand/30 rounded-full">
+                                    Continue
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             );
         };
 
         const ThemeSelector = () => {
             const { themeKey, setThemeKey, themes, uiRadius, setUiRadius } = useContext(ThemeContext);
+            const [isPickerOpen, setIsPickerOpen] = useState(false);
+            const currentTheme = themes[themeKey];
+
             return (
                 <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(themes).map(([key, t]) => (
-                            <button
-                                key={key}
-                                onClick={() => setThemeKey(key)}
-                                className={`h-16 rounded-xl flex items-center justify-center relative overflow-hidden transition-transform active:scale-95 border-2 ${themeKey === key ? 'border-brand ring-2 ring-brand ring-offset-2' : 'border-transparent'}`}
-                                style={{ backgroundColor: t.bg, color: t.text }}
-                            >
-                                <div className="absolute inset-0 opacity-20" style={{ background: `linear-gradient(45deg, ${t.brand}, ${t.accent})` }}></div>
-                                <span className="relative z-10 font-bold text-sm shadow-black drop-shadow-md">{t.name}</span>
-                                {themeKey === key && <div className="absolute top-1 right-1 bg-brand rounded-full p-0.5"><Icons.Check /></div>}
-                            </button>
-                        ))}
-                    </div>
+                    <button
+                        onClick={() => setIsPickerOpen(true)}
+                        className="flex items-center justify-between p-4 bg-surface-highlight/50 rounded-2xl border border-white/10 active:scale-98 transition-transform"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full shadow-lg" style={{ background: `linear-gradient(45deg, ${currentTheme.brand}, ${currentTheme.accent})` }}></div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-sm">Theme</span>
+                                <span className="text-xs text-text-muted">{currentTheme.name}</span>
+                            </div>
+                        </div>
+                        <Icons.ChevronRight />
+                    </button>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-text-muted uppercase">Shape & Radius</label>
-                        <div className="flex bg-surface-highlight p-1 rounded-lg">
+                        <label className="text-xs font-bold text-text-muted uppercase ml-2">Corner Radius</label>
+                        <div className="bg-surface-highlight/50 p-1 rounded-2xl flex">
                             {['square', 'default', 'round'].map(mode => (
                                 <button
                                     key={mode}
                                     onClick={() => setUiRadius(mode)}
-                                    className={`flex-1 py-1.5 text-xs font-semibold capitalize rounded-md transition-all ${uiRadius === mode ? 'bg-surface text-brand shadow-sm' : 'text-text-muted hover:text-text'}`}
+                                    className={`flex-1 py-2 text-xs font-bold capitalize rounded-xl transition-all ${uiRadius === mode ? 'bg-surface shadow-sm text-brand' : 'text-text-muted hover:text-text'}`}
                                 >
                                     {mode}
                                 </button>
                             ))}
                         </div>
                     </div>
+
+                    {isPickerOpen && (
+                        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center animate-in fade-in" onClick={() => setIsPickerOpen(false)}>
+                            <div className="w-full max-w-sm bg-surface rounded-t-[2rem] sm:rounded-[2rem] p-6 shadow-2xl animate-in slide-in-from-bottom" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xl font-bold">Choose Theme</h3>
+                                    <button onClick={() => setIsPickerOpen(false)} className="bg-surface-highlight p-2 rounded-full"><Icons.Close /></button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
+                                    {Object.entries(themes).map(([key, t]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => { setThemeKey(key); setIsPickerOpen(false); }}
+                                            className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95 ${themeKey === key ? 'border-brand bg-brand/5' : 'border-transparent bg-surface-highlight/50'}`}
+                                        >
+                                            <div className="w-12 h-12 rounded-full shadow-md" style={{ background: `linear-gradient(45deg, ${t.brand}, ${t.accent})` }}></div>
+                                            <span className="font-bold text-xs">{t.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -1669,36 +2077,147 @@
                 reader.readAsDataURL(file);
             };
 
+            const [showExportMenu, setShowExportMenu] = useState(false);
+
+            const handleExportCSV = () => {
+                const headers = ["ID,Business Name,Type,Location,Distributor,Monthly Volume,Status,Date"];
+                const rows = surveys.map(s =>
+                    `"${s.id}","${s.businessName || ''}","${s.businessType || ''}","${s.locationArea || ''}","${s.distributorName || ''}","${s.qtyMonthly || ''}","${s.status || ''}","${s.timestamp ? new Date(s.timestamp).toISOString() : ''}"`
+                );
+                const csvContent = headers.concat(rows).join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `vellora_export_${new Date().toISOString().slice(0, 10)}.csv`;
+                link.click();
+                setShowExportMenu(false);
+            };
+
+            const handleExportJSON = () => {
+                const blob = new Blob([JSON.stringify(surveys, null, 2)], { type: 'application/json' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `vellora_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                link.click();
+                setShowExportMenu(false);
+            };
+
             const handleFullPDF = () => {
                 const doc = new jspdf.jsPDF();
                 const logo = localStorage.getItem('app_logo');
-                if (logo) {
-                    try { doc.addImage(logo, 'PNG', 10, 10, 20, 20); } catch (e) { }
-                }
 
-                doc.setFontSize(18);
-                doc.text("VELLORA Full Report", 40, 25);
-                doc.setFontSize(10);
-                doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 32);
+                // Vibrant Apple Palette (Same as single view)
+                const COLORS = {
+                    primary: [0, 0, 0],
+                    secondary: [142, 142, 147],
+                    accent: THEMES[themeKey].brand === '#3B82F6' ? [0, 122, 255] : [52, 199, 89],
+                    bgParams: [242, 242, 247],
+                    cardBg: [255, 255, 255],
+                    success: [52, 199, 89],
+                    danger: [255, 59, 48],
+                    headerBg: [245, 245, 250]
+                };
 
-                const head = [['Date', 'Business', 'Type', 'Location', 'Volume', 'Distributor']];
-                const body = surveys.map(s => [
-                    new Date(s.timestamp).toLocaleDateString(),
-                    s.businessName,
-                    s.businessType,
-                    s.locationArea,
-                    s.qtyMonthly,
-                    s.distributorName
-                ]);
+                surveys.forEach((survey, index) => {
+                    if (index > 0) doc.addPage();
 
-                doc.autoTable({
-                    startY: 40,
-                    head: head,
-                    body: body,
-                    theme: 'striped'
+                    // --- DRAW HEADER ---
+                    doc.setFillColor(...COLORS.primary);
+                    doc.rect(0, 0, 210, 5, 'F');
+
+                    doc.setFillColor(...COLORS.headerBg);
+                    doc.rect(0, 5, 210, 45, 'F');
+
+                    if (logo) {
+                        try { doc.addImage(logo, 'PNG', 15, 12, 26, 26); } catch (e) { }
+                    }
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(24);
+                    doc.setTextColor(...COLORS.primary);
+                    doc.text("VELLORA", 50, 22);
+
+                    doc.setFontSize(12);
+                    doc.setTextColor(...COLORS.accent);
+                    doc.text("Enterprise Market Insight Report", 50, 29);
+
+                    doc.setFontSize(9);
+                    doc.setTextColor(...COLORS.secondary);
+                    doc.text(`Survey ID: ${survey.id.slice(0, 8)} • ${new Date(survey.timestamp).toLocaleDateString()}`, 50, 36);
+
+                    // --- DRAW BUSINESS CARD ---
+                    doc.setDrawColor(220, 220, 220);
+                    doc.setFillColor(...COLORS.cardBg);
+                    doc.roundedRect(15, 60, 180, 35, 3, 3, 'FD');
+
+                    doc.setFontSize(16);
+                    doc.setTextColor(...COLORS.primary);
+                    doc.text(survey.businessName || "Unknown Business", 25, 72);
+
+                    // Badges
+                    const drawBadge = (text, x, y, color) => {
+                        doc.setFillColor(...color);
+                        doc.roundedRect(x, y - 4, doc.getTextWidth(text) + 6, 6, 2, 2, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(8);
+                        doc.text(text, x + 3, y);
+                    };
+
+                    drawBadge(survey.businessType || 'N/A', 25, 82, [0, 122, 255]);
+                    drawBadge(survey.locationArea || 'N/A', 35 + doc.getTextWidth(survey.businessType || 'N/A'), 82, [255, 149, 0]);
+
+                    // --- DRAW DATA TABLE ---
+                    const dataBody = [
+                        ['SECTION: WATER USAGE', ''],
+                        ['Brands Stocked', (survey.brands || []).join(', ')],
+                        ['Bottle Sizes', (survey.bottleSizes || []).join(', ')],
+                        ['Monthly Volume', `${survey.qtyMonthly || 0} crates`],
+                        ['SECTION: PRICING', ''],
+                        ['Distributor', survey.distributorName || 'N/A'],
+                        ['Buy Price', `INR ${survey.buyPrice || '-'}`],
+                        ['Sell Price', `INR ${survey.sellPrice || '-'}`],
+                        ['Profit Margin', (survey.sellPrice && survey.buyPrice) ? `${Math.round(((survey.sellPrice - survey.buyPrice) / survey.buyPrice) * 100)}%` : '-'],
+                        ['SECTION: FEEDBACK', ''],
+                        ['Service Satisfaction', survey.happyWithService || '-'],
+                        ['Reported Issues', (survey.mainProblems || []).join(', ')],
+                        ['Custom Logo Interest', survey.interestedInCustomLogo || '-'],
+                        ['Willing to Pay', survey.extraWillingToPay ? `INR ${survey.extraWillingToPay}` : '-']
+                    ];
+
+                    doc.autoTable({
+                        startY: 105,
+                        head: [['Metric', 'Value']],
+                        body: dataBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [242, 242, 247], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0 },
+                        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70, textColor: [100, 100, 100] }, 1: { textColor: [0, 0, 0], fontStyle: 'bold' } },
+                        styles: { fontSize: 10, cellPadding: 4, lineColor: [230, 230, 235], lineWidth: 0.1 },
+                        didParseCell: function (data) {
+                            if (data.section === 'body' && data.cell.raw === '') data.cell.text = '';
+                            // Simple coloring for satisfaction
+                            if (data.section === 'body' && data.column.index === 1) {
+                                if (data.row.raw[0] === 'Service Satisfaction') {
+                                    if (data.cell.raw === 'Yes') data.cell.styles.textColor = [52, 199, 89];
+                                    else if (data.cell.raw === 'No') data.cell.styles.textColor = [255, 59, 48];
+                                }
+                            }
+                        }
+                    });
+
+                    // Footer
+                    const pageHeight = doc.internal.pageSize.height;
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    doc.text("Design & Analytics by Vellora", 105, pageHeight - 10, { align: 'center' });
+
+                    // Decorative bottom bar
+                    doc.setFillColor(52, 199, 89); doc.rect(0, pageHeight - 2, 70, 2, 'F');
+                    doc.setFillColor(0, 122, 255); doc.rect(70, pageHeight - 2, 70, 2, 'F');
+                    doc.setFillColor(255, 59, 48); doc.rect(140, pageHeight - 2, 70, 2, 'F');
                 });
 
-                doc.save('vellora_full_report.pdf');
+                doc.save(`vellora_bulk_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+                setShowExportMenu(false);
             };
 
             return (
@@ -1706,18 +2225,26 @@
                     <h2 className="text-2xl font-bold text-text">Settings</h2>
 
                     <section>
-                        <h3 className="text-sm font-bold text-text-muted uppercase mb-3">App Branding</h3>
-                        <Card>
-                            <div className="flex items-center gap-4">
+                        <Card className="flex items-center gap-4 !p-4">
+                            <div className="relative group">
                                 {localStorage.getItem('app_logo') ? (
-                                    <img src={localStorage.getItem('app_logo')} className="w-16 h-16 object-contain border rounded" />
+                                    <img src={localStorage.getItem('app_logo')} className="w-16 h-16 object-contain rounded-xl bg-white border border-border" />
                                 ) : (
-                                    <div className="w-16 h-16 bg-surface-highlight rounded flex items-center justify-center text-text-muted text-xs">No Logo</div>
+                                    <div className="w-16 h-16 bg-surface-highlight rounded-xl flex items-center justify-center text-text-muted"><Icons.Chart /></div>
                                 )}
-                                <div className="flex-1">
-                                    <label className="block text-sm font-bold mb-1">Upload Logo</label>
-                                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-xs w-full" />
-                                    <button onClick={() => { localStorage.removeItem('app_logo'); window.location.reload(); }} className="text-xs text-red-500 underline mt-1">Remove Logo</button>
+                            </div>
+                            <div className="flex-1 flex flex-col gap-2">
+                                <h3 className="font-bold text-lg leading-tight">Brand Logo</h3>
+                                <div className="flex gap-2">
+                                    <label className="bg-brand text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg shadow-brand/30 cursor-pointer active:scale-95 transition-transform">
+                                        Upload New
+                                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                                    </label>
+                                    {localStorage.getItem('app_logo') && (
+                                        <button onClick={() => { localStorage.removeItem('app_logo'); window.location.reload(); }} className="px-4 py-2 rounded-full text-xs font-bold bg-red-100 text-red-600 hover:bg-red-200 transition-colors">
+                                            Remove
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </Card>
@@ -1735,46 +2262,47 @@
                         </Card>
                     </section>
 
-                    <section className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-text-muted uppercase">Sync Workspace</h3>
-                            <button onClick={() => setShowWorkspace(!showWorkspace)} className="text-xs text-brand underline">
-                                {showWorkspace ? 'Hide' : 'Show'}
-                            </button>
-                        </div>
 
-                        {showWorkspace && (
-                            <Card>
-                                <div className="flex flex-col gap-3">
-                                    <p className="text-xs text-text-muted">Devices with the same code share data.</p>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={code}
-                                            onChange={e => setCode(e.target.value.toUpperCase())}
-                                            placeholder="MAIN"
-                                            className="uppercase font-mono"
-                                        />
-                                        <Button onClick={handleSaveCode} disabled={code === syncCode}>Save</Button>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 p-2 rounded">
-                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                        Active: {syncCode}
-                                    </div>
-                                </div>
-                            </Card>
-                        )}
-                    </section>
 
                     <section className="flex flex-col gap-3">
                         <h3 className="text-sm font-bold text-text-muted uppercase">Data Management</h3>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                             <Button variant="secondary" onClick={forceSync} className="text-sm">
-                                Force Sync
+                                Force Cloud Sync
                             </Button>
-                            <Button variant="danger" onClick={clearData} className="text-sm bg-red-100 text-red-600 shadow-none border border-red-200">
-                                <Icons.Trash /> Reset App
+
+                            <Button variant="primary" onClick={() => setShowExportMenu(true)} className="text-sm bg-surface-highlight text-text border border-border shadow-none hover:bg-surface-highlight/80">
+                                <Icons.Download /> Export / Backup Data
                             </Button>
+
+                            {showExportMenu && (
+                                <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center animate-in fade-in" onClick={() => setShowExportMenu(false)}>
+                                    <div className="w-full max-w-sm bg-surface rounded-t-[2rem] sm:rounded-[2rem] p-6 shadow-2xl animate-in slide-in-from-bottom" onClick={e => e.stopPropagation()}>
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="text-xl font-bold">Export Data</h3>
+                                            <button onClick={() => setShowExportMenu(false)} className="bg-surface-highlight p-2 rounded-full"><Icons.Close /></button>
+                                        </div>
+                                        <div className="flex flex-col gap-3">
+                                            <button onClick={handleFullPDF} className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold flex items-center justify-between shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">
+                                                <div className="flex flex-col items-start">
+                                                    <span>Full PDF Report</span>
+                                                    <span className="text-[10px] opacity-80 font-normal">One Page Per Survey • Apple Style</span>
+                                                </div>
+                                                <Icons.Download />
+                                            </button>
+                                            <button onClick={handleExportCSV} className="p-4 rounded-2xl bg-surface-highlight flex items-center justify-between font-bold active:scale-95 transition-transform border border-border">
+                                                <span>Export CSV</span>
+                                                <Icons.List />
+                                            </button>
+                                            <button onClick={handleExportJSON} className="p-4 rounded-2xl bg-surface-highlight flex items-center justify-between font-bold active:scale-95 transition-transform border border-border">
+                                                <span>Export JSON</span>
+                                                <Icons.Settings />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-2">
@@ -1827,14 +2355,15 @@
 
             const [view, setView] = useState('LIST');
             const [editData, setEditData] = useState(null);
+            const [isListScrolled, setIsListScrolled] = useState(false);
 
-            const NavItem = ({ icon: Icon, label, target, active }) => (
+            const NavItem = ({ icon: Icon, label, target, active, onClick, customClass, iconSize }) => (
                 <button
-                    onClick={() => setView(target)}
-                    className={`flex flex-col items-center justify-center flex-1 py-2 transition-colors ${active ? 'text-brand' : 'text-text-muted hover:text-text'}`}
+                    onClick={onClick || (() => setView(target))}
+                    className={`relative flex flex-col items-center justify-center flex-1 py-2 transition-all duration-500 ease-spring ${active ? 'text-brand' : 'text-text-muted hover:text-text'} ${customClass || ''}`}
                 >
-                    <Icon />
-                    <span className="text-[10px] font-medium mt-1">{label}</span>
+                    <Icon size={iconSize || 24} />
+                    {label && <span className="text-[10px] font-medium mt-1 transition-all">{label}</span>}
                 </button>
             );
 
@@ -1852,22 +2381,16 @@
                 if (view === 'WIZARD') return <SurveyWizard initialData={editData} onClose={closeWizard} />;
 
                 switch (view) {
-                    case 'LIST': return <SurveyList onEdit={handleEdit} />;
+                    case 'LIST': return <SurveyList onEdit={handleEdit} onScrollChange={setIsListScrolled} />;
                     case 'ANALYTICS': return <AnalyticsHub />;
                     case 'SETTINGS': return <Settings />;
-                    default: return <SurveyList onEdit={handleEdit} />;
+                    default: return <SurveyList onEdit={handleEdit} onScrollChange={setIsListScrolled} />;
                 }
             };
 
-            if (!user) return (
-                <div className="h-screen w-full flex items-center justify-center bg-bg text-text">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-                </div>
-            );
-
             const [logo, setLogo] = useState(localStorage.getItem('app_logo'));
 
-            // Update logo listener mechanism (poling or event based - simplistic polling for now every few secs or relying on re-renders)
+            // Update logo listener mechanism
             useEffect(() => {
                 const interval = setInterval(() => {
                     const l = localStorage.getItem('app_logo');
@@ -1875,6 +2398,13 @@
                 }, 2000);
                 return () => clearInterval(interval);
             }, [logo]);
+
+            if (!user) return (
+                <div className="h-screen w-full flex items-center justify-center bg-bg text-text">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                </div>
+            );
+
 
             // Status Dot Logic
             const getStatusColor = () => {
@@ -1884,33 +2414,58 @@
             };
 
             return (
-                <div id="app-shell" className={`min-h-screen w-full bg-bg text-text pb-24 transition-colors duration-300`}>
-                    <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
+                <div id="app-shell" className={`min-h-screen w-full bg-bg text-text pb-32 transition-colors duration-300 font-sans`}>
+                    <header className="sticky top-0 z-40 bg-surface/60 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${getStatusColor()} shadow-sm ring-1 ring-white/50`} title={!isOnline ? 'Offline' : (outboxCount > 0 ? 'Syncing' : 'Online')}></div>
-
-                            <div className="flex items-center gap-2">
-                                {logo && <img src={logo} alt="Logo" className="h-8 w-8 object-contain rounded-md" />}
-                                <h1 className="text-xl font-bold tracking-tight text-brand">VELLORA</h1>
+                            {logo && <img src={logo} alt="Logo" className="h-10 w-10 object-contain rounded-xl shadow-sm bg-white" />}
+                            <div>
+                                <h1 className="text-2xl font-black tracking-tighter drop-shadow-sm" style={{ color: (['light', 'corporate', 'pastel', 'warm', 'forest', 'sunset'].includes(themeKey)) ? '#000000' : '#FFFFFF' }}>
+                                    VELLORA
+                                </h1>
                             </div>
                         </div>
-
-                        {/* Global New Button only on Home/List */}
-                        {view === 'LIST' && (
-                            <Button variant="primary" className="!py-1.5 !px-3 !text-sm !rounded-lg" onClick={() => { setEditData(null); setView('WIZARD'); }}>
-                                <Icons.Plus /> New
-                            </Button>
-                        )}
+                        <div className="flex items-center gap-2 bg-surface-highlight/30 px-3 py-1.5 rounded-full border border-white/5">
+                            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
+                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{!isOnline ? 'Offline' : (outboxCount > 0 ? 'Syncing...' : 'Online')}</span>
+                        </div>
                     </header>
 
-                    <main className="max-w-md mx-auto min-h-[80vh]">
+                    <main className="max-w-xl mx-auto min-h-[85vh] p-6">
                         {renderContent()}
                     </main>
 
                     {view !== 'WIZARD' && (
-                        <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border pb-safe pt-2 px-4 shadow-lg z-50 flex items-center justify-around h-20 md:max-w-md md:mx-auto safe-area-bottom">
+                        <nav className="fixed bottom-6 left-6 right-6 bg-surface/80 backdrop-blur-2xl border border-white/20 rounded-full shadow-2xl z-50 flex items-center justify-around h-16 md:max-w-md md:mx-auto ring-1 ring-black/5">
                             <NavItem icon={Icons.Chart} label="Analytics" target="ANALYTICS" active={view === 'ANALYTICS'} />
-                            <NavItem icon={Icons.Home} label="Home" target="LIST" active={view === 'LIST'} />
+
+                            {/* Dynamic Home Button */}
+                            <button
+                                onClick={() => {
+                                    if (view === 'LIST') {
+                                        if (!isListScrolled) {
+                                            // Top -> New Survey
+                                            setEditData(null);
+                                            setView('WIZARD');
+                                        } else {
+                                            // Scrolled -> Scroll to Top
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }
+                                    } else {
+                                        setView('LIST');
+                                    }
+                                }}
+                                className={`flex items-center justify-center transition-all duration-500 ease-spring shadow-lg overflow-hidden border border-white/10 group ${view === 'LIST' && !isListScrolled ? 'w-32 bg-brand text-white rounded-[2rem] gap-2 active:scale-95' : 'w-12 h-12 rounded-full bg-surface-highlight text-text-muted hover:text-text'}`}
+                            >
+                                {view === 'LIST' && !isListScrolled ? (
+                                    <>
+                                        <Icons.Plus size={20} />
+                                        <span className="text-xs font-bold whitespace-nowrap">New Survey</span>
+                                    </>
+                                ) : (
+                                    <Icons.Home size={24} className={view === 'LIST' ? 'text-brand' : ''} />
+                                )}
+                            </button>
+
                             <NavItem icon={Icons.Settings} label="Settings" target="SETTINGS" active={view === 'SETTINGS'} />
                         </nav>
                     )}
