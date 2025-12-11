@@ -110,16 +110,18 @@
         };
 
         const THEMES = {
-            'corporate': { name: 'Corporate Light', brand: '#2563eb', accent: '#1d4ed8', bg: '#f8fafc', surface: '#ffffff', surfaceHighlight: '#e2e8f0', text: '#0f172a', textMuted: '#475569', border: '#cbd5e1', input: '#ffffff' },
-            'sunset': { name: 'Sunset', brand: '#ea580c', accent: '#c2410c', bg: '#fff7ed', surface: '#ffffff', surfaceHighlight: '#ffedd5', text: '#431407', textMuted: '#9a3412', border: '#fed7aa', input: '#ffffff' },
-            'forest': { name: 'Forest Rain', brand: '#059669', accent: '#047857', bg: '#f0fdf4', surface: '#ffffff', surfaceHighlight: '#dcfce7', text: '#064e3b', textMuted: '#065f46', border: '#86efac', input: '#ffffff' },
-            'berry': { name: 'Berry', brand: '#db2777', accent: '#be185d', bg: '#fdf2f8', surface: '#ffffff', surfaceHighlight: '#fce7f3', text: '#831843', textMuted: '#9d174d', border: '#fbcfe8', input: '#ffffff' },
-            'slate': { name: 'Slate', brand: '#475569', accent: '#334155', bg: '#f1f5f9', surface: '#ffffff', surfaceHighlight: '#cbd5e1', text: '#1e293b', textMuted: '#475569', border: '#cbd5e1', input: '#ffffff' },
-            'midnight': { name: 'Midnight Dark', brand: '#60a5fa', accent: '#3b82f6', bg: '#020617', surface: '#0f172a', surfaceHighlight: '#1e293b', text: '#f8fafc', textMuted: '#94a3b8', border: '#1e293b', input: '#0f172a' },
-            'obsidian': { name: 'Obsidian', brand: '#ffffff', accent: '#eeeeee', bg: '#000000', surface: '#111111', surfaceHighlight: '#222222', text: '#ffffff', textMuted: '#a3a3a3', border: '#333333', input: '#111111' },
-            'oceanic': { name: 'Oceanic', brand: '#0891b2', accent: '#0e7490', bg: '#ecfeff', surface: '#ffffff', surfaceHighlight: '#cffafe', text: '#164e63', textMuted: '#155e75', border: '#a5f3fc', input: '#ffffff' },
-            'royal': { name: 'Royal', brand: '#7c3aed', accent: '#6d28d9', bg: '#faf5ff', surface: '#ffffff', surfaceHighlight: '#f3e8ff', text: '#2e1065', textMuted: '#5b21b6', border: '#e9d5ff', input: '#ffffff' },
-            'luxury': { name: 'Luxury', brand: '#d4af37', accent: '#b4941f', bg: '#0c0a09', surface: '#1c1917', surfaceHighlight: '#292524', text: '#fafaf9', textMuted: '#a8a29e', border: '#44403c', input: '#1c1917' },
+            'corporate': { name: 'Corporate Blue', brand: '#007AFF', accent: '#5AC8FA', bg: '#F2F2F7', surface: '#FFFFFF', surfaceHighlight: '#E5E5EA', text: '#000000', textMuted: '#8E8E93', border: '#C6C6C8', input: '#FFFFFF' },
+            'sunset': { name: 'California Sunset', brand: '#FF9500', accent: '#FF2D55', bg: '#FFF7F0', surface: '#FFFFFF', surfaceHighlight: '#FFE4D1', text: '#2C1B10', textMuted: '#9A6B53', border: '#FFDCC2', input: '#FFFFFF' },
+            'forest': { name: 'Sherwood Forest', brand: '#34C759', accent: '#30B0C7', bg: '#F0FDF4', surface: '#FFFFFF', surfaceHighlight: '#DCFCE7', text: '#052E16', textMuted: '#166534', border: '#BBF7D0', input: '#FFFFFF' },
+            'berry': { name: 'Berry Smoothie', brand: '#AF52DE', accent: '#FF2D55', bg: '#FDF4FF', surface: '#FFFFFF', surfaceHighlight: '#F5D0FE', text: '#4A044E', textMuted: '#A21CAF', border: '#F0ABFC', input: '#FFFFFF' },
+            'ocean': { name: 'Pacific Ocean', brand: '#00C7BE', accent: '#32ADE6', bg: '#ECFEFF', surface: '#FFFFFF', surfaceHighlight: '#CFFAFE', text: '#083344', textMuted: '#155E75', border: '#A5F3FC', input: '#FFFFFF' },
+
+            // Dark Themes
+            'midnight': { name: 'Midnight', brand: '#0A84FF', accent: '#5E5CE6', bg: '#000000', surface: '#1C1C1E', surfaceHighlight: '#2C2C2E', text: '#FFFFFF', textMuted: '#8E8E93', border: '#38383A', input: '#1C1C1E' },
+            'obsidian': { name: 'Obsidian', brand: '#FFFFFF', accent: '#8E8E93', bg: '#000000', surface: '#121212', surfaceHighlight: '#262626', text: '#FFFFFF', textMuted: '#A0A0A0', border: '#333333', input: '#121212' },
+            'deep_space': { name: 'Deep Space', brand: '#BF5AF2', accent: '#5E5CE6', bg: '#050408', surface: '#161221', surfaceHighlight: '#29233B', text: '#F5F3FF', textMuted: '#A78BFA', border: '#382E52', input: '#161221' },
+            'coffee': { name: 'Dark Roast', brand: '#AC8E68', accent: '#D4B895', bg: '#1A1613', surface: '#292524', surfaceHighlight: '#44403C', text: '#F5F5F4', textMuted: '#A8A29E', border: '#57534E', input: '#292524' },
+            'cyber': { name: 'Cyberpunk', brand: '#30D158', accent: '#FFD60A', bg: '#080A08', surface: '#131A14', surfaceHighlight: '#1F2E21', text: '#E4F8E7', textMuted: '#4ADE80', border: '#254228', input: '#131A14' },
         };
 
         const INITIAL_MASTER_DATA = {
@@ -138,9 +140,11 @@
 
         // --- 2a. ThemeContext ---
         const ThemeContext = createContext();
+        // --- 2b. PromptContext ---
+        const PromptContext = createContext();
         const ThemeProvider = ({ children }) => {
             const [themeKey, setThemeKey] = useState(() => localStorage.getItem('vellora_theme') || 'corporate');
-            const [uiRadius, setUiRadius] = useState(() => localStorage.getItem('vellora_radius') || 'default');
+            const [uiRadius, setUiRadius] = useState('round');
 
             useEffect(() => {
                 const t = THEMES[themeKey];
@@ -704,7 +708,7 @@
 
                     {/* Dropdown / Modal */}
                     {isOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-surface shadow-2xl rounded-xl border border-border z-50 max-h-60 overflow-y-auto flex flex-col p-2 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-surface shadow-2xl rounded-xl border border-border z-[100] max-h-60 overflow-y-auto flex flex-col p-2 animate-in fade-in zoom-in-95 duration-200">
                             <input
                                 autoFocus
                                 value={filter}
@@ -749,6 +753,7 @@
 
         const StepBusinessProfile = ({ data, onChange, onNext }) => {
             const { masterData, addMasterItem } = useContext(DataContext);
+            const { openPrompt } = useContext(PromptContext);
             const [geoError, setGeoError] = useState(null);
             const [loadingGeo, setLoadingGeo] = useState(false);
 
@@ -847,11 +852,10 @@
                             ))}
                             <button
                                 onClick={() => {
-                                    const val = prompt("Enter new Business Type:");
-                                    if (val) {
+                                    openPrompt("Enter new Business Type:", (val) => {
                                         addMasterItem('businessTypes', val);
                                         onChange('businessType', val);
-                                    }
+                                    });
                                 }}
                                 className="p-4 rounded-2xl text-sm font-bold border-2 border-dashed border-border text-text-muted bg-transparent hover:bg-surface-highlight active:scale-95 flex flex-col items-center justify-center gap-2 h-24"
                             >
@@ -884,6 +888,7 @@
 
         const StepWaterUsage = ({ data, onChange }) => {
             const { masterData, addMasterItem } = useContext(DataContext);
+            const { openPrompt } = useContext(PromptContext);
 
             // Multi-select helpers
             const toggleItem = (field, item) => {
@@ -911,7 +916,7 @@
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center px-2">
                             <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Brands Stocked</label>
-                            <button onClick={() => { const v = prompt("Add Brand:"); handleAddBrand(v); }} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
+                            <button onClick={() => openPrompt("Add Brand:", (v) => handleAddBrand(v))} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
                         </div>
                         <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 flex flex-wrap gap-2 shadow-sm border border-white/10">
                             {masterData.brands.map(b => (
@@ -930,7 +935,7 @@
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center px-2">
                             <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Bottle Sizes</label>
-                            <button onClick={() => { const v = prompt("Add Size:"); handleAddSize(v); }} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
+                            <button onClick={() => openPrompt("Add Size:", (v) => handleAddSize(v))} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
                         </div>
                         <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 flex flex-wrap gap-2 shadow-sm border border-white/10">
                             {masterData.bottleSizes.map(s => (
@@ -947,42 +952,66 @@
 
                     {/* Monthly Qty Slider - Apple Health Style */}
                     <div className="flex flex-col gap-3">
-                        <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Monthly Volume</label>
-                        <div className="bg-surface rounded-[2rem] p-6 shadow-sm flex flex-col items-center gap-8 border border-white/10 relative overflow-hidden">
+                        <div className="flex justify-between items-center ml-4 mr-2">
+                            <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Volume Estimation</label>
+
+                            {/* Toggle */}
+                            <div className="flex bg-surface-highlight/50 p-1 rounded-lg">
+                                {['Daily', 'Monthly'].map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => {
+                                            onChange('qtyMode', m.toLowerCase());
+                                            // Recalculate immediate visual (optional, but good for UX)
+                                        }}
+                                        className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${data.qtyMode === m.toLowerCase() ? 'bg-white shadow text-brand' : 'text-text-muted hover:text-text'}`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-surface rounded-[2rem] p-6 shadow-sm flex flex-col items-center gap-6 border border-white/10 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand/20 to-transparent"></div>
 
                             <div className="flex flex-col items-center z-10 w-full px-8">
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="number"
-                                        value={data.qtyMonthly || 0}
-                                        onChange={e => onChange('qtyMonthly', parseInt(e.target.value) || 0)}
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        value={data.qtyMode === 'daily' ? (Math.round((data.qtyMonthly || 0) / 30)) : (data.qtyMonthly || 0)}
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value) || 0;
+                                            if (data.qtyMode === 'daily') onChange('qtyMonthly', val * 30);
+                                            else onChange('qtyMonthly', val);
+                                        }}
                                         className="text-7xl font-black tracking-tighter text-text tabular-nums drop-shadow-sm bg-transparent outline-none text-center w-full max-w-[300px]"
                                     />
                                 </div>
-                                <span className="text-brand font-bold text-xs uppercase tracking-widest mt-1 bg-brand/10 px-3 py-1 rounded-full">Crates / Month</span>
+                                <span className="text-brand font-bold text-xs uppercase tracking-widest mt-1 bg-brand/10 px-3 py-1 rounded-full">{data.qtyMode === 'daily' ? 'Crates / Day' : 'Crates / Month'}</span>
+                                {data.qtyMode === 'daily' && <span className="text-[10px] text-text-muted mt-2 font-medium">≈ 30 days = {data.qtyMonthly || 0} / month</span>}
                             </div>
 
-                            <div className="w-full relative h-12 flex items-center mt-4">
+                            <div className="w-full relative h-12 flex items-center mt-2">
                                 <input
                                     type="range"
                                     min="0"
-                                    max="2000"
-                                    step="10"
-                                    value={data.qtyMonthly || 0}
-                                    onChange={e => onChange('qtyMonthly', parseInt(e.target.value))}
+                                    max={data.qtyMode === 'daily' ? 100 : 3000}
+                                    step={data.qtyMode === 'daily' ? 1 : 10}
+                                    value={data.qtyMode === 'daily' ? (Math.round((data.qtyMonthly || 0) / 30)) : (data.qtyMonthly || 0)}
+                                    onChange={e => {
+                                        const val = parseInt(e.target.value);
+                                        if (data.qtyMode === 'daily') onChange('qtyMonthly', val * 30);
+                                        else onChange('qtyMonthly', val);
+                                    }}
                                     className="w-full h-12 opacity-0 cursor-pointer absolute z-20"
                                 />
                                 <div className="w-full h-4 bg-surface-highlight rounded-full overflow-hidden absolute z-10">
-                                    <div className="h-full bg-gradient-to-r from-brand to-accent transition-all duration-100" style={{ width: `${Math.min(100, (data.qtyMonthly / 2000) * 100)}%` }}></div>
+                                    <div className="h-full bg-gradient-to-r from-brand to-accent transition-all duration-100" style={{ width: `${Math.min(100, ((data.qtyMonthly || 0) / 3000) * 100)}%` }}></div>
                                 </div>
-                                <div className="absolute w-8 h-8 bg-white shadow-md border-2 border-surface-highlight rounded-full z-10 pointer-events-none transition-all duration-100" style={{ left: `calc(${Math.min(100, (data.qtyMonthly / 2000) * 100)}% - 16px)` }}></div>
-                            </div>
-
-                            <div className="flex gap-2 w-full">
-                                {[100, 500, 1000, 2000].map(v => (
-                                    <button key={v} onClick={() => onChange('qtyMonthly', v)} className="flex-1 py-3 rounded-2xl bg-surface-highlight/30 text-xs font-bold text-text-muted hover:bg-brand hover:text-white transition-all shadow-sm active:scale-90">{v}</button>
-                                ))}
+                                <div className="absolute w-8 h-8 bg-white shadow-md border-2 border-surface-highlight rounded-full z-10 pointer-events-none transition-all duration-100" style={{ left: `calc(${Math.min(100, ((data.qtyMonthly || 0) / 3000) * 100)}% - 16px)` }}></div>
                             </div>
                         </div>
                     </div>
@@ -1057,6 +1086,7 @@
 
         const StepDistributor = ({ data, onChange }) => {
             const { masterData, addMasterItem } = useContext(DataContext);
+            const { openPrompt } = useContext(PromptContext);
 
             const handleAddDist = (val) => {
                 if (!val) return;
@@ -1087,17 +1117,22 @@
                         </div>
                     </div>
 
-                    {data.distributorName === 'Direct Company' && (
+                    {/* Contact details for ANY selected distributor */}
+                    {data.distributorName && (
                         <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in border border-white/10">
-                            <Input label="Company Name (Optional)" value={data.distCompany || ''} onChange={e => onChange('distCompany', e.target.value)} />
-                            <Input label="Reg Number (Optional)" value={data.distReg || ''} onChange={e => onChange('distReg', e.target.value)} />
-                        </div>
-                    )}
-
-                    {data.distributorName === 'Local Vendor' && (
-                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in border border-white/10">
-                            <Input label="Vendor Name *" value={data.localVendorName || ''} onChange={e => onChange('localVendorName', e.target.value)} />
-                            <Input label="Mobile Number" type="tel" value={data.localVendorMobile || ''} onChange={e => onChange('localVendorMobile', e.target.value)} />
+                            <Input
+                                label={data.distributorName === 'Direct Company' ? "Company Name (Optional)" : "Contact Person Name *"}
+                                value={data.distContactName || ''}
+                                onChange={e => onChange('distContactName', e.target.value)}
+                            />
+                            <Input
+                                label="Phone Number *"
+                                type="tel"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={data.distContactPhone || ''}
+                                onChange={e => onChange('distContactPhone', e.target.value)}
+                            />
                         </div>
                     )}
 
@@ -1118,7 +1153,7 @@
                                         {p}
                                     </button>
                                 ))}
-                                <button onClick={() => { const v = prompt("Add Problem:"); if (v) { addMasterItem('problems', v); toggleProblem(v); } }} className="px-4 py-2.5 rounded-xl text-xs font-bold border border-brand/20 text-brand bg-brand/5 hover:bg-brand/10 transition-colors">+ Add</button>
+                                <button onClick={() => openPrompt("Add Problem:", (v) => { addMasterItem('problems', v); toggleProblem(v); })} className="px-4 py-2.5 rounded-xl text-xs font-bold border border-brand/20 text-brand bg-brand/5 hover:bg-brand/10 transition-colors">+ Add</button>
                             </div>
                         </div>
                     )}
@@ -1209,6 +1244,7 @@
 
         const StepWhiteLabel = ({ data, onChange }) => {
             const { masterData, addMasterItem } = useContext(DataContext);
+            const { openPrompt } = useContext(PromptContext);
             return (
                 <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
 
@@ -1238,7 +1274,7 @@
                                     {masterData.whiteLabelPurposes.map(p => (
                                         <button key={p} onClick={() => onChange('customPurpose', p)} className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${data.customPurpose === p ? 'bg-brand text-white border-transparent shadow-lg scale-105' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight'}`}>{p}</button>
                                     ))}
-                                    <button onClick={() => { const v = prompt("Purpose:"); if (v) { addMasterItem('whiteLabelPurposes', v); onChange('customPurpose', v); } }} className="px-4 py-2.5 rounded-xl text-xs font-bold bg-brand/5 text-brand border border-brand/20 hover:bg-brand/10">+ Add</button>
+                                    <button onClick={() => openPrompt("Purpose:", (v) => { addMasterItem('whiteLabelPurposes', v); onChange('customPurpose', v); })} className="px-4 py-2.5 rounded-xl text-xs font-bold bg-brand/5 text-brand border border-brand/20 hover:bg-brand/10">+ Add</button>
                                 </div>
                             </div>
                         </>
@@ -1531,7 +1567,7 @@
                         <h3 className="font-bold text-xl">Recycle Bin Locked</h3>
                         <p className="text-text-muted text-sm -mt-2 mb-4">Enter passcode to view deleted items</p>
                         <div className="flex gap-2">
-                            <Input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="• • • •" className="w-32 text-center text-lg tracking-widest font-mono" />
+                            <Input type="password" inputMode="numeric" pattern="[0-9]*" value={pin} onChange={e => setPin(e.target.value)} placeholder="• • • •" className="w-32 text-center text-lg tracking-widest font-mono" />
                             <Button onClick={checkPin} variant="primary">Unlock</Button>
                         </div>
                     </div>
@@ -1586,6 +1622,7 @@
             }, [onScrollChange]);
 
             const filtered = surveys.filter(s => {
+                if (s.deletedAt) return false; // Hide deleted items logic (Ghosting fix)
                 const searchMatch = (s.businessName || '').toLowerCase().includes(filter.toLowerCase()) ||
                     (s.locationArea || '').toLowerCase().includes(filter.toLowerCase());
 
@@ -2022,20 +2059,7 @@
                         <Icons.ChevronRight />
                     </button>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-text-muted uppercase ml-2">Corner Radius</label>
-                        <div className="bg-surface-highlight/50 p-1 rounded-2xl flex">
-                            {['square', 'default', 'round'].map(mode => (
-                                <button
-                                    key={mode}
-                                    onClick={() => setUiRadius(mode)}
-                                    className={`flex-1 py-2 text-xs font-bold capitalize rounded-xl transition-all ${uiRadius === mode ? 'bg-surface shadow-sm text-brand' : 'text-text-muted hover:text-text'}`}
-                                >
-                                    {mode}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+
 
                     {isPickerOpen && (
                         <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center animate-in fade-in" onClick={() => setIsPickerOpen(false)}>
@@ -2355,6 +2379,47 @@
             );
         };
 
+        const AppPromptModal = () => {
+            const { promptState, closePrompt } = useContext(PromptContext);
+            const [val, setVal] = useState('');
+
+            useEffect(() => {
+                if (promptState.isOpen) setVal('');
+            }, [promptState.isOpen]);
+
+            if (!promptState.isOpen) return null;
+
+            const handleConfirm = () => {
+                if (val.trim()) {
+                    promptState.callback(val);
+                    closePrompt();
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-6">
+                    <div className="bg-surface w-full max-w-sm rounded-[2rem] p-6 shadow-2xl scale-100 animate-in zoom-in-95 border border-white/20">
+                        <h3 className="text-xl font-bold text-center mb-2">{promptState.message}</h3>
+                        <p className="text-text-muted text-center text-sm mb-6">Enter details below</p>
+
+                        <input
+                            autoFocus
+                            value={val}
+                            onChange={e => setVal(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                            className="w-full bg-surface-highlight text-lg px-4 py-3 rounded-xl outline-none border-2 border-transparent focus:border-brand transition-all text-center font-bold mb-6"
+                            placeholder="Type here..."
+                        />
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={closePrompt} className="py-3 rounded-xl font-bold text-text-muted bg-surface-highlight hover:bg-surface-highlight/80 transition-colors">Cancel</button>
+                            <button onClick={handleConfirm} className="py-3 rounded-xl font-bold text-white bg-brand shadow-lg shadow-brand/30 hover:scale-105 transition-transform">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const { themeKey } = useContext(ThemeContext);
             const { isOnline, outboxCount } = useContext(DataContext);
@@ -2420,65 +2485,37 @@
                 return 'bg-green-500';
             };
 
+            // Prompt State
+            const [promptState, setPromptState] = useState({ isOpen: false, message: '', callback: null });
+            const openPrompt = (message, callback) => {
+                setPromptState({ isOpen: true, message, callback });
+            };
+            const closePrompt = () => setPromptState(prev => ({ ...prev, isOpen: false }));
+
             return (
-                <div id="app-shell" className={`min-h-screen w-full bg-bg text-text pb-32 transition-colors duration-300 font-sans`}>
-                    <header className="sticky top-0 z-40 bg-surface/60 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-sm">
-                        <div className="flex items-center gap-3">
-                            {logo && <img src={logo} alt="Logo" className="h-10 w-10 object-contain rounded-xl shadow-sm bg-white" />}
-                            <div>
-                                <h1 className="text-2xl font-black tracking-tighter drop-shadow-sm" style={{ color: (['light', 'corporate', 'pastel', 'warm', 'forest', 'sunset'].includes(themeKey)) ? '#000000' : '#FFFFFF' }}>
-                                    VELLORA
-                                </h1>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 bg-surface-highlight/30 px-3 py-1.5 rounded-full border border-white/5">
-                            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
-                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{!isOnline ? 'Offline' : (outboxCount > 0 ? 'Syncing...' : 'Online')}</span>
-                        </div>
-                    </header>
-
-                    <main className="max-w-xl mx-auto min-h-[85vh] p-6">
-                        {renderContent()}
-                    </main>
-
-                    {view !== 'WIZARD' && (
-                        <nav className="fixed bottom-6 left-6 right-6 bg-surface/80 backdrop-blur-2xl border border-white/20 rounded-full shadow-2xl z-50 flex items-center justify-around h-16 md:max-w-md md:mx-auto ring-1 ring-black/5">
-                            <NavItem icon={Icons.Chart} label="Analytics" target="ANALYTICS" active={view === 'ANALYTICS'} />
-
-                            {/* Dynamic Home Button */}
-                            <button
-                                onClick={() => {
-                                    if (view === 'LIST') {
-                                        if (!isListScrolled) {
-                                            // Top -> New Survey
-                                            setEditData(null);
-                                            setView('WIZARD');
-                                        } else {
-                                            // Scrolled -> Scroll to Top
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }
-                                    } else {
-                                        setView('LIST');
-                                    }
-                                }}
-                                className={`flex items-center justify-center transition-all duration-500 ease-spring shadow-lg overflow-hidden border border-white/10 group ${view === 'LIST' && !isListScrolled ? 'w-32 bg-brand text-white rounded-[2rem] gap-2 active:scale-95' : 'w-12 h-12 rounded-full bg-surface-highlight text-text-muted hover:text-text'}`}
-                            >
-                                {view === 'LIST' && !isListScrolled ? (
-                                    <>
-                                        <Icons.Plus size={20} />
-                                        <span className="text-xs font-bold whitespace-nowrap">New Survey</span>
-                                    </>
-                                ) : (
-                                    <Icons.Home size={24} className={view === 'LIST' ? 'text-brand' : ''} />
-                                )}
-                            </button>
-
-                            <NavItem icon={Icons.Settings} label="Settings" target="SETTINGS" active={view === 'SETTINGS'} />
-                        </nav>
-                    )}
-                </div>
+                <ThemeContext.Provider value={{ themeKey, setThemeKey, themes: THEMES, uiRadius, setUiRadius, colors: THEMES[themeKey] }}>
+                    <PromptContext.Provider value={{ openPrompt, promptState, closePrompt }}>
+                        <DataContext.Provider value={{
+                            surveys, persistSurveys,
+                            masterData, persistMasterData: updateMasterData,
+                            outbox, persistOutbox: updateOutbox,
+                            deletedSurveys, persistDeleted: updateDeletedSurveys,
+                            logo, setLogo: handleLogoUpload,
+                            restoreSurvey, permDeleteSurvey,
+                            deleteSurvey,
+                            addMasterItem,
+                            syncCode, updateSyncCode,
+                            isOnline
+                        }}>
+                            {renderContent()}
+                            <AppPromptModal />
+                        </DataContext.Provider>
+                    </PromptContext.Provider>
+                </ThemeContext.Provider>
             );
         };
+
+
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(
