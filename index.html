@@ -92,6 +92,34 @@
     </script>
 
     <!-- Icons (Lucide via CDN image sprites or SVG implementation in code - using simple SVGs for now to reduce deps) -->
+
+    <!-- Dynamic Favicon/Icon Script -->
+    <script>
+        (function () {
+            try {
+                const logo = localStorage.getItem('app_logo');
+                if (logo) {
+                    let link = document.querySelector("link[rel~='icon']");
+                    if (!link) {
+                        link = document.createElement('link');
+                        link.rel = 'icon';
+                        document.head.appendChild(link);
+                    }
+                    link.href = logo;
+
+                    let appleLink = document.querySelector("link[rel~='apple-touch-icon']");
+                    if (!appleLink) {
+                        appleLink = document.createElement('link');
+                        appleLink.rel = 'apple-touch-icon';
+                        document.head.appendChild(appleLink);
+                    }
+                    appleLink.href = logo;
+                }
+            } catch (e) {
+                console.error("Error setting dynamic icon", e);
+            }
+        })();
+    </script>
 </head>
 
 <body>
@@ -421,19 +449,7 @@
 
             // --- E. PUBLIC ACTIONS ---
 
-            const [deletedSurveys, setDeletedSurveys] = useState([]); // In-memory Recycle bin for now (could persist if needed)
 
-            // Persist recycle bin to local storage
-            const persistDeleted = (data) => {
-                setDeletedSurveys(data);
-                localStorage.setItem(`vellora_${syncCode}_deleted`, JSON.stringify(data));
-            };
-
-            // Load Deleted on mounting
-            useEffect(() => {
-                const saved = localStorage.getItem(`vellora_${syncCode}_deleted`);
-                if (saved) setDeletedSurveys(JSON.parse(saved));
-            }, [syncCode]);
 
             // ... (Sync Engine omitted for brevity - existing logic remains) ...
             // We need to ensure we don't sync "soft deletes" as "hard deletes" to firestore immediately if we want to restore them.
@@ -469,44 +485,31 @@
                 return completeSurvey;
             };
 
-            // Soft Delete (Move to Bin)
+
+            // Soft Delete (Mark as Deleted - SYNCED)
             const deleteSurvey = (id) => {
                 const survey = surveys.find(s => s.id === id);
                 if (!survey) return;
 
-                // Remove from active
-                const newSurveys = surveys.filter(s => s.id !== id);
-                persistSurveys(newSurveys);
-
-                // Add to deleted
-                const newDeleted = [{ ...survey, deletedAt: new Date().toISOString() }, ...deletedSurveys];
-                persistDeleted(newDeleted);
-
-                // NOTE: We do NOT send DELETE to Firestore yet.
+                const updated = { ...survey, deletedAt: new Date().toISOString() };
+                saveSurvey(updated);
             };
 
             // Restore from Bin
             const restoreSurvey = (id) => {
-                const survey = deletedSurveys.find(s => s.id === id);
+                const survey = surveys.find(s => s.id === id);
                 if (!survey) return;
 
-                // Remove from deleted
-                const newDeleted = deletedSurveys.filter(s => s.id !== id);
-                persistDeleted(newDeleted);
-
-                // Add to active (remove deletedAt marker if wanted)
                 const { deletedAt, ...rest } = survey;
-                const newSurveys = [rest, ...surveys];
-                // sort by timestamp
-                newSurveys.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                persistSurveys(newSurveys);
+                saveSurvey({ ...rest, deletedAt: null }); // Explicit null or omit? SaveSurvey merges. Better to send null or re-save clean.
+                // Best approach: Optimistic update clears filter.
             };
 
-            // Permanent Delete
+            // Permanent Delete (Hard Delete)
             const permDeleteSurvey = (id) => {
-                // Remove from deleted
-                const newDeleted = deletedSurveys.filter(s => s.id !== id);
-                persistDeleted(newDeleted);
+                // Optimistic remove from local list
+                const newSurveys = surveys.filter(s => s.id !== id);
+                persistSurveys(newSurveys);
 
                 // Send DELETE to Firestore
                 const task = { type: 'DELETE_SURVEY', payload: { id }, id: generateUUID() };
@@ -535,10 +538,10 @@
                 if (confirm('Clear all local data?')) {
                     localStorage.removeItem(`vellora_${syncCode}_surveys`);
                     localStorage.removeItem(`vellora_${syncCode}_outbox`);
-                    localStorage.removeItem(`vellora_${syncCode}_deleted`);
+                    // localStorage.removeItem(`vellora_${syncCode}_deleted`); // Gone
                     setSurveys([]);
                     setOutbox([]);
-                    setDeletedSurveys([]);
+                    // setDeletedSurveys([]); // Gone
                     window.location.reload();
                 }
             };
@@ -554,7 +557,7 @@
                     setSyncCode: updateSyncCode,
                     masterData,
                     surveys,
-                    deletedSurveys, // Exported
+                    // deletedSurveys, // Removed. Derived in components.
                     isOnline,
                     saveSurvey,
                     deleteSurvey, // Soft delete
@@ -1104,9 +1107,9 @@
             };
 
             return (
-                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300">
+                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300 pb-24">
 
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 relative z-30">
                         <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Distributor Source</label>
                         <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white/10">
                             <SelfLearningSelect
@@ -1122,7 +1125,7 @@
 
                     {/* Contact details for ANY selected distributor */}
                     {data.distributorName && (
-                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in border border-white/10">
+                        <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-4 border border-white/10 relative z-20">
                             <Input
                                 label={data.distributorName === 'Direct Company' ? "Company Name (Optional)" : "Contact Person Name *"}
                                 value={data.distContactName || ''}
@@ -1139,7 +1142,7 @@
                         </div>
                     )}
 
-                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between border border-white/10">
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between border border-white/10 relative z-10">
                         <label className="text-sm font-bold text-text">Happy with Service?</label>
                         <div className="flex bg-surface-highlight rounded-xl p-1">
                             <button onClick={() => onChange('happyWithService', 'Yes')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${data.happyWithService === 'Yes' ? 'bg-white shadow text-green-600' : 'text-text-muted hover:text-text'}`}>Yes</button>
@@ -1552,7 +1555,10 @@
         };
 
         const RecycleBinView = () => {
-            const { deletedSurveys, restoreSurvey, permDeleteSurvey } = useContext(DataContext);
+            // Refactored to derive from single source of truth
+            const { surveys, restoreSurvey, permDeleteSurvey } = useContext(DataContext);
+            const deletedSurveys = surveys.filter(s => s.deletedAt).sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+
             const [pin, setPin] = useState('');
             const [unlocked, setUnlocked] = useState(false);
 
@@ -1625,7 +1631,8 @@
             }, [onScrollChange]);
 
             const filtered = surveys.filter(s => {
-                if (s.deletedAt) return false; // Hide deleted items logic (Ghosting fix)
+                if (s.deletedAt) return false; // Hide deleted items (Ghosted fixed via Logic Refactor)
+
                 const searchMatch = (s.businessName || '').toLowerCase().includes(filter.toLowerCase()) ||
                     (s.locationArea || '').toLowerCase().includes(filter.toLowerCase());
 
@@ -1633,9 +1640,8 @@
 
                 if (filterCategory === 'All') return true;
                 if (filterCategory === 'High Volume') return (s.qtyMonthly || 0) > 500;
-                if (filterCategory === 'Recently Added') return new Date(s.timestamp) > new Date(Date.now() - 86400000 * 2); // Last 2 days
+                if (filterCategory === 'Recently Added') return new Date(s.timestamp) > new Date(Date.now() - 86400000 * 2);
 
-                // Partial match for Type
                 return (s.businessType || '').includes(filterCategory);
             });
 
