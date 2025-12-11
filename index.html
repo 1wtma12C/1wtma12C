@@ -143,11 +143,14 @@
         // --- 2b. PromptContext ---
         const PromptContext = createContext();
         const ThemeProvider = ({ children }) => {
-            const [themeKey, setThemeKey] = useState(() => localStorage.getItem('vellora_theme') || 'corporate');
+            const [themeKey, setThemeKey] = useState(() => {
+                const stored = localStorage.getItem('vellora_theme');
+                return (stored && THEMES[stored]) ? stored : 'corporate';
+            });
             const [uiRadius, setUiRadius] = useState('round');
 
             useEffect(() => {
-                const t = THEMES[themeKey];
+                const t = THEMES[themeKey] || THEMES['corporate'];
                 const root = document.documentElement;
                 root.style.setProperty('--color-brand', t.brand);
                 root.style.setProperty('--color-accent', t.accent);
@@ -2429,6 +2432,13 @@
             const [editData, setEditData] = useState(null);
             const [isListScrolled, setIsListScrolled] = useState(false);
 
+            // Prompt State (Moved to top to prevent Hook errors)
+            const [promptState, setPromptState] = useState({ isOpen: false, message: '', callback: null });
+            const openPrompt = (message, callback) => {
+                setPromptState({ isOpen: true, message, callback });
+            };
+            const closePrompt = () => setPromptState(prev => ({ ...prev, isOpen: false }));
+
             const NavItem = ({ icon: Icon, label, target, active, onClick, customClass, iconSize }) => (
                 <button
                     onClick={onClick || (() => setView(target))}
@@ -2485,33 +2495,65 @@
                 return 'bg-green-500';
             };
 
-            // Prompt State
-            const [promptState, setPromptState] = useState({ isOpen: false, message: '', callback: null });
-            const openPrompt = (message, callback) => {
-                setPromptState({ isOpen: true, message, callback });
-            };
-            const closePrompt = () => setPromptState(prev => ({ ...prev, isOpen: false }));
+
 
             return (
-                <ThemeContext.Provider value={{ themeKey, setThemeKey, themes: THEMES, uiRadius, setUiRadius, colors: THEMES[themeKey] }}>
-                    <PromptContext.Provider value={{ openPrompt, promptState, closePrompt }}>
-                        <DataContext.Provider value={{
-                            surveys, persistSurveys,
-                            masterData, persistMasterData: updateMasterData,
-                            outbox, persistOutbox: updateOutbox,
-                            deletedSurveys, persistDeleted: updateDeletedSurveys,
-                            logo, setLogo: handleLogoUpload,
-                            restoreSurvey, permDeleteSurvey,
-                            deleteSurvey,
-                            addMasterItem,
-                            syncCode, updateSyncCode,
-                            isOnline
-                        }}>
+                <PromptContext.Provider value={{ openPrompt, promptState, closePrompt }}>
+                    <div id="app-shell" className={`min-h-screen w-full bg-bg text-text pb-32 transition-colors duration-300 font-sans`}>
+                        <header className="sticky top-0 z-40 bg-surface/60 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-3">
+                                {logo && <img src={logo} alt="Logo" className="h-10 w-10 object-contain rounded-xl shadow-sm bg-white" />}
+                                <div>
+                                    <h1 className="text-2xl font-black tracking-tighter drop-shadow-sm" style={{ color: (['light', 'corporate', 'pastel', 'warm', 'forest', 'sunset'].includes(themeKey) || !themeKey) ? '#000000' : '#FFFFFF' }}>
+                                        VELLORA
+                                    </h1>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 bg-surface-highlight/30 px-3 py-1.5 rounded-full border border-white/5">
+                                <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
+                                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{!isOnline ? 'Offline' : (outboxCount > 0 ? 'Syncing...' : 'Online')}</span>
+                            </div>
+                        </header>
+
+                        <main className="max-w-xl mx-auto min-h-[85vh] p-6">
                             {renderContent()}
-                            <AppPromptModal />
-                        </DataContext.Provider>
-                    </PromptContext.Provider>
-                </ThemeContext.Provider>
+                        </main>
+
+                        {view !== 'WIZARD' && (
+                            <nav className="fixed bottom-6 left-6 right-6 bg-surface/80 backdrop-blur-2xl border border-white/20 rounded-full shadow-2xl z-50 flex items-center justify-around h-16 md:max-w-md md:mx-auto ring-1 ring-black/5">
+                                <NavItem icon={Icons.Chart} label="Analytics" target="ANALYTICS" active={view === 'ANALYTICS'} />
+
+                                <button
+                                    onClick={() => {
+                                        if (view === 'LIST') {
+                                            if (!isListScrolled) {
+                                                setEditData(null);
+                                                setView('WIZARD');
+                                            } else {
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }
+                                        } else {
+                                            setView('LIST');
+                                        }
+                                    }}
+                                    className={`flex items-center justify-center transition-all duration-500 ease-spring shadow-lg overflow-hidden border border-white/10 group ${view === 'LIST' && !isListScrolled ? 'w-32 bg-brand text-white rounded-[2rem] gap-2 active:scale-95' : 'w-12 h-12 rounded-full bg-surface-highlight text-text-muted hover:text-text'}`}
+                                >
+                                    {view === 'LIST' && !isListScrolled ? (
+                                        <>
+                                            <Icons.Plus size={20} />
+                                            <span className="text-xs font-bold whitespace-nowrap">New Survey</span>
+                                        </>
+                                    ) : (
+                                        <Icons.Home size={24} className={view === 'LIST' ? 'text-brand' : ''} />
+                                    )}
+                                </button>
+
+                                <NavItem icon={Icons.Settings} label="Settings" target="SETTINGS" active={view === 'SETTINGS'} />
+                            </nav>
+                        )}
+                        <AppPromptModal />
+                    </div>
+                </PromptContext.Provider>
             );
         };
 
