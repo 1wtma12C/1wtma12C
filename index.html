@@ -138,18 +138,129 @@
         };
 
         const THEMES = {
-            'corporate': { name: 'Corporate Blue', brand: '#007AFF', accent: '#5AC8FA', bg: '#F2F2F7', surface: '#FFFFFF', surfaceHighlight: '#E5E5EA', text: '#000000', textMuted: '#8E8E93', border: '#C6C6C8', input: '#FFFFFF' },
-            'sunset': { name: 'California Sunset', brand: '#FF9500', accent: '#FF2D55', bg: '#FFF7F0', surface: '#FFFFFF', surfaceHighlight: '#FFE4D1', text: '#2C1B10', textMuted: '#9A6B53', border: '#FFDCC2', input: '#FFFFFF' },
-            'forest': { name: 'Sherwood Forest', brand: '#34C759', accent: '#30B0C7', bg: '#F0FDF4', surface: '#FFFFFF', surfaceHighlight: '#DCFCE7', text: '#052E16', textMuted: '#166534', border: '#BBF7D0', input: '#FFFFFF' },
-            'berry': { name: 'Berry Smoothie', brand: '#AF52DE', accent: '#FF2D55', bg: '#FDF4FF', surface: '#FFFFFF', surfaceHighlight: '#F5D0FE', text: '#4A044E', textMuted: '#A21CAF', border: '#F0ABFC', input: '#FFFFFF' },
-            'ocean': { name: 'Pacific Ocean', brand: '#00C7BE', accent: '#32ADE6', bg: '#ECFEFF', surface: '#FFFFFF', surfaceHighlight: '#CFFAFE', text: '#083344', textMuted: '#155E75', border: '#A5F3FC', input: '#FFFFFF' },
+            // --- 5 LITE THEMES (High Contrast + Luxury) ---
+            'corporate': {
+                name: 'Vellora Classic',
+                brand: '#007AFF', // Vibrant Blue
+                accent: '#0056B3',
+                bg: '#FFFFFF', // Pure White
+                surface: '#F5F5FA', // Light Gray-Blue Surface
+                surfaceHighlight: '#E0E0E5',
+                text: '#000000', // Pure Black
+                textMuted: '#505055', // Dark Gray
+                border: '#C7C7CC',
+                input: '#FFFFFF'
+            },
+            'minimal': {
+                name: 'Studio White',
+                brand: '#000000', // Black Branding
+                accent: '#666666',
+                bg: '#FFFFFF',
+                surface: '#FAFAFA',
+                surfaceHighlight: '#EFEFEF',
+                text: '#000000',
+                textMuted: '#666666',
+                border: '#D1D1D1',
+                input: '#FFFFFF'
+            },
+            'sunrise': {
+                name: 'Morning Glow',
+                brand: '#DD5200', // Deep Orange
+                accent: '#B43D00',
+                bg: '#FFF8F2', // Very pale orange tint
+                surface: '#FFFFFF',
+                surfaceHighlight: '#FFE6D5',
+                text: '#2A1A10', // Dark Brown-Black
+                textMuted: '#6B4A3A',
+                border: '#E8D0C0',
+                input: '#FFFFFF'
+            },
+            'leaf': {
+                name: 'Nature',
+                brand: '#1E6F30', // Forest Green
+                accent: '#145220',
+                bg: '#F6FDF7',
+                surface: '#FFFFFF',
+                surfaceHighlight: '#D8F3DC',
+                text: '#0C2B10', // Dark Green-Black
+                textMuted: '#2C5E33',
+                border: '#BDE6C3',
+                input: '#FFFFFF'
+            },
+            'royal': {
+                name: 'Royal Purple',
+                brand: '#582C83', // Deep Purple
+                accent: '#3F1D5E',
+                bg: '#FAFAFF',
+                surface: '#F3EFFF',
+                surfaceHighlight: '#E0D4FC',
+                text: '#1C0D2E',
+                textMuted: '#4F3B66',
+                border: '#D8CCEA',
+                input: '#FFFFFF'
+            },
 
-            // Dark Themes
-            'midnight': { name: 'Midnight', brand: '#0A84FF', accent: '#5E5CE6', bg: '#000000', surface: '#1C1C1E', surfaceHighlight: '#2C2C2E', text: '#FFFFFF', textMuted: '#8E8E93', border: '#38383A', input: '#1C1C1E' },
-            'obsidian': { name: 'Obsidian', brand: '#FFFFFF', accent: '#8E8E93', bg: '#000000', surface: '#121212', surfaceHighlight: '#262626', text: '#FFFFFF', textMuted: '#A0A0A0', border: '#333333', input: '#121212' },
-            'deep_space': { name: 'Deep Space', brand: '#BF5AF2', accent: '#5E5CE6', bg: '#050408', surface: '#161221', surfaceHighlight: '#29233B', text: '#F5F3FF', textMuted: '#A78BFA', border: '#382E52', input: '#161221' },
-            'coffee': { name: 'Dark Roast', brand: '#AC8E68', accent: '#D4B895', bg: '#1A1613', surface: '#292524', surfaceHighlight: '#44403C', text: '#F5F5F4', textMuted: '#A8A29E', border: '#57534E', input: '#292524' },
-            'cyber': { name: 'Cyberpunk', brand: '#30D158', accent: '#FFD60A', bg: '#080A08', surface: '#131A14', surfaceHighlight: '#1F2E21', text: '#E4F8E7', textMuted: '#4ADE80', border: '#254228', input: '#131A14' },
+            // --- 5 DARK THEMES (True Black + Neon Pop) ---
+            'midnight': {
+                name: 'Midnight Pro',
+                brand: '#0A84FF', // Neon Blue
+                accent: '#5E5CE6',
+                bg: '#000000', // True Black
+                surface: '#1C1C1E', // System Gray 6 Dark
+                surfaceHighlight: '#2C2C2E',
+                text: '#FFFFFF', // Pure White
+                textMuted: '#AEAEB2', // Light Gray
+                border: '#3A3A3C',
+                input: '#1C1C1E'
+            },
+            'obsidian': {
+                name: 'Obsidian Matte',
+                brand: '#FFFFFF', // White Branding
+                accent: '#8E8E93',
+                bg: '#121212',
+                surface: '#1E1E1E',
+                surfaceHighlight: '#2C2C2E',
+                text: '#FFFFFF',
+                textMuted: '#A1A1AA',
+                border: '#404040',
+                input: '#1E1E1E'
+            },
+            'nebula': {
+                name: 'Cosmic Nebula',
+                brand: '#D946EF', // Magenta Neon
+                accent: '#A855F7',
+                bg: '#0F0518', // Deep Purple Black
+                surface: '#220B30',
+                surfaceHighlight: '#3B1550',
+                text: '#FDF4FF',
+                textMuted: '#CBA6D9',
+                border: '#4C1D66',
+                input: '#220B30'
+            },
+            'matrix': {
+                name: 'The Matrix',
+                brand: '#22C55E', // Matrix Green
+                accent: '#15803D',
+                bg: '#051109',
+                surface: '#0B2011',
+                surfaceHighlight: '#13331C',
+                text: '#E0F2E4',
+                textMuted: '#68A678',
+                border: '#1A4526',
+                input: '#0B2011'
+            },
+            'volcano': {
+                name: 'Magma',
+                brand: '#FF3B30', // Red Neon
+                accent: '#FF453A',
+                bg: '#150505',
+                surface: '#260B0B',
+                surfaceHighlight: '#3F1212',
+                text: '#FFF0F0',
+                textMuted: '#D98E8E',
+                border: '#5C1A1A',
+                input: '#260B0B'
+            },
         };
 
         const INITIAL_MASTER_DATA = {
@@ -279,6 +390,7 @@
             const [outbox, setOutbox] = useState([]);
             const [isOnline, setIsOnline] = useState(navigator.onLine);
             const [lastSyncTime, setLastSyncTime] = useState(null);
+            const [pricingHistory, setPricingHistory] = useState({});
 
             // --- A. HELPER: PERSISTENCE ---
             const persistSurveys = (newSurveys) => {
@@ -307,6 +419,10 @@
                 const m = JSON.parse(localStorage.getItem(`vellora_${syncCode}_masterData`) || 'null');
                 if (m) setMasterData(m);
                 else setMasterData(INITIAL_MASTER_DATA);
+
+                // Pricing History (Phase 8 Upgrade)
+                const ph = JSON.parse(localStorage.getItem(`vellora_${syncCode}_pricingHistory`) || '{}');
+                setPricingHistory(ph);
             }, [syncCode]);
 
 
@@ -340,6 +456,21 @@
                         refMD.set(masterData).catch(e => console.error("Init Master Data err", e));
                     }
                 }, err => console.log('MasterData listener err', err));
+
+                // 2. Listen to Pricing History
+                const refPH = db.collection('artifacts').doc(syncCode).collection('settings').doc('pricingHistory');
+                const unsubPH = refPH.onSnapshot(snap => {
+                    if (snap.exists) {
+                        const data = snap.data();
+                        setPricingHistory(prev => {
+                            const merged = { ...prev, ...data };
+                            localStorage.setItem(`vellora_${syncCode}_pricingHistory`, JSON.stringify(merged));
+                            return merged;
+                        });
+                    } else {
+                        refPH.set(pricingHistory).catch(e => console.error("Init Pricing Hist err", e));
+                    }
+                }, err => console.log('PricingHistory listener err', err));
 
                 // 2. Listen to Surveys (Workspace)
                 // path: data/{syncCode}/surveys OR data/surveys/items (based on prompt req)
@@ -388,6 +519,7 @@
 
                 return () => {
                     unsubMD();
+                    unsubPH();
                     unsubSurveys();
                 };
             }, [db, syncCode, isOnline]); // outbox not a dep to avoid loop, handled inside setter if needed
@@ -415,7 +547,11 @@
                             // Use arrayUnion for the specific list
                             const updatePayload = {};
                             updatePayload[task.payload.listName] = firebase.firestore.FieldValue.arrayUnion(task.payload.value);
+                            updatePayload[task.payload.listName] = firebase.firestore.FieldValue.arrayUnion(task.payload.value);
                             await refMD.set(updatePayload, { merge: true });
+                        } else if (task.type === 'UPDATE_PRICING_HISTORY') {
+                            const refPH = db.collection('artifacts').doc(syncCode).collection('settings').doc('pricingHistory');
+                            await refPH.set(task.payload, { merge: true });
                         }
                     } catch (err) {
                         console.error("Sync failed for task", task, err);
@@ -551,12 +687,43 @@
                 setSyncCode(newCode);
             };
 
+            const updatePricingHistory = (key, data) => {
+                if (!key || !data) return;
+
+                // 1. Optimistic Update
+                const newHistory = {
+                    ...pricingHistory,
+                    [key]: {
+                        ...data,
+                        lastUpdated: new Date().toISOString()
+                    }
+                };
+                setPricingHistory(newHistory);
+                localStorage.setItem(`vellora_${syncCode}_pricingHistory`, JSON.stringify(newHistory));
+
+                // 2. Outbox (Full overwrite of map key? No, easier to just send the whole object or partial)
+                // Actually, if we send the whole object every time, it's heavy.
+                // Better to send JUST the updated key-value pair for merging on server?
+                // For simplicity in this "Single Document" store approach:
+                // We will send the entire 'pricingHistory' map as an update or just one entry?
+                // Firestore 'set' with merge: true works on the DOC level.
+                // So if we send { "Brand|Size": { ... } }, it merges that key into the doc. Perfect.
+
+                const task = {
+                    type: 'UPDATE_PRICING_HISTORY',
+                    payload: { [key]: newHistory[key] },
+                    id: generateUUID()
+                };
+                persistOutbox([...outbox, task]);
+            };
+
             return (
                 <DataContext.Provider value={{
                     syncCode,
                     setSyncCode: updateSyncCode,
                     masterData,
                     surveys,
+                    pricingHistory,
                     // deletedSurveys, // Removed. Derived in components.
                     isOnline,
                     saveSurvey,
@@ -564,6 +731,8 @@
                     restoreSurvey, // Restore
                     permDeleteSurvey, // Hard delete
                     addMasterItem,
+                    pricingHistory, // <--- Added this
+                    updatePricingHistory,
                     forceSync,
                     clearData,
                     outboxCount: outbox.length,
@@ -757,7 +926,7 @@
 
         // --- 4. WIZARD COMPONENTS ---
 
-        const StepBusinessProfile = ({ data, onChange, onNext }) => {
+        const StepBusinessProfile = ({ data, onChange, onNext, isEditing }) => {
             const { masterData, addMasterItem } = useContext(DataContext);
             const { openPrompt } = useContext(PromptContext);
             const [geoError, setGeoError] = useState(null);
@@ -837,6 +1006,22 @@
                                 </button>
                             </div>
                         </div>
+
+                        {/* Coordinates (New - Conditional Edit) */}
+                        <div className="p-4 flex items-center gap-4 bg-white/5">
+                            <label className="w-1/3 text-sm font-semibold text-text-muted">Coordinates</label>
+                            <div className="flex-1 flex gap-2">
+                                <input
+                                    value={data.gpsString || ''}
+                                    onChange={e => onChange('gpsString', e.target.value)}
+                                    placeholder="Lat, Lng"
+                                    readOnly={!isEditing}
+                                    className={`flex-1 text-right text-sm font-mono bg-transparent outline-none transition-colors ${!isEditing ? 'text-text-muted cursor-not-allowed opacity-70' : 'text-brand border-b border-brand/20'}`}
+                                />
+                                {!isEditing && <Icons.Lock size={14} className="text-text-muted/50" />}
+                            </div>
+                        </div>
+
                         {geoError && <div className="p-2 text-center text-xs text-red-500 bg-red-50">{geoError}</div>}
                     </div>
 
@@ -876,11 +1061,11 @@
                         <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Daily Footfall</label>
                         <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-2 shadow-sm border border-white/10">
                             <div className="flex bg-surface-highlight/50 p-1 rounded-xl">
-                                {['0-50', '51-150', '151-300', '300+'].map(f => (
+                                {['<50', '50-100', '100-300', '300+'].map(f => (
                                     <button
                                         key={f}
-                                        onClick={() => onChange('footfall', f)}
-                                        className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${data.footfall === f ? 'bg-white text-text shadow-md scale-[1.02]' : 'text-text-muted hover:text-text'}`}
+                                        onClick={() => onChange('dailyFootfall', f)}
+                                        className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${data.dailyFootfall === f ? 'bg-white text-text shadow-md scale-[1.02]' : 'text-text-muted hover:text-text'}`}
                                     >
                                         {f}
                                     </button>
@@ -956,6 +1141,18 @@
                         </div>
                     </div>
 
+                    {/* Weekly Deliveries (Phase 8 Upgrade) */}
+                    <div className="flex flex-col gap-3">
+                        <Input
+                            label="Typical Weekly Deliveries (Optional)"
+                            type="number"
+                            inputMode="numeric"
+                            value={data.weeklyDeliveries || ''}
+                            onChange={e => onChange('weeklyDeliveries', e.target.value)}
+                            placeholder="e.g. 2"
+                        />
+                    </div>
+
                     {/* Monthly Qty Slider - Apple Health Style */}
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center ml-4 mr-2">
@@ -1026,13 +1223,49 @@
         };
 
         const StepPricing = ({ data, onChange }) => {
+            const { pricingHistory, updatePricingHistory } = useContext(DataContext);
             const brands = data.brands || [];
             const sizes = data.bottleSizes || [];
+
+            // AUTOFILL LOGIC
+            useEffect(() => {
+                let hasUpdates = false;
+                const newBuying = { ...data.buyingPrice };
+                const newSelling = { ...data.sellingPrice };
+
+                brands.forEach(b => {
+                    sizes.forEach(s => {
+                        const key = `${b}|${s}`;
+                        const history = pricingHistory[key];
+                        // If cell is empty AND we have history
+                        if (history && !newBuying[key] && !newSelling[key]) {
+                            if (history.buyingPrice) newBuying[key] = history.buyingPrice;
+                            if (history.sellingPrice) newSelling[key] = history.sellingPrice;
+                            hasUpdates = true;
+                        }
+                    });
+                });
+
+                if (hasUpdates) {
+                    onChange('buyingPrice', newBuying);
+                    onChange('sellingPrice', newSelling);
+                }
+            }, [brands, sizes]); // Only run when matrix shape changes
 
             const handlePriceChange = (type, brand, size, val) => {
                 const key = `${brand}|${size}`;
                 const prev = data[type] || {};
                 onChange(type, { ...prev, [key]: val });
+
+                // Update History Immediately
+                const otherType = type === 'buyingPrice' ? 'sellingPrice' : 'buyingPrice';
+                const otherVal = data[otherType]?.[key];
+
+                updatePricingHistory(key, {
+                    [type]: val,
+                    [otherType]: otherVal,
+                    lastUpdated: new Date().toISOString()
+                });
             };
 
             const getVal = (type, brand, size) => {
@@ -1042,49 +1275,78 @@
             const calcProfit = (b, s) => {
                 const buy = parseFloat(getVal('buyingPrice', b, s)) || 0;
                 const sell = parseFloat(getVal('sellingPrice', b, s)) || 0;
-                if (!buy && !sell) return 0;
-                return (sell - buy).toFixed(1);
+                if (!buy || !sell) return '—';
+                return (sell - buy).toFixed(0);
+            };
+
+            const isAuto = (b, s) => {
+                const key = `${b}|${s}`;
+                return !!pricingHistory[key];
             };
 
             return (
-                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300 h-full">
-                    {/* Info Card */}
-                    <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50 shadow-sm flex items-center gap-3">
-                        <div className="bg-blue-100 p-2 rounded-full text-blue-600"><Icons.BarChart size={16} /></div>
-                        <p className="text-xs text-blue-800 font-medium">Enter Buying & Selling Price per crate/bottle</p>
+                <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-300 pb-24 h-full">
+                    <div className="px-4">
+                        <div className="bg-blue-50/80 backdrop-blur-sm text-blue-800 text-xs px-4 py-3 rounded-xl flex items-center gap-3 border border-blue-100 shadow-sm">
+                            <div className="bg-blue-100 p-1.5 rounded-full"><Icons.Chart /></div>
+                            <span className="font-medium">Prices auto-fill from your history. Scrolling enabled →</span>
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-6">
-                        {brands.map((b, idx) => (
-                            <div key={b} className="bg-surface/50 backdrop-blur-md rounded-3xl overflow-hidden shadow-sm border border-white/10 animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${idx * 50}ms` }}>
-                                <div className="bg-surface-highlight/30 px-6 py-3 border-b border-border/50 flex justify-between items-center">
-                                    <h3 className="font-bold text-lg">{b}</h3>
-                                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider bg-white/50 px-2 py-1 rounded-lg">Pricing Sheet</span>
-                                </div>
-                                <div className="p-4 flex flex-col gap-4">
-                                    {sizes.map(s => {
-                                        const profit = calcProfit(b, s);
-                                        const isProfit = profit > 0;
-                                        return (
-                                            <div key={s} className="grid grid-cols-[80px_1fr_1fr_60px] gap-2 items-center bg-white/5 p-2 rounded-2xl border border-transparent hover:border-border/50 transition-colors">
-                                                <div className="font-bold text-sm pl-2">{s}</div>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-bold">IN</span>
-                                                    <input type="number" placeholder="0" value={getVal('buyingPrice', b, s)} onChange={e => handlePriceChange('buyingPrice', b, s, e.target.value)} className="w-full bg-surface-highlight/50 rounded-xl py-2.5 pl-8 pr-2 text-center text-base font-bold outline-none focus:ring-2 focus:ring-brand/50 transition-all" />
+                    <div className="overflow-x-auto pb-6 px-4 -mx-4 no-scrollbar">
+                        <table className="w-full text-left border-collapse min-w-[300px]">
+                            <thead>
+                                <tr>
+                                    <th className="p-3 text-xs font-bold text-text-muted uppercase tracking-wider sticky left-0 bg-bg z-20 w-24 border-b border-border/30">Brand</th>
+                                    {sizes.map(s => <th key={s} className="p-3 text-xs font-bold text-text-muted text-center uppercase tracking-wider min-w-[100px] border-b border-border/30">{s}</th>)}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/30">
+                                {brands.map(b => (
+                                    <tr key={b}>
+                                        <td className="p-3 font-bold text-sm text-text sticky left-0 bg-bg z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-border/10 vertical-align-top pt-4">{b}</td>
+                                        {sizes.map(s => (
+                                            <td key={s} className="p-2 align-top">
+                                                <div className="flex flex-col gap-2 min-w-[110px] bg-surface/40 rounded-xl p-2 border border-border/40 shadow-sm relative group hover:bg-surface transition-colors">
+                                                    {isAuto(b, s) && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" title="Auto-filled from History"></div>}
+
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <label className="text-[9px] font-bold text-text-muted uppercase pl-1">Buy</label>
+                                                        <input
+                                                            type="number"
+                                                            inputMode="numeric"
+                                                            pattern="[0-9]*"
+                                                            value={getVal('buyingPrice', b, s)}
+                                                            onChange={e => handlePriceChange('buyingPrice', b, s, e.target.value)}
+                                                            className="w-full bg-surface-highlight rounded-lg px-2 py-2 text-sm font-bold border-transparent focus:border-brand focus:ring-0 text-center outline-none transition-all placeholder:text-text-muted/20"
+                                                            placeholder="-"
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <label className="text-[9px] font-bold text-text-muted uppercase pl-1">Sell</label>
+                                                        <input
+                                                            type="number"
+                                                            inputMode="numeric"
+                                                            pattern="[0-9]*"
+                                                            value={getVal('sellingPrice', b, s)}
+                                                            onChange={e => handlePriceChange('sellingPrice', b, s, e.target.value)}
+                                                            className="w-full bg-surface-highlight rounded-lg px-2 py-2 text-sm font-bold border-transparent focus:border-brand focus:ring-0 text-center outline-none transition-all placeholder:text-text-muted/20"
+                                                            placeholder="-"
+                                                        />
+                                                    </div>
+                                                    <div className="mt-1 pt-2 border-t border-dashed border-border/50 text-center flex justify-between items-center px-1">
+                                                        <span className="text-[9px] text-text-muted font-bold">PROFIT</span>
+                                                        <span className={`text-xs font-black ${calcProfit(b, s) !== '—' && parseInt(calcProfit(b, s)) > 0 ? 'text-green-600' : 'text-text-muted'}`}>
+                                                            {calcProfit(b, s) !== '—' ? '₹' + calcProfit(b, s) : '—'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-text-muted font-bold">OUT</span>
-                                                    <input type="number" placeholder="0" value={getVal('sellingPrice', b, s)} onChange={e => handlePriceChange('sellingPrice', b, s, e.target.value)} className="w-full bg-surface-highlight/50 rounded-xl py-2.5 pl-8 pr-2 text-center text-base font-bold outline-none focus:ring-2 focus:ring-brand/50 transition-all" />
-                                                </div>
-                                                <div className={`text-xs font-black text-center py-2 rounded-xl ${isProfit ? 'bg-green-100 text-green-700' : (profit < 0 ? 'bg-red-100 text-red-600' : 'bg-surface-highlight text-text-muted')}`}>
-                                                    {profit > 0 ? '+' : ''}{profit}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             );
@@ -1142,7 +1404,38 @@
                         </div>
                     )}
 
-                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between border border-white/10 relative z-10">
+                    {/* Credit Logic (Phase 8 Upgrade) */}
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex flex-col gap-4 border border-white/10 relative z-10 animate-in slide-in-from-right-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-bold text-text">Credit Given?</label>
+                            <div className="flex bg-surface-highlight rounded-xl p-1">
+                                <button onClick={() => onChange('creditGiven', 'Yes')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${data.creditGiven === 'Yes' ? 'bg-white shadow text-brand' : 'text-text-muted hover:text-text'}`}>Yes</button>
+                                <button onClick={() => onChange('creditGiven', 'No')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${data.creditGiven === 'No' ? 'bg-white shadow text-text' : 'text-text-muted hover:text-text'}`}>No</button>
+                            </div>
+                        </div>
+
+                        {data.creditGiven === 'Yes' && (
+                            <div className="space-y-4 pt-2 border-t border-border/30 animate-in slide-in-from-top-2">
+                                <Input
+                                    label="Credit Limit Amount (₹) *"
+                                    type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={data.creditLimitAmount || ''}
+                                    onChange={e => onChange('creditLimitAmount', e.target.value)}
+                                    placeholder="e.g. 5000"
+                                />
+                                <Input
+                                    label="Credit Provider Name *"
+                                    value={data.creditProviderName || ''}
+                                    onChange={e => onChange('creditProviderName', e.target.value)}
+                                    placeholder="e.g. Agency / Bank"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between border border-white/10 relative z-0">
                         <label className="text-sm font-bold text-text">Happy with Service?</label>
                         <div className="flex bg-surface-highlight rounded-xl p-1">
                             <button onClick={() => onChange('happyWithService', 'Yes')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${data.happyWithService === 'Yes' ? 'bg-white shadow text-green-600' : 'text-text-muted hover:text-text'}`}>Yes</button>
@@ -1151,15 +1444,24 @@
                     </div>
 
                     {data.happyWithService === 'No' && (
-                        <div className="flex flex-col gap-3 animate-in fade-in">
-                            <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Main Problems</label>
-                            <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex flex-wrap gap-2 border border-white/10">
+                        <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex justify-between items-center px-2">
+                                <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Main Problems</label>
+                                <button onClick={() => openPrompt("Add Problem:", (v) => { if (v) { addMasterItem('problems', v); toggleProblem(v); } })} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
                                 {masterData.problems.map(p => (
-                                    <button key={p} onClick={() => toggleProblem(p)} className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${data.mainProblems?.includes(p) ? 'bg-red-500 text-white border-red-500 shadow-lg scale-105' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight'}`}>
+                                    <button
+                                        key={p}
+                                        onClick={() => toggleProblem(p)}
+                                        className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border text-left flex items-center gap-2 ${data.mainProblems?.includes(p) ? 'bg-red-50 text-red-600 border-red-200' : 'bg-surface-highlight/50 text-text border-transparent cursor-pointer'}`}
+                                    >
+                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${data.mainProblems?.includes(p) ? 'bg-red-500 border-red-500 text-white' : 'border-text-muted'}`}>
+                                            {data.mainProblems?.includes(p) && <Icons.Check />}
+                                        </div>
                                         {p}
                                     </button>
                                 ))}
-                                <button onClick={() => openPrompt("Add Problem:", (v) => { addMasterItem('problems', v); toggleProblem(v); })} className="px-4 py-2.5 rounded-xl text-xs font-bold border border-brand/20 text-brand bg-brand/5 hover:bg-brand/10 transition-colors">+ Add</button>
                             </div>
                         </div>
                     )}
@@ -1194,7 +1496,8 @@
                     items: [
                         { label: "Brands Stocked", value: (data.brands || []).join(', '), valueColor: "text-cyan-800" },
                         { label: "Bottle Sizes", value: (data.bottleSizes || []).join(', ') },
-                        { label: "Monthly Volume", value: data.qtyMonthly ? `${data.qtyMonthly} crates` : '', valueColor: "text-cyan-900 font-bold text-lg" }
+                        { label: "Monthly Volume", value: data.qtyMonthly ? `${data.qtyMonthly} crates` : '', valueColor: "text-cyan-900 font-bold text-lg" },
+                        { label: "Weekly Deliveries", value: data.weeklyDeliveries }
                     ]
                 },
                 {
@@ -1205,13 +1508,14 @@
                     border: "border-emerald-100",
                     items: [
                         { label: "Distributor", value: data.distributorName, valueColor: "text-emerald-800" },
-                        { label: "Buy Price", value: data.buyPrice ? `₹${data.buyPrice}` : '', valueColor: "text-emerald-700 font-bold" },
-                        { label: "Sell Price", value: data.sellPrice ? `₹${data.sellPrice}` : '', valueColor: "text-emerald-700 font-bold" },
-                        { label: "Profit Margin", value: (data.sellPrice && data.buyPrice) ? `${Math.round(((data.sellPrice - data.buyPrice) / data.buyPrice) * 100)}%` : '', valueColor: "text-green-600 font-black" }
-                    ]
+                        { label: "Credit Given", value: data.creditGiven, valueColor: data.creditGiven === 'Yes' ? 'text-green-600 font-bold' : 'text-text-muted' },
+                        data.creditGiven === 'Yes' ? { label: "Credit Limit", value: `₹${data.creditLimitAmount || 0}`, valueColor: "text-green-700" } : null,
+                        data.creditGiven === 'Yes' ? { label: "Provider", value: data.creditProviderName } : null,
+                        { label: "Pricing Sheet", value: `${Object.keys(data.buyingPrice || {}).length} Variants Priced`, valueColor: "text-text font-bold" }
+                    ].filter(Boolean)
                 },
                 {
-                    title: "Feedback",
+                    title: "White Label & Feedback",
                     icon: Icons.Settings,
                     color: "text-purple-600",
                     bg: "bg-purple-50/50",
@@ -1219,7 +1523,10 @@
                     items: [
                         { label: "Happy with Service?", value: data.happyWithService, valueColor: data.happyWithService === 'Yes' ? 'text-green-600 font-bold' : 'text-red-500 font-bold' },
                         data.happyWithService === 'No' ? { label: "Issues", value: (data.mainProblems || []).join(', '), valueColor: "text-red-600" } : null,
-                        { label: "Custom Logo Interest", value: data.interestedInCustomLogo, valueColor: "text-purple-800 font-bold" }
+                        { label: "Custom Logo Interest", value: data.interestedInCustomLogo, valueColor: "text-purple-800 font-bold" },
+                        data.interestedInCustomLogo === 'Yes' ? { label: "Extra Willing to Pay", value: `₹${data.extraWillingToPay || 0}`, valueColor: "text-purple-700 font-bold" } : null,
+                        data.interestedInCustomLogo === 'Yes' ? { label: "Order Size", value: `${data.expectedOrderSize || 0} crates` } : null,
+                        data.interestedInCustomLogo === 'Yes' ? { label: "Goals", value: (Array.isArray(data.customPurpose) ? data.customPurpose : [data.customPurpose]).filter(Boolean).join(', ') } : null
                     ].filter(Boolean)
                 }
             ];
@@ -1270,17 +1577,49 @@
                                     {['0', '1', '2', '5', '10'].map(p => (
                                         <button key={p} onClick={() => onChange('extraWillingToPay', p)} className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg transition-all shadow-sm ${data.extraWillingToPay === p ? 'bg-brand text-white scale-110 shadow-lg shadow-brand/30' : 'bg-surface-highlight/50 text-text hover:bg-surface-highlight'}`}>₹{p}</button>
                                     ))}
-                                    <button onClick={() => { const v = prompt("Price:"); if (v) onChange('extraWillingToPay', v); }} className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg border-2 border-dashed border-border text-text-muted hover:text-brand hover:border-brand/50 transition-colors">?</button>
+                                    <button onClick={() => openPrompt("Enter Custom Price:", (v) => { if (v) onChange('extraWillingToPay', v); })} className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg border-2 border-dashed border-border text-text-muted hover:text-brand hover:border-brand/50 transition-colors">?</button>
                                 </div>
                             </div>
 
                             <div className="flex flex-col gap-3 animate-in fade-in">
-                                <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-widest">Primary Goal</label>
+                                <Input
+                                    label="Expected Order Size (Crates)"
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={data.expectedOrderSize || ''}
+                                    onChange={e => onChange('expectedOrderSize', e.target.value)}
+                                    placeholder="e.g. 50"
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-3 animate-in fade-in">
+                                <div className="flex justify-between items-center px-2">
+                                    <label className="text-xs font-bold text-text-muted uppercase tracking-widest">Primary Goal</label>
+                                    <button onClick={() => openPrompt("Add Goal:", (v) => {
+                                        if (v) {
+                                            addMasterItem('whiteLabelPurposes', v);
+                                            const prev = Array.isArray(data.customPurpose) ? data.customPurpose : [];
+                                            onChange('customPurpose', [...prev, v]);
+                                        }
+                                    })} className="text-brand text-xs font-bold bg-brand/10 px-2 py-1 rounded-lg hover:bg-brand/20">+ Add New</button>
+                                </div>
                                 <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm flex flex-wrap gap-2 border border-white/10">
-                                    {masterData.whiteLabelPurposes.map(p => (
-                                        <button key={p} onClick={() => onChange('customPurpose', p)} className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${data.customPurpose === p ? 'bg-brand text-white border-transparent shadow-lg scale-105' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight'}`}>{p}</button>
-                                    ))}
-                                    <button onClick={() => openPrompt("Purpose:", (v) => { addMasterItem('whiteLabelPurposes', v); onChange('customPurpose', v); })} className="px-4 py-2.5 rounded-xl text-xs font-bold bg-brand/5 text-brand border border-brand/20 hover:bg-brand/10">+ Add</button>
+                                    {masterData.whiteLabelPurposes.map(p => {
+                                        const isSelected = Array.isArray(data.customPurpose) && data.customPurpose.includes(p);
+                                        return (
+                                            <button
+                                                key={p}
+                                                onClick={() => {
+                                                    const prev = Array.isArray(data.customPurpose) ? data.customPurpose : [];
+                                                    if (isSelected) onChange('customPurpose', prev.filter(x => x !== p));
+                                                    else onChange('customPurpose', [...prev, p]);
+                                                }}
+                                                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${isSelected ? 'bg-brand text-white border-transparent shadow-lg scale-105' : 'bg-surface-highlight/50 text-text border-transparent hover:bg-surface-highlight'}`}
+                                            >
+                                                {p}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </>
@@ -1291,35 +1630,73 @@
 
         const StepClosing = ({ data, onChange, onSave }) => {
             const [saving, setSaving] = useState(false);
+
+            // Validation
+            const getMissingFields = () => {
+                const missing = [];
+                if (!data.businessName) missing.push("Business Name");
+                if (!data.businessType) missing.push("Business Type");
+                if (!data.locationArea) missing.push("Location");
+                if (!data.contactName) missing.push("Your Name");
+                if (!data.contactMobile) missing.push("Mobile Number");
+                if (!data.distributorName) missing.push("Distributor");
+                return missing;
+            };
+
             const handleSave = () => {
-                if (!data.contactName || !data.contactMobile) return alert("Contact details required!");
+                const missing = getMissingFields();
+                if (missing.length > 0) return alert(`Missing required fields:\n• ${missing.join('\n• ')}`);
+
                 setSaving(true);
-                onSave();
+                // Artificial delay for UX
+                setTimeout(() => onSave(), 800);
             };
 
             return (
-                <div className="flex flex-col gap-8 animate-in slide-in-from-right duration-300">
+                <div className="flex flex-col gap-8 animate-in slide-in-from-right duration-300 pb-32">
                     <div className="text-center space-y-2">
-                        <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-brand mb-4">
+                        <div className="bg-brand/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-brand mb-4 animate-bounce">
                             <Icons.Check size={32} />
                         </div>
-                        <h2 className="text-3xl font-black text-text tracking-tight">Almost Done!</h2>
-                        <p className="text-text-muted">Please provide contact details to finalize.</p>
+                        <h2 className="text-3xl font-black text-text tracking-tight">Review & Finalize</h2>
+                        <p className="text-text-muted">Ensure all details are correct before saving.</p>
                     </div>
 
                     <div className="bg-surface/50 backdrop-blur-md rounded-2xl p-4 shadow-sm space-y-4 border border-white/10">
-                        <Input label="Contact Name *" value={data.contactName || ''} onChange={e => onChange('contactName', e.target.value)} />
-                        <Input label="Mobile Number *" type="tel" value={data.contactMobile || ''} onChange={e => onChange('contactMobile', e.target.value)} />
+                        <div className="bg-brand/5 p-3 rounded-xl mb-2">
+                            <p className="text-xs font-bold text-brand uppercase tracking-widest mb-2">Owner Contact</p>
+                            <div className="space-y-4">
+                                <Input label="Contact Name *" value={data.contactName || ''} onChange={e => onChange('contactName', e.target.value)} placeholder="Owner / Manager Name" />
+                                <Input label="Mobile Number *" type="tel" inputMode="numeric" value={data.contactMobile || ''} onChange={e => onChange('contactMobile', e.target.value)} placeholder="10-digit Number" />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="mt-4">
-                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-2 mb-3 block">Summary</label>
+                    <div className="mt-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-text-muted ml-2 mb-3 block">Full Survey Summary</label>
                         <SurveyFullSummary data={data} />
                     </div>
 
-                    <Button onClick={handleSave} variant="primary" className="mt-8 w-full py-4 text-xl font-bold shadow-2xl shadow-brand/40 rounded-[2rem] h-16 transition-transform active:scale-[0.98]">
-                        {saving ? 'Saving...' : 'COMPLETE SURVEY'}
-                    </Button>
+                    <div className="fixed bottom-6 left-4 right-4 z-50">
+                        <Button
+                            onClick={handleSave}
+                            variant="primary"
+                            disabled={saving}
+                            className="w-full py-4 text-xl font-bold shadow-2xl shadow-brand/40 rounded-[2rem] h-16 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 backdrop-blur-xl bg-opacity-90"
+                        >
+                            {saving ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <span>Complete Survey</span>
+                                    <Icons.ChevronRight />
+                                </>
+                            )}
+                        </Button>
+                    </div>
                 </div>
             );
         };
@@ -1330,169 +1707,163 @@
             const handlePDF = () => {
                 const doc = new jspdf.jsPDF();
                 const logo = localStorage.getItem('app_logo');
+                const pageHeight = doc.internal.pageSize.height;
+                const pageWidth = doc.internal.pageSize.width;
 
-                // Vibrant Apple Palette
-                const COLORS = {
-                    primary: [0, 0, 0],       // Black text
-                    secondary: [142, 142, 147], // Gray text
-                    accent: THEMES.corporate.brand === '#3B82F6' ? [0, 122, 255] : [52, 199, 89], // Apple Blue or Green
-                    bgParams: [242, 242, 247], // System Gray 6 (light gray bg)
-                    cardBg: [255, 255, 255],   // White card
-                    success: [52, 199, 89],
-                    danger: [255, 59, 48],
-                    headerBg: [245, 245, 250]
-                };
+                // --- LUXURY CONFIG ---
+                const MARGIN = 20;
+                const COLOR_PRIMARY = [28, 28, 30]; // Apple Black
+                const COLOR_SECONDARY = [142, 142, 147]; // Apple Gray
+                const COLOR_ACCENT = [0, 122, 255]; // Apple Blue
+                const COLOR_DIVIDER = [229, 229, 234]; // Light Divider
 
-                // --- HEADER SECTION ---
-                // Full light header background
-                doc.setFillColor(...COLORS.headerBg);
-                doc.rect(0, 0, 210, 50, 'F'); // Taller header
+                let y = 30;
+
+                // 1. BRANDING HEADER (Centered or Split?)
+                // User asked for "Velura branding on the top". Let's do a classic letterhead.
+
+                // Top Bar Line
+                doc.setDrawColor(...COLOR_ACCENT);
+                doc.setLineWidth(1.5);
+                doc.line(0, 0, pageWidth, 0);
 
                 if (logo) {
                     try {
-                        // Circle clip simulation for logo not easy in raw jsPDF, just placing it nicely
-                        doc.addImage(logo, 'PNG', 15, 12, 26, 26);
+                        doc.addImage(logo, 'PNG', MARGIN, 15, 20, 20);
                     } catch (e) { }
                 }
 
-                // Title
+                // Company Title (Right aligned or next to logo?) -> Let's put VELLORA name next to logo
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(24);
-                doc.setTextColor(...COLORS.primary);
-                doc.text("VELLORA", 50, 22);
+                doc.setFontSize(22);
+                doc.setTextColor(...COLOR_PRIMARY);
+                doc.text("VELLORA", logo ? MARGIN + 25 : MARGIN, 24);
+
+                doc.setFontSize(10);
+                doc.setTextColor(...COLOR_SECONDARY);
+                doc.setFont("helvetica", "bold");
+                doc.text("MARKET INSIGHT REPORT", logo ? MARGIN + 25 : MARGIN, 30);
+
+                // Timestamp (Right Aligned)
+                doc.setFont("helvetica", "normal");
+                doc.text(new Date(survey.timestamp).toLocaleDateString(), pageWidth - MARGIN, 24, { align: 'right' });
+                doc.text(survey.id ? `#${survey.id.slice(0, 8)}` : '', pageWidth - MARGIN, 30, { align: 'right' });
+
+                y = 50;
+
+                // 2. BUSINESS HEADER (Hero Section)
+                doc.setFontSize(28);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(...COLOR_PRIMARY);
+                doc.text(survey.businessName || "Unknown Business", MARGIN, y);
+                y += 10;
 
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "normal");
-                doc.setTextColor(...COLORS.accent); // Color the subtitle!
-                doc.text("Enterprise Market Insight Report", 50, 30);
+                doc.setTextColor(...COLOR_SECONDARY);
+                doc.text(`${survey.businessType || 'Business'}  •  ${survey.locationArea || 'Location'}`, MARGIN, y);
+                y += 15;
 
-                doc.setFontSize(10);
-                doc.setTextColor(...COLORS.secondary);
-                doc.text(`Generated: ${new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 50, 38);
+                // Divider
+                doc.setDrawColor(...COLOR_DIVIDER);
+                doc.setLineWidth(0.5);
+                doc.line(MARGIN, y, pageWidth - MARGIN, y);
+                y += 10;
 
-                // --- BUSINESS SUMMARY CARD ---
-                // We'll draw a "card" visual below the header
-                // doc.setFillColor(...COLORS.cardBg);
-                // doc.roundedRect(15, 55, 180, 25, 3, 3, 'F'); // Card background
-
-                doc.setFontSize(20);
-                doc.setFont("helvetica", "bold");
-                doc.setTextColor(0, 50, 100); // Dark Blue-ish for Business Name
-                doc.text(survey.businessName, 15, 65);
-
-                // Badges (Colored Rectangles with Text)
-                const badges = [
-                    { text: survey.businessType, r: 0, g: 122, b: 255 }, // Blue
-                    { text: survey.locationArea, r: 255, g: 149, b: 0 }  // Orange
-                ];
-
-                let xPos = 15;
-                const badgeY = 72;
-                badges.forEach(b => {
-                    doc.setFontSize(10);
-                    doc.setFont("helvetica", "bold");
-                    const w = doc.getTextWidth(b.text) + 8;
-                    doc.setFillColor(b.r, b.g, b.b);
-                    doc.roundedRect(xPos, badgeY, w, 7, 2, 2, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(b.text, xPos + 4, badgeY + 5);
-                    xPos += w + 5;
-                });
-
-                // Contact Info Line
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.setTextColor(80, 80, 84);
-                doc.text(`Contact: ${survey.contactName}  •  ${survey.contactMobile}`, 15, badgeY + 15);
-
-
-                // --- RICH DATA TABLE ---
-                // We will color specific values in the table logic
-                const dataBody = [
-                    ['Survey Timestamp', new Date(survey.timestamp).toLocaleString()],
-                    ['Monthly Volume', `${survey.qtyMonthly || 0} crates`],
-                    ['Buying Price', survey.buyPrice ? `₹${survey.buyPrice}` : '-'],
-                    ['Selling Price', survey.sellPrice ? `₹${survey.sellPrice}` : '-'],
-                    ['Profit Margin', (survey.sellPrice && survey.buyPrice) ? `${Math.round(((survey.sellPrice - survey.buyPrice) / survey.buyPrice) * 100)}%` : '-'],
-                    ['Brands Stocked', (survey.brands || []).join(', ')],
-                    ['Bottle Sizes', (survey.bottleSizes || []).join(', ')],
-                    ['Distributor', survey.distributorName],
-                    ['Service Satisfaction', survey.happyWithService],
-                    ['Issues Reported', (survey.mainProblems || []).join(', ')],
-                    ['Custom Logo Interest', survey.interestedInCustomLogo]
-                ];
-
-                doc.autoTable({
-                    startY: 100,
-                    head: [['Metric', 'Value']],
-                    body: dataBody,
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [242, 242, 247], // Light gray header
-                        textColor: [0, 0, 0],       // Black text
-                        fontStyle: 'bold',
-                        lineWidth: 0,
-                        cellPadding: 4
+                // 3. DATA SECTIONS
+                const sections = [
+                    {
+                        title: "Business Profile",
+                        items: [
+                            ['Owner / Contact', `${survey.contactName || '-'}`, true],
+                            ['Mobile Number', `${survey.contactMobile || '-'}`, true],
+                            ['Coordinates (GPS)', survey.gpsString || (survey.lat ? `${survey.lat}, ${survey.lng}` : '-'), false],
+                            ['Address / Area', survey.locationArea || '-', false],
+                            ['Daily Footfall', survey.dailyFootfall || '-', false]
+                        ]
                     },
-                    columnStyles: {
-                        0: { fontStyle: 'bold', cellWidth: 70, textColor: [100, 100, 100] }, // Label color
-                        1: { textColor: [0, 0, 0], fontStyle: 'bold' } // Value color default
+                    {
+                        title: "Water Usage & Sales",
+                        items: [
+                            ['Brands Stocked', (survey.brands || []).join(', '), false],
+                            ['Bottle Sizes', (survey.bottleSizes || []).join(', '), false],
+                            ['Monthly Volume', `${survey.qtyMonthly || 0} crates`, true], // Highlighted
+                            ['Weekly Deliveries', survey.weeklyDeliveries || '-', false]
+                        ]
                     },
-                    styles: {
-                        fontSize: 10,
-                        cellPadding: 4,
-                        lineColor: [230, 230, 235],
-                        lineWidth: 0.1,
-                        overflow: 'linebreak'
+                    {
+                        title: "Pricing & Economics",
+                        items: [
+                            ['Distributor', survey.distributorName || '-', false],
+                            ['Credit Given', survey.creditGiven || 'No', false],
+                            ['Credit Limit', survey.creditLimitAmount ? `INR ${survey.creditLimitAmount}` : '-', false],
+                            ['Avg. Buy Price', survey.buyPrice ? `₹ ${survey.buyPrice}` : '-', true],
+                            ['Avg. Sell Price', survey.sellPrice ? `₹ ${survey.sellPrice}` : '-', true],
+                            ['Profit Margin', (survey.sellPrice && survey.buyPrice) ? `${Math.round(((survey.sellPrice - survey.buyPrice) / survey.buyPrice) * 100)}%` : '-', true]
+                        ]
                     },
-                    didParseCell: function (data) {
-                        // COLOR LOGIC FOR VALUES
-                        if (data.section === 'body' && data.column.index === 1) {
-                            const rowLabel = data.row.raw[0];
-                            const val = data.cell.raw;
-
-                            if (rowLabel === 'Service Satisfaction') {
-                                if (val === 'Yes') data.cell.styles.textColor = [52, 199, 89]; // Green
-                                else data.cell.styles.textColor = [255, 59, 48]; // Red
-                            }
-                            if (rowLabel === 'Issues Reported' && val && val.length > 0) {
-                                data.cell.styles.textColor = [255, 59, 48]; // Red
-                            }
-                            if (rowLabel === 'Custom Logo Interest') {
-                                if (val === 'Yes') data.cell.styles.textColor = [0, 122, 255]; // Blue
-                            }
-                            if (rowLabel === 'Monthly Volume') {
-                                data.cell.styles.textColor = [0, 122, 255]; // Blue
-                                data.cell.styles.fontSize = 11;
-                            }
-                            if (rowLabel === 'Profit Margin') {
-                                data.cell.styles.textColor = [52, 199, 89]; // Green
-                            }
-                        }
+                    {
+                        title: "Feedback & Future",
+                        items: [
+                            ['Happy with Service?', survey.happyWithService || '-', false],
+                            ['Issues Reported', (survey.mainProblems || []).length > 0 ? (survey.mainProblems || []).join(', ') : 'None', false],
+                            ['Interested in Custom Logo?', survey.interestedInCustomLogo || '-', true],
+                            ['Extra Willing to Pay', survey.extraWillingToPay ? `₹ ${survey.extraWillingToPay}` : '-', false]
+                        ]
                     }
+                ];
+
+                sections.forEach(section => {
+                    if (y > pageHeight - 40) { doc.addPage(); y = 30; }
+
+                    // Section Header
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.setTextColor(...COLOR_ACCENT);
+                    doc.text(section.title.toUpperCase(), MARGIN, y);
+                    y += 8;
+
+                    // Grid Layout for Items
+                    section.items.forEach(([label, value, isHighlight], idx) => {
+                        if (y > pageHeight - 30) { doc.addPage(); y = 30; }
+
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(10);
+                        doc.setTextColor(...COLOR_SECONDARY);
+                        doc.text(label, MARGIN, y);
+
+                        doc.setFont("helvetica", isHighlight ? "bold" : "normal");
+                        doc.setFontSize(10);
+                        doc.setTextColor(isHighlight ? COLOR_ACCENT[0] : COLOR_PRIMARY[0], isHighlight ? COLOR_ACCENT[1] : COLOR_PRIMARY[1], isHighlight ? COLOR_ACCENT[2] : COLOR_PRIMARY[2]);
+
+                        // Right Column Value
+                        const valStr = String(value || '-');
+                        // Align value 
+                        doc.text(valStr, MARGIN + 60, y); // Fixed column at 60 + margin
+
+                        y += 6;
+                    });
+
+                    y += 8; // Spacer
                 });
 
-                // Footer
-                const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-
-                // Decorative colored bottom bar
-                const bottomColors = [[0, 122, 255], [52, 199, 89], [255, 149, 0], [255, 59, 48]];
-                let bW = 210 / 4;
-                bottomColors.forEach((c, i) => {
-                    doc.setFillColor(...c);
-                    doc.rect(i * bW, pageHeight - 2, bW, 2, 'F');
-                });
-
+                // Privacy Note / Footer
                 doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text("Design & Analytics by Vellora", 105, pageHeight - 8, { align: 'center' });
+                doc.setTextColor(...COLOR_SECONDARY);
+                doc.text("CONFIDENTIAL - FOR INTERNAL USE ONLY", pageWidth / 2, pageHeight - 15, { align: 'center' });
+                doc.text(`Generated by VELLORA App`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-                doc.save(`vellora_report_${survey.businessName.replace(/\s/g, '_')}.pdf`);
+                // Bottom Line
+                doc.setFillColor(...COLOR_ACCENT);
+                doc.rect(0, pageHeight - 2, pageWidth, 2, 'F');
+
+                doc.save(`Vellora_Report_${survey.businessName.replace(/[^a-z0-9]/gi, '_')}.pdf`);
             };
 
             const openMap = () => {
-                // Fallback to searching area if lat/lng missing
-                const q = survey.lat ? `${survey.lat},${survey.lng}` : survey.locationArea;
+                // Priority: gpsString > legacy lat/lng > locationArea
+                const q = survey.gpsString || (survey.lat ? `${survey.lat},${survey.lng}` : null) || survey.locationArea;
+                if (!q) return alert("No location data available");
                 window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank');
             };
 
@@ -1950,8 +2321,12 @@
             );
         };
 
-        const SurveyWizard = ({ initialData, onClose }) => {
+        const SurveyWizard = ({ initialData, onClose, isEditing }) => {
             const { saveSurvey, syncCode } = useContext(DataContext);
+            // Steps: A=Info, B=Volume, C=Pricing, D=Distributor, E=WhiteLabel, F=Closing
+            const STEPS = ['A', 'B', 'C', 'D', 'E', 'F'];
+            const TITLES = { A: 'Business Profile', B: 'Water Usage', C: 'Smart Pricing', D: 'Distributor', E: 'White Label', F: 'Closing' };
+
             const [step, setStep] = useState('A');
             const [data, setData] = useState(initialData || {
                 id: generateUUID(),
@@ -1962,18 +2337,26 @@
             const updateData = (key, val) => setData(prev => ({ ...prev, [key]: val }));
 
             const nextStep = () => {
-                if (step === 'A') {
+                const s = step;
+                // Validation Logic
+                if (s === 'A') {
                     if (!data.businessName || !data.businessType || !data.locationArea) return alert("Please fill required fields (Name, Type, Location)");
                     setStep('B');
-                } else if (step === 'B') {
+                } else if (s === 'B') {
                     if (!data.brands?.length || !data.bottleSizes?.length) return alert("Select at least one Brand and Size");
                     setStep('C');
-                } else if (step === 'C') {
+                } else if (s === 'C') {
+                    // Smart pricing usually optional, but maybe warn if empty?
+                    // Let's proceed.
+                    setStep('D');
+                } else if (s === 'D') {
+                    if (data.creditGiven === 'Yes') {
+                        if (!data.creditLimitAmount || !data.creditProviderName) return alert("Please provide Credit Details");
+                    }
+                    if (data.happyWithService === undefined) return alert("Please answer 'Happy with Service?'");
                     setStep('E');
-                } else if (step === 'E') {
-                    setStep('G');
-                } else if (step === 'G') {
-                    setStep('I');
+                } else if (s === 'E') {
+                    setStep('F');
                 }
             };
 
@@ -1983,21 +2366,28 @@
                 else window.location.reload();
             };
 
-            const titles = { A: 'Info', B: 'Volume', C: 'Pricing', E: 'Distributor', G: 'White Label', I: 'Notes' };
+            const currentIdx = STEPS.indexOf(step);
+            const progress = ((currentIdx + 1) / STEPS.length) * 100;
 
             return (
                 <div className="fixed inset-0 bg-bg z-50 overflow-hidden flex flex-col font-sans">
                     {/* Header - Blurs on scroll */}
-                    <div className="absolute top-0 left-0 right-0 h-20 bg-surface/80 backdrop-blur-xl border-b border-white/10 z-20 flex items-end justify-between px-6 pb-4">
-                        <button onClick={onClose || (() => window.location.reload())} className="text-brand font-medium text-lg flex items-center gap-1 active:opacity-60 transition-opacity">
-                            Cancel
-                        </button>
-                        <span className="font-bold text-sm opacity-0 transition-opacity duration-300" id="sticky-title">Step {step}: {titles[step]}</span>
-                        <div className="w-16"></div>
+                    <div className="absolute top-0 left-0 right-0 h-20 bg-surface/80 backdrop-blur-xl border-b border-white/10 z-20 flex flex-col justify-between px-6 pb-2 pt-4">
+                        <div className="flex items-center justify-between w-full">
+                            <button onClick={onClose || (() => window.location.reload())} className="text-brand font-medium text-lg flex items-center gap-1 active:opacity-60 transition-opacity">
+                                Cancel
+                            </button>
+                            <span className="font-bold text-sm" id="sticky-title">{TITLES[step]}</span>
+                            <div className="w-16"></div>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full h-1.5 bg-border/20 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-brand transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${progress}%` }}></div>
+                        </div>
                     </div>
 
                     {/* Content Scroll Area */}
-                    <div className="flex-1 overflow-y-auto pt-24 pb-48" onScroll={(e) => {
+                    <div className="flex-1 overflow-y-auto pt-28 pb-48" onScroll={(e) => {
                         const title = document.getElementById('sticky-title');
                         if (title) title.style.opacity = e.target.scrollTop > 40 ? '1' : '0';
                     }}>
@@ -2005,39 +2395,35 @@
 
                             {/* Large Title */}
                             <div>
-                                <h1 className="text-4xl font-black tracking-tight text-text mb-2">{titles[step]}</h1>
-                                <p className="text-text-muted font-medium">Step {Object.keys(titles).indexOf(step) + 1} of {Object.keys(titles).length}</p>
+                                <h1 className="text-4xl font-black tracking-tight text-text mb-2">{TITLES[step]}</h1>
+                                <p className="text-text-muted font-medium">Step {currentIdx + 1} of {STEPS.length}</p>
                             </div>
 
                             {/* Render Steps */}
-                            {step === 'A' && <StepBusinessProfile data={data} onChange={updateData} />}
+                            {step === 'A' && <StepBusinessProfile data={data} onChange={updateData} isEditing={isEditing} />}
                             {step === 'B' && <StepWaterUsage data={data} onChange={updateData} />}
                             {step === 'C' && <StepPricing data={data} onChange={updateData} />}
-                            {step === 'E' && <StepDistributor data={data} onChange={updateData} />}
-                            {step === 'G' && <StepWhiteLabel data={data} onChange={updateData} />}
-                            {step === 'I' && <StepClosing data={data} onChange={updateData} onSave={handleFinalSave} />}
+                            {step === 'D' && <StepDistributor data={data} onChange={updateData} />}
+                            {step === 'E' && <StepWhiteLabel data={data} onChange={updateData} />}
+                            {step === 'F' && <StepClosing data={data} onChange={updateData} onSave={handleFinalSave} />}
                         </div>
                     </div>
 
                     {/* Sticky Bottom Action Bar */}
                     <div className="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-xl border-t border-white/20 p-6 z-50 pb-safe shadow-2xl">
                         <div className="max-w-xl mx-auto flex gap-4 items-center">
-                            {step !== 'A' && step !== 'I' && (
+                            {step !== 'A' && step !== 'F' && (
                                 <button
                                     onClick={() => {
-                                        if (step === 'B') setStep('A');
-                                        if (step === 'C') setStep('B');
-                                        if (step === 'E') setStep('C');
-                                        if (step === 'G') setStep('E');
-                                        if (step === 'I') setStep('G');
+                                        if (currentIdx > 0) setStep(STEPS[currentIdx - 1]);
                                     }}
-                                    className="h-12 w-12 rounded-full bg-surface-highlight flex items-center justify-center text-text shadow-sm active:scale-95 transition-transform"
+                                    className="h-12 w-12 rounded-full bg-surface-highlight flex items-center justify-center text-text shadow-sm active:scale-95 transition-transform hover:bg-surface-highlight/80"
                                 >
                                     <Icons.ChevronRight className="rotate-180" />
                                 </button>
                             )}
-                            {step !== 'I' && (
-                                <Button onClick={nextStep} variant="primary" className="flex-1 h-12 text-lg shadow-xl shadow-brand/30 rounded-full">
+                            {step !== 'F' && (
+                                <Button onClick={nextStep} variant="primary" className="flex-1 h-12 text-lg shadow-xl shadow-brand/30 rounded-full transition-transform active:scale-[0.98]">
                                     Continue
                                 </Button>
                             )}
@@ -2145,115 +2531,142 @@
             const handleFullPDF = () => {
                 const doc = new jspdf.jsPDF();
                 const logo = localStorage.getItem('app_logo');
+                const pageHeight = doc.internal.pageSize.height;
+                const pageWidth = doc.internal.pageSize.width;
 
-                // Vibrant Apple Palette (Same as single view)
-                const COLORS = {
-                    primary: [0, 0, 0],
-                    secondary: [142, 142, 147],
-                    accent: THEMES[themeKey].brand === '#3B82F6' ? [0, 122, 255] : [52, 199, 89],
-                    bgParams: [242, 242, 247],
-                    cardBg: [255, 255, 255],
-                    success: [52, 199, 89],
-                    danger: [255, 59, 48],
-                    headerBg: [245, 245, 250]
-                };
+                // --- LUXURY CONFIG ---
+                const MARGIN = 20;
+                const COLOR_PRIMARY = [28, 28, 30];
+                const COLOR_SECONDARY = [142, 142, 147];
+                const COLOR_ACCENT = [0, 122, 255];
+                const COLOR_DIVIDER = [229, 229, 234];
 
                 surveys.forEach((survey, index) => {
                     if (index > 0) doc.addPage();
+                    let y = 30;
 
-                    // --- DRAW HEADER ---
-                    doc.setFillColor(...COLORS.primary);
-                    doc.rect(0, 0, 210, 5, 'F');
-
-                    doc.setFillColor(...COLORS.headerBg);
-                    doc.rect(0, 5, 210, 45, 'F');
+                    // 1. BRANDING HEADER
+                    doc.setDrawColor(...COLOR_ACCENT);
+                    doc.setLineWidth(1.5);
+                    doc.line(0, 0, pageWidth, 0);
 
                     if (logo) {
-                        try { doc.addImage(logo, 'PNG', 15, 12, 26, 26); } catch (e) { }
+                        try { doc.addImage(logo, 'PNG', MARGIN, 15, 20, 20); } catch (e) { }
                     }
 
                     doc.setFont("helvetica", "bold");
-                    doc.setFontSize(24);
-                    doc.setTextColor(...COLORS.primary);
-                    doc.text("VELLORA", 50, 22);
+                    doc.setFontSize(22);
+                    doc.setTextColor(...COLOR_PRIMARY);
+                    doc.text("VELLORA", logo ? MARGIN + 25 : MARGIN, 24);
+
+                    doc.setFontSize(10);
+                    doc.setTextColor(...COLOR_SECONDARY);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("MARKET INSIGHT REPORT", logo ? MARGIN + 25 : MARGIN, 30);
+
+                    doc.setFont("helvetica", "normal");
+                    doc.text(new Date(survey.timestamp).toLocaleDateString(), pageWidth - MARGIN, 24, { align: 'right' });
+                    doc.text(survey.id ? `#${survey.id.slice(0, 8)}` : '', pageWidth - MARGIN, 30, { align: 'right' });
+
+                    y = 50;
+
+                    // 2. BUSINESS HEADER
+                    doc.setFontSize(28);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(...COLOR_PRIMARY);
+                    doc.text(survey.businessName || "Unknown", MARGIN, y);
+                    y += 10;
 
                     doc.setFontSize(12);
-                    doc.setTextColor(...COLORS.accent);
-                    doc.text("Enterprise Market Insight Report", 50, 29);
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(...COLOR_SECONDARY);
+                    doc.text(`${survey.businessType || 'Business'}  •  ${survey.locationArea || 'Location'}`, MARGIN, y);
+                    y += 15;
 
-                    doc.setFontSize(9);
-                    doc.setTextColor(...COLORS.secondary);
-                    doc.text(`Survey ID: ${survey.id.slice(0, 8)} • ${new Date(survey.timestamp).toLocaleDateString()}`, 50, 36);
+                    doc.setDrawColor(...COLOR_DIVIDER);
+                    doc.setLineWidth(0.5);
+                    doc.line(MARGIN, y, pageWidth - MARGIN, y);
+                    y += 10;
 
-                    // --- DRAW BUSINESS CARD ---
-                    doc.setDrawColor(220, 220, 220);
-                    doc.setFillColor(...COLORS.cardBg);
-                    doc.roundedRect(15, 60, 180, 35, 3, 3, 'FD');
-
-                    doc.setFontSize(16);
-                    doc.setTextColor(...COLORS.primary);
-                    doc.text(survey.businessName || "Unknown Business", 25, 72);
-
-                    // Badges
-                    const drawBadge = (text, x, y, color) => {
-                        doc.setFillColor(...color);
-                        doc.roundedRect(x, y - 4, doc.getTextWidth(text) + 6, 6, 2, 2, 'F');
-                        doc.setTextColor(255, 255, 255);
-                        doc.setFontSize(8);
-                        doc.text(text, x + 3, y);
-                    };
-
-                    drawBadge(survey.businessType || 'N/A', 25, 82, [0, 122, 255]);
-                    drawBadge(survey.locationArea || 'N/A', 35 + doc.getTextWidth(survey.businessType || 'N/A'), 82, [255, 149, 0]);
-
-                    // --- DRAW DATA TABLE ---
-                    const dataBody = [
-                        ['SECTION: WATER USAGE', ''],
-                        ['Brands Stocked', (survey.brands || []).join(', ')],
-                        ['Bottle Sizes', (survey.bottleSizes || []).join(', ')],
-                        ['Monthly Volume', `${survey.qtyMonthly || 0} crates`],
-                        ['SECTION: PRICING', ''],
-                        ['Distributor', survey.distributorName || 'N/A'],
-                        ['Buy Price', `INR ${survey.buyPrice || '-'}`],
-                        ['Sell Price', `INR ${survey.sellPrice || '-'}`],
-                        ['Profit Margin', (survey.sellPrice && survey.buyPrice) ? `${Math.round(((survey.sellPrice - survey.buyPrice) / survey.buyPrice) * 100)}%` : '-'],
-                        ['SECTION: FEEDBACK', ''],
-                        ['Service Satisfaction', survey.happyWithService || '-'],
-                        ['Reported Issues', (survey.mainProblems || []).join(', ')],
-                        ['Custom Logo Interest', survey.interestedInCustomLogo || '-'],
-                        ['Willing to Pay', survey.extraWillingToPay ? `INR ${survey.extraWillingToPay}` : '-']
+                    // 3. SECTIONS
+                    const sections = [
+                        {
+                            title: "Business Profile",
+                            items: [
+                                ['Owner / Contact', `${survey.contactName || '-'}`, true],
+                                ['Mobile Number', `${survey.contactMobile || '-'}`, true],
+                                ['Coordinates (GPS)', survey.gpsString || (survey.lat ? `${survey.lat}, ${survey.lng}` : '-'), false],
+                                ['Address / Area', survey.locationArea || '-', false],
+                                ['Daily Footfall', survey.dailyFootfall || '-', false]
+                            ]
+                        },
+                        {
+                            title: "Water Usage & Sales",
+                            items: [
+                                ['Brands Stocked', (survey.brands || []).join(', '), false],
+                                ['Bottle Sizes', (survey.bottleSizes || []).join(', '), false],
+                                ['Monthly Volume', `${survey.qtyMonthly || 0} crates`, true],
+                                ['Weekly Deliveries', survey.weeklyDeliveries || '-', false]
+                            ]
+                        },
+                        {
+                            title: "Pricing & Economics",
+                            items: [
+                                ['Distributor', survey.distributorName || '-', false],
+                                ['Credit Given', survey.creditGiven || 'No', false],
+                                ['Credit Limit', survey.creditLimitAmount ? `INR ${survey.creditLimitAmount}` : '-', false],
+                                ['Avg. Buy Price', survey.buyPrice ? `₹ ${survey.buyPrice}` : '-', true],
+                                ['Avg. Sell Price', survey.sellPrice ? `₹ ${survey.sellPrice}` : '-', true],
+                                ['Profit Margin', (survey.sellPrice && survey.buyPrice) ? `${Math.round(((survey.sellPrice - survey.buyPrice) / survey.buyPrice) * 100)}%` : '-', true]
+                            ]
+                        },
+                        {
+                            title: "Feedback & Future",
+                            items: [
+                                ['Happy with Service?', survey.happyWithService || '-', false],
+                                ['Issues Reported', (survey.mainProblems || []).length > 0 ? (survey.mainProblems || []).join(', ') : 'None', false],
+                                ['Interested in Custom Logo?', survey.interestedInCustomLogo || '-', true],
+                                ['Extra Willing to Pay', survey.extraWillingToPay ? `₹ ${survey.extraWillingToPay}` : '-', false]
+                            ]
+                        }
                     ];
 
-                    doc.autoTable({
-                        startY: 105,
-                        head: [['Metric', 'Value']],
-                        body: dataBody,
-                        theme: 'grid',
-                        headStyles: { fillColor: [242, 242, 247], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0 },
-                        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70, textColor: [100, 100, 100] }, 1: { textColor: [0, 0, 0], fontStyle: 'bold' } },
-                        styles: { fontSize: 10, cellPadding: 4, lineColor: [230, 230, 235], lineWidth: 0.1 },
-                        didParseCell: function (data) {
-                            if (data.section === 'body' && data.cell.raw === '') data.cell.text = '';
-                            // Simple coloring for satisfaction
-                            if (data.section === 'body' && data.column.index === 1) {
-                                if (data.row.raw[0] === 'Service Satisfaction') {
-                                    if (data.cell.raw === 'Yes') data.cell.styles.textColor = [52, 199, 89];
-                                    else if (data.cell.raw === 'No') data.cell.styles.textColor = [255, 59, 48];
-                                }
-                            }
-                        }
+                    sections.forEach(section => {
+                        if (y > pageHeight - 40) { doc.addPage(); y = 30; }
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(10);
+                        doc.setTextColor(...COLOR_ACCENT);
+                        doc.text(section.title.toUpperCase(), MARGIN, y);
+                        y += 8;
+
+                        section.items.forEach(([label, value, isHighlight]) => {
+                            if (y > pageHeight - 30) { doc.addPage(); y = 30; }
+
+                            doc.setFont("helvetica", "normal");
+                            doc.setFontSize(10);
+                            doc.setTextColor(...COLOR_SECONDARY);
+                            doc.text(label, MARGIN, y);
+
+                            doc.setFont("helvetica", isHighlight ? "bold" : "normal");
+                            doc.setFontSize(10);
+                            doc.setTextColor(isHighlight ? COLOR_ACCENT[0] : COLOR_PRIMARY[0], isHighlight ? COLOR_ACCENT[1] : COLOR_PRIMARY[1], isHighlight ? COLOR_ACCENT[2] : COLOR_PRIMARY[2]);
+
+                            const valStr = String(value || '-');
+                            doc.text(valStr, MARGIN + 60, y);
+                            y += 6;
+                        });
+                        y += 8;
                     });
 
                     // Footer
-                    const pageHeight = doc.internal.pageSize.height;
                     doc.setFontSize(8);
-                    doc.setTextColor(150, 150, 150);
-                    doc.text("Design & Analytics by Vellora", 105, pageHeight - 10, { align: 'center' });
+                    doc.setTextColor(...COLOR_SECONDARY);
+                    doc.text("CONFIDENTIAL - FOR INTERNAL USE ONLY", pageWidth / 2, pageHeight - 15, { align: 'center' });
+                    doc.text(`Generated by VELLORA App`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-                    // Decorative bottom bar
-                    doc.setFillColor(52, 199, 89); doc.rect(0, pageHeight - 2, 70, 2, 'F');
-                    doc.setFillColor(0, 122, 255); doc.rect(70, pageHeight - 2, 70, 2, 'F');
-                    doc.setFillColor(255, 59, 48); doc.rect(140, pageHeight - 2, 70, 2, 'F');
+                    doc.setFillColor(...COLOR_ACCENT);
+                    doc.rect(0, pageHeight - 2, pageWidth, 2, 'F');
                 });
 
                 doc.save(`vellora_bulk_report_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -2345,34 +2758,7 @@
                             )}
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <Button variant="ghost" onClick={handleFullPDF} className="w-full border border-border">
-                                <Icons.Download /> Export Full PDF Report
-                            </Button>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={() => {
-                                    const blob = new Blob([JSON.stringify({ surveys, masterData }, null, 2)], { type: 'application/json' });
-                                    const a = document.createElement('a');
-                                    a.href = URL.createObjectURL(blob);
-                                    a.download = `vellora_backup_${new Date().toISOString().slice(0, 10)}.json`;
-                                    a.click();
-                                }} className="flex-1 text-xs border border-border">
-                                    Export JSON
-                                </Button>
-                                <Button variant="ghost" onClick={() => {
-                                    const headers = ['id', 'timestamp', 'businessName', 'locationArea', 'qtyMonthly', 'brands', 'distributorName'];
-                                    const rows = surveys.map(s => headers.map(h => `"${(s[h] || '').toString().replace(/"/g, '""')}"`).join(','));
-                                    const csv = [headers.join(','), ...rows].join('\n');
-                                    const blob = new Blob([csv], { type: 'text/csv' });
-                                    const a = document.createElement('a');
-                                    a.href = URL.createObjectURL(blob);
-                                    a.download = `vellora_surveys_${new Date().toISOString().slice(0, 10)}.csv`;
-                                    a.click();
-                                }} className="flex-1 text-xs border border-border">
-                                    Export CSV
-                                </Button>
-                            </div>
-                        </div>
+
 
                         <div className="text-xs text-text-muted text-center mt-2">
                             Master Data Items: {Object.values(masterData).flat().length} loaded.
@@ -2466,7 +2852,7 @@
                     setView('LIST');
                 };
 
-                if (view === 'WIZARD') return <SurveyWizard initialData={editData} onClose={closeWizard} />;
+                if (view === 'WIZARD') return <SurveyWizard initialData={editData} onClose={closeWizard} isEditing={!!editData} />;
 
                 switch (view) {
                     case 'LIST': return <SurveyList onEdit={handleEdit} onScrollChange={setIsListScrolled} />;
